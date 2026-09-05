@@ -1,4 +1,4 @@
-# Shane's Dark Fantasy RPG
+# Dark Fantasy RPG
 
 Updated installable PWA package.
 
