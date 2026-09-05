@@ -1,6 +1,6 @@
 {
-  "name": "Shane's Dark Fantasy RPG",
-  "short_name": "Shane RPG",
+  "name": "Dark Fantasy RPG",
+  "short_name": "Dark Fantasy RPG",
   "description": "AI-assisted dark fantasy role-playing game with automatic saving.",
   "start_url": "./",
   "scope": "./",
