@@ -37,13 +37,40 @@ jobs:
           cp icon-192.png app/src/main/assets/ 2>/dev/null || true
           cp icon-512.png app/src/main/assets/ 2>/dev/null || true
 
-          # Install the Dark Fantasy RPG artwork as the Android launcher icon.
+          # Use the SAME Dark Fantasy RPG artwork as an Android adaptive icon.
+          # This prevents modern Android launchers from wrapping the artwork in a white legacy-icon circle.
+          mkdir -p app/src/main/res/mipmap-anydpi-v26
+          mkdir -p app/src/main/res/drawable
+
+          cp icon-512.png app/src/main/res/drawable/dark_fantasy_icon.png
+
+          cat > app/src/main/res/drawable/ic_launcher_background.xml <<'EOF'
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#080f1a" />
+          </shape>
+          EOF
+
+          cat > app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item
+                  android:drawable="@drawable/dark_fantasy_icon"
+                  android:gravity="center" />
+          </layer-list>
+          EOF
+
+          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
+          </adaptive-icon>
+          EOF
+
+          # Legacy fallback for Android versions below 8.0. Use the same artwork, not a new image.
           mkdir -p app/src/main/res/mipmap-mdpi
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-xhdpi
           mkdir -p app/src/main/res/mipmap-xxhdpi
           mkdir -p app/src/main/res/mipmap-xxxhdpi
-
           cp icon-512.png app/src/main/res/mipmap-mdpi/ic_launcher.png
           cp icon-512.png app/src/main/res/mipmap-hdpi/ic_launcher.png
           cp icon-512.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
