@@ -1,10 +1,14 @@
-Shane's Dark Fantasy RPG — installable PWA package
+# Shane's Dark Fantasy RPG
 
-Files:
-- index.html: game (v2.8)
-- manifest.webmanifest: app name/icon/install settings
-- sw.js: offline caching
-- icon-192.png / icon-512.png: chosen app icon
-- favicon.ico: browser icon
+Updated installable PWA package.
 
-To install as an Android app, serve this folder from HTTPS, open index.html in Chrome, then use Chrome menu → Add to Home screen / Install app. The icon is the chosen blue/purple/orange Shane warrior artwork.
+Included:
+- index.html — latest RPG build (v3.7)
+- manifest.webmanifest — app name and PWA settings
+- sw.js — updated service-worker cache
+- icon-192.png — correct app icon
+- icon-512.png — correct app icon
+- favicon.png — browser/favicon icon
+
+App name: Shane's Dark Fantasy RPG
+Home-screen name: Dark Fantasy RPG

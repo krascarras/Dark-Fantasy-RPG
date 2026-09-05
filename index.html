@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dark Fantasy RPG">
-<title>Dark Fantasy RPG</title>
+<meta name="theme-color" content="#0b0b0d"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Shane RPG">
+<title>Shane's Dark Fantasy RPG v3.7</title>
 <style>
 :root{--bg:#080f1a;--panel:rgba(13,31,53,.80);--panel2:rgba(18,42,70,.80);--text:#fff;--muted:#aebdce;--line:#2d4664;--accent:#8b5cf6}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
@@ -334,7 +334,7 @@ function render(){
     return `<div class="entry${actionClass}"><img class="entry-avatar" src="${avatar}" alt=""><div class="entry-body"><div class="speaker ${cls}">${esc(speaker)}</div>${text}</div></div>`;
   }).join('');
 }
-function openSceneImage(src){const w=window.open('', '_blank'); if(!w)return; w.document.write(`<title>Dark Fantasy RPG</title><style>html,body{margin:0;background:#080b12;height:100%;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img src="${src}">`); w.document.close();}
+function openSceneImage(src){const w=window.open('', '_blank'); if(!w)return; w.document.write(`<title>Shane's Dark Fantasy RPG v3.7</title><style>html,body{margin:0;background:#080b12;height:100%;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img src="${src}">`); w.document.close();}
 function renderRichText(raw){
   const parts=String(raw).split(/\*([^*]+)\*/g);
   let html='<p>';
