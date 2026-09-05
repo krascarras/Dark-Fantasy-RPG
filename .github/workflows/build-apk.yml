@@ -91,7 +91,7 @@ jobs:
               <application
                   android:theme="@style/AppTheme"
                   android:label="Dark Fantasy RPG"
-                  android:icon="@mipmap/ic_launcher"
+                  android:icon="@drawable/app_icon"
                   android:usesCleartextTraffic="true">
 
                   <activity
