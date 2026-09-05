@@ -37,6 +37,19 @@ jobs:
           cp icon-192.png app/src/main/assets/ 2>/dev/null || true
           cp icon-512.png app/src/main/assets/ 2>/dev/null || true
 
+          # Install the Dark Fantasy RPG artwork as the Android launcher icon.
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          cp icon-512.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp icon-512.png app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp icon-512.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp icon-512.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp icon-512.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -91,6 +104,7 @@ jobs:
               <application
                   android:theme="@style/AppTheme"
                   android:label="Dark Fantasy RPG"
+                  android:icon="@mipmap/ic_launcher"
                   
                   
                   android:usesCleartextTraffic="true">
