@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -22,17 +22,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '8.10'
+          gradle-version: '8.10.2'
 
-      - name: Create Android project
+      - name: Create complete Android project
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
+
+          test -f index.html
+
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/darkfantasyrpg/app
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
 
+          # Keep the actual RPG index, including its embedded artwork.
           cp index.html app/src/main/assets/index.html
 
           cat > settings.gradle <<'EOF'
@@ -43,6 +47,7 @@ jobs:
                   gradlePluginPortal()
               }
           }
+
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
@@ -50,6 +55,7 @@ jobs:
                   mavenCentral()
               }
           }
+
           rootProject.name = "DarkFantasyRPG"
           include(":app")
           EOF
@@ -88,16 +94,29 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
               <uses-permission android:name="android.permission.INTERNET" />
 
               <application
-                  android:theme="@style/AppTheme"
+                  android:allowBackup="true"
+                  android:hardwareAccelerated="true"
+                  android:icon="@drawable/dark_fantasy_icon"
                   android:label="Dark Fantasy RPG"
-                  android:hardwareAccelerated="true">
+                  android:usesCleartextTraffic="false"
+                  android:theme="@style/AppTheme">
+
+                  <!-- Optional native libraries used by LiteRT-LM GPU acceleration. -->
+                  <uses-native-library
+                      android:name="libvndksupport.so"
+                      android:required="false" />
+                  <uses-native-library
+                      android:name="libOpenCL.so"
+                      android:required="false" />
+
                   <activity
                       android:name=".MainActivity"
-                      android:screenOrientation="portrait"
-                      android:exported="true">
+                      android:exported="true"
+                      android:screenOrientation="portrait">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -110,8 +129,12 @@ jobs:
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
-                  <item name="android:windowFullscreen">true</item>
                   <item name="android:fontFamily">sans</item>
+                  <item name="android:windowFullscreen">true</item>
+                  <item name="android:colorAccent">#8B5CF6</item>
+                  <item name="android:navigationBarColor">#07111F</item>
+                  <item name="android:statusBarColor">#07111F</item>
+                  <item name="android:windowLightStatusBar">false</item>
               </style>
           </resources>
           EOF
@@ -123,16 +146,325 @@ jobs:
               android:viewportWidth="108"
               android:viewportHeight="108">
               <path
-                  android:fillColor="#111111"
+                  android:fillColor="#101827"
                   android:pathData="M0,0h108v108h-108z" />
               <path
-                  android:fillColor="#777777"
-                  android:pathData="M54,12a42,42 0,1 0,0 84a42,42 0,1 0,0 -84" />
+                  android:fillColor="#8B5CF6"
+                  android:pathData="M54,10a44,44 0,1 0,0 88a44,44 0,1 0,0 -88" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M54,25l7.5,18.5L81,51l-19.5,7.5L54,77l-7.5,-18.5L27,51l19.5,-7.5z" />
           </vector>
           EOF
 
+          cat > app/src/main/java/com/darkfantasyrpg/app/MainActivity.kt <<'EOF'
+          package com.darkfantasyrpg.app
+
+          import android.app.Activity
+          import android.os.Bundle
+          import android.os.Handler
+          import android.os.Looper
+          import android.webkit.JavascriptInterface
+          import android.webkit.WebSettings
+          import android.webkit.WebView
+          import android.webkit.WebViewClient
+          import android.widget.Toast
+          import com.google.ai.edge.litertlm.Backend
+          import com.google.ai.edge.litertlm.Contents
+          import com.google.ai.edge.litertlm.Conversation
+          import com.google.ai.edge.litertlm.ConversationConfig
+          import com.google.ai.edge.litertlm.Engine
+          import com.google.ai.edge.litertlm.EngineConfig
+          import kotlinx.coroutines.CoroutineScope
+          import kotlinx.coroutines.Dispatchers
+          import kotlinx.coroutines.SupervisorJob
+          import kotlinx.coroutines.delay
+          import kotlinx.coroutines.launch
+          import java.io.File
+          import java.io.RandomAccessFile
+          import java.net.HttpURLConnection
+          import java.net.URL
+
+          class MainActivity : Activity() {
+              private lateinit var webView: WebView
+              private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+              private val mainHandler = Handler(Looper.getMainLooper())
+
+              private var engine: Engine? = null
+              private var conversation: Conversation? = null
+              private var engineLoading = false
+
+              private val modelDir by lazy { File(filesDir, "models") }
+              private val modelFile by lazy {
+                  File(modelDir, "gemma-4-E4B-it.litertlm")
+              }
+              private val partFile by lazy {
+                  File(modelDir, "gemma-4-E4B-it.litertlm.part")
+              }
+
+              private val modelUrl =
+                  "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true"
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+
+                  webView = WebView(this)
+                  val settings: WebSettings = webView.settings
+                  settings.javaScriptEnabled = true
+                  settings.domStorageEnabled = true
+                  settings.databaseEnabled = true
+                  settings.allowFileAccess = true
+                  settings.allowContentAccess = true
+                  settings.javaScriptCanOpenWindowsAutomatically = false
+                  settings.setSupportMultipleWindows(false)
+
+                  webView.webViewClient = WebViewClient()
+                  webView.addJavascriptInterface(LocalAI(), "AndroidLocalAI")
+                  webView.loadUrl("file:///android_asset/index.html")
+                  setContentView(webView)
+              }
+
+              override fun onDestroy() {
+                  scope.launch(Dispatchers.IO) {
+                      try { conversation?.close() } catch (_: Exception) {}
+                      try { engine?.close() } catch (_: Exception) {}
+                  }
+                  super.onDestroy()
+              }
+
+              inner class LocalAI {
+                  @JavascriptInterface
+                  fun isModelInstalled(): Boolean =
+                      modelFile.exists() && modelFile.length() > 100_000_000L
+
+                  @JavascriptInterface
+                  fun downloadModel() {
+                      if (isModelInstalled()) {
+                          postJsStatus("Local AI model is already installed.")
+                          return
+                      }
+                      if (engineLoading) {
+                          postJsStatus("Local AI is already preparing.")
+                          return
+                      }
+
+                      scope.launch(Dispatchers.IO) {
+                          try {
+                              modelDir.mkdirs()
+                              downloadWithResume()
+                              postJsStatus("✓ Local AI model downloaded. Tap Test AI.")
+                          } catch (e: Exception) {
+                              postJsError("Model download failed: ${e.message ?: e.javaClass.simpleName}")
+                          }
+                      }
+                  }
+
+                  @JavascriptInterface
+                  fun generate(requestId: String, prompt: String) {
+                      if (!isModelInstalled()) {
+                          postJsError(
+                              requestId,
+                              "The local AI model is not installed. Download it first."
+                          )
+                          return
+                      }
+
+                      scope.launch(Dispatchers.IO) {
+                          try {
+                              ensureEngine()
+                              val conv = conversation
+                                  ?: throw IllegalStateException("Local AI conversation unavailable")
+
+                              val result = StringBuilder()
+                              conv.sendMessageAsync(prompt).collect { chunk ->
+                                  result.append(chunk)
+                              }
+
+                              postJsResult(requestId, result.toString())
+                          } catch (e: Exception) {
+                              postJsError(
+                                  requestId,
+                                  "Local AI failed: ${e.message ?: e.javaClass.simpleName}"
+                              )
+                          }
+                      }
+                  }
+              }
+
+              private suspend fun ensureEngine() {
+                  if (conversation != null) return
+
+                  if (engineLoading) {
+                      while (engineLoading) delay(100)
+                      if (conversation != null) return
+                  }
+
+                  engineLoading = true
+                  try {
+                      val cacheDir = File(cacheDir, "litertlm-cache").apply { mkdirs() }
+
+                      val config = EngineConfig(
+                          modelPath = modelFile.absolutePath,
+                          backend = Backend.CPU(),
+                          cacheDir = cacheDir.absolutePath
+                      )
+
+                      val e = Engine(config)
+                      e.initialize()
+                      engine = e
+
+                      conversation = e.createConversation(
+                          ConversationConfig(
+                              systemInstruction = Contents.of(
+                                  """
+                                  You are the local narrative engine for Shane's Dark Fantasy RPG.
+
+                                  Treat the RPG's supplied canon, character descriptions,
+                                  relationship state, memories, current scene and player
+                                  action as authoritative.
+
+                                  Never invent visual facts that contradict supplied character
+                                  canon. Preserve named character traits. Write natural,
+                                  fluid fantasy prose rather than repetitive stock phrases.
+
+                                  Follow the output format requested by the game.
+                                  """.trimIndent()
+                              )
+                          )
+                      )
+                  } finally {
+                      engineLoading = false
+                  }
+              }
+
+              private fun downloadWithResume() {
+                  val existing = if (partFile.exists()) partFile.length() else 0L
+
+                  val connection =
+                      (URL(modelUrl).openConnection() as HttpURLConnection).apply {
+                          connectTimeout = 30_000
+                          readTimeout = 120_000
+                          instanceFollowRedirects = true
+                          setRequestProperty("User-Agent", "DarkFantasyRPG/LocalAI")
+                          if (existing > 0) {
+                              setRequestProperty("Range", "bytes=$existing-")
+                          }
+                      }
+
+                  try {
+                      val code = connection.responseCode
+                      if (code != HttpURLConnection.HTTP_OK &&
+                          code != HttpURLConnection.HTTP_PARTIAL) {
+                          throw IllegalStateException("HTTP $code")
+                      }
+
+                      val append =
+                          code == HttpURLConnection.HTTP_PARTIAL && existing > 0
+
+                      if (!append && existing > 0) {
+                          partFile.delete()
+                      }
+
+                      val total =
+                          if (code == HttpURLConnection.HTTP_PARTIAL) {
+                              existing + connection.contentLengthLong
+                          } else {
+                              connection.contentLengthLong
+                          }
+
+                      connection.inputStream.use { input ->
+                          RandomAccessFile(partFile, "rw").use { output ->
+                              if (append) output.seek(existing)
+                              else output.setLength(0)
+
+                              val buffer = ByteArray(1024 * 1024)
+                              var downloaded = if (append) existing else 0L
+                              var lastPercent = -1
+
+                              while (true) {
+                                  val read = input.read(buffer)
+                                  if (read <= 0) break
+
+                                  output.write(buffer, 0, read)
+                                  downloaded += read
+
+                                  if (total > 0) {
+                                      val percent =
+                                          ((downloaded * 100L) / total).toInt()
+
+                                      if (percent != lastPercent &&
+                                          percent % 2 == 0) {
+                                          lastPercent = percent
+                                          postJsStatus(
+                                              "Downloading local AI model… $percent%"
+                                          )
+                                      }
+                                  }
+                              }
+                          }
+                      }
+
+                      if (!partFile.exists() ||
+                          partFile.length() < 100_000_000L) {
+                          throw IllegalStateException("Downloaded file is incomplete")
+                      }
+
+                      if (modelFile.exists()) modelFile.delete()
+
+                      if (!partFile.renameTo(modelFile)) {
+                          throw IllegalStateException("Could not finalise model file")
+                      }
+                  } finally {
+                      connection.disconnect()
+                  }
+              }
+
+              private fun postJsStatus(message: String) {
+                  mainHandler.post {
+                      val escaped = message.jsString()
+                      webView.evaluateJavascript(
+                          "window.__localAIStatus && window.__localAIStatus('$escaped')",
+                          null
+                      )
+                  }
+              }
+
+              private fun postJsResult(requestId: String, text: String) {
+                  mainHandler.post {
+                      webView.evaluateJavascript(
+                          "window.onLocalAIResult('${requestId.jsString()}','${text.jsString()}')",
+                          null
+                      )
+                  }
+              }
+
+              private fun postJsError(requestId: String, message: String) {
+                  mainHandler.post {
+                      webView.evaluateJavascript(
+                          "window.onLocalAIError('${requestId.jsString()}','${message.jsString()}')",
+                          null
+                      )
+                  }
+              }
+
+              private fun postJsError(message: String) {
+                  postJsStatus("✗ $message")
+                  mainHandler.post {
+                      Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                  }
+              }
+
+              private fun String.jsString(): String =
+                  replace("\\", "\\\\")
+                      .replace("'", "\\'")
+                      .replace("\n", "\\n")
+                      .replace("\r", "\\r")
+                      .replace("</", "<\\/")
+          }
+          EOF
+
       - name: Build APK
-        run: gradle assembleDebug
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
