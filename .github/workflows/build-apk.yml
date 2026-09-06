@@ -443,7 +443,7 @@ jobs:
 
               private fun postJsStatus(message: String) {
                   mainHandler.post {
-                      val escaped = message.jsString()
+                      val escaped = jsString(message)
                       webView.evaluateJavascript(
                           "window.__localAIStatus && window.__localAIStatus('$escaped')",
                           null
@@ -454,7 +454,7 @@ jobs:
               private fun postJsResult(requestId: String, text: String) {
                   mainHandler.post {
                       webView.evaluateJavascript(
-                          "window.onLocalAIResult('${requestId.jsString()}','${text.jsString()}')",
+                          "window.onLocalAIResult('${jsString(requestId)}','${jsString(text)}')",
                           null
                       )
                   }
@@ -463,7 +463,7 @@ jobs:
               private fun postJsError(requestId: String, message: String) {
                   mainHandler.post {
                       webView.evaluateJavascript(
-                          "window.onLocalAIError('${requestId.jsString()}','${message.jsString()}')",
+                          "window.onLocalAIError('${jsString(requestId)}','${jsString(message)}')",
                           null
                       )
                   }
@@ -476,8 +476,8 @@ jobs:
                   }
               }
 
-              private fun String.jsString(): String =
-                  replace("\\", "\\\\")
+              private fun jsString(value: String): String =
+                  value.replace("\\", "\\\\")
                       .replace("'", "\\'")
                       .replace("\n", "\\n")
                       .replace("\r", "\\r")
