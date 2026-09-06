@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Shane RPG">
-<title>Shane's Dark Fantasy RPG v3.7</title>
+<meta name="theme-color" content="#0b0b0d"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dark Fantasy RPG">
+<title>Dark Fantasy RPG</title>
 <style>
 :root{--bg:#080f1a;--panel:rgba(13,31,53,.80);--panel2:rgba(18,42,70,.80);--text:#fff;--muted:#aebdce;--line:#2d4664;--accent:#8b5cf6}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
@@ -26,11 +26,12 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 #story{line-height:1.55}.entry{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}.entry:last-child{border-bottom:0}.entry-avatar{width:104px;height:128px;flex:0 0 104px;border-radius:12px;object-fit:contain;object-position:center;background:#111827;border:1px solid var(--line);margin-top:1px;padding:1px}.entry-body{min-width:0;flex:1;width:auto}
 @media(max-width:520px){.entry{gap:12px}.entry-avatar{width:86px;height:106px;flex:0 0 86px;border-radius:12px;object-fit:contain;object-position:center;background:#111827;border:1px solid var(--line);padding:1px;margin-top:1px}.portrait{width:94px;height:116px}}.entry.narrator-entry{display:block}.entry.narrator-entry .entry-body{width:100%}.story-busy{opacity:.7;pointer-events:none}.speaker{font-weight:800;margin-bottom:5px}.speaker.narrator{color:var(--muted)}.speaker.character{color:#c4b5fd}.entry p{margin:0 0 9px}.entry p:last-child{margin-bottom:0}.action-text{color:#d8b4ff;font-style:italic}.entry.action-entry{background:rgba(139,92,246,.045);border-radius:10px;padding-left:8px;padding-right:8px}.action-hint{margin-top:7px;color:var(--muted);font-size:12px}.compact-action{padding:8px 10px;margin-top:0}.compact-action textarea{min-height:52px;height:52px;max-height:96px;padding:9px}.compact-actions{margin-top:6px;justify-content:flex-end}.compact-actions .btn{padding:8px 16px;min-width:82px}.story-card{margin-bottom:8px}
 .scene-image{display:block;width:100%;max-height:62vh;object-fit:contain;border-radius:14px;border:1px solid var(--line);background:#080b12;margin:4px 0 10px;cursor:zoom-in}.scene-image:active{transform:scale(.995)}.scene-caption{font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin:-4px 0 8px}
-.scenario-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.scenario-row:last-child{border-bottom:0}.scenario-info{min-width:0;flex:1}.scenario-menu-wrap{position:relative;flex:0 0 auto}.scenario-menu-btn{width:42px;height:42px;padding:0;font-size:22px;line-height:1;border-radius:12px}.scenario-menu{position:absolute;right:0;top:46px;z-index:15;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px}.scenario-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.scenario-menu button:hover{background:rgba(255,255,255,.06)}.character-menu-wrap{position:relative;flex:0 0 auto}.character-menu-btn{width:42px;height:42px;padding:0;font-size:22px;line-height:1;border-radius:12px}.character-menu{position:absolute;right:0;top:46px;z-index:15;min-width:190px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px}.character-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.character-menu button:hover{background:rgba(255,255,255,.06)}.character-menu .danger{color:#ff8b8b}.scenario-menu .danger{color:#ff8b8b}.scenario-params{margin-top:10px;padding:10px;border:1px dashed var(--line);border-radius:12px}.character-section-label{margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.npc-card{display:flex;gap:12px;align-items:center}.npc-mini{width:70px;height:86px;border-radius:10px;object-fit:contain;background:#111827;border:1px solid var(--line);padding:2px}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 15px;border-radius:12px;display:none;z-index:20}
+.scenario-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.scenario-row:last-child{border-bottom:0}.scenario-info{min-width:0;flex:1}.scenario-menu-wrap{position:relative;flex:0 0 auto}.scenario-menu-btn{width:42px;height:42px;padding:0;font-size:22px;line-height:1;border-radius:12px}.scenario-menu{position:absolute;right:0;top:46px;z-index:15;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px}.scenario-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.scenario-menu button:hover{background:rgba(255,255,255,.06)}.scenario-menu .danger{color:#ff8b8b}.scenario-params{margin-top:10px;padding:10px;border:1px dashed var(--line);border-radius:12px}.character-section-label{margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.npc-card{display:flex;gap:12px;align-items:center}.npc-mini{width:70px;height:86px;border-radius:10px;object-fit:contain;background:#111827;border:1px solid var(--line);padding:2px}.version-badge{position:fixed;right:8px;top:6px;z-index:30;font-size:10px;color:var(--muted);opacity:.65;pointer-events:none}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 15px;border-radius:12px;display:none;z-index:20}
 @media (max-width:600px){main{padding:8px}.story-log{height:68vh;min-height:260px}.compact-action{padding:7px 9px}.compact-action textarea{min-height:50px;height:50px}.compact-actions{margin-top:5px}}
 </style>
 </head>
 <body>
+<div class="version-badge">v3.8</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -88,7 +89,11 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
   <div class="card"><h3>🌳 Magical Resources</h3><p>Some rare trees, herbs, crystals and other natural resources hold unusually concentrated mana. Certain old trees are known for producing materials used in healing, elemental, warding or enchanting work. Necromantic practitioners may seek corrupted resources, but such practices are dangerous and illegal in many regions.</p></div>
   <div class="card"><h3>🐉 Creatures & Nest Jobs</h3><p>The wilds contain everything from nuisance pests to genuine monsters. Adventurers are regularly hired to clear nests, lairs and infestations, and new creatures can appear as the party travels.</p><p class="small">Possible threats include goblins, kobolds, giant spiders, magically altered wolves, bog imps, harpies, wyverns, drakes, basilisks, trolls, manticores, wraiths, revenants, treants, gargoyles, sirens, fae creatures, shadow beasts, gryphons and other region-specific mystical creatures. Not every creature is hostile, and danger varies by individual and circumstance.</p></div>
   <div class="card"><h3>🏰 Dungeons & Ancient Ruins</h3><p>Dungeons are scattered throughout the world: buried temples, abandoned fortresses, forgotten mines, underground cities, crypts, magical laboratories, collapsed keeps and older places whose original purpose has been lost to history. Some are natural caverns that have become monster lairs; others were deliberately built and can contain multiple levels, sealed chambers, traps, puzzles, hidden passages and powerful guardians.</p><p>Dungeons are not simply combat arenas. Exploration, preparation, navigation, resource management, deciphering clues, negotiating with inhabitants and deciding when to retreat can matter as much as fighting. Different dungeons should have their own atmosphere, history, hazards and logic.</p><p>Rewards can include ordinary treasure, useful equipment, rare crafting materials, forgotten records, magical artefacts, maps, keys or information that changes what the party understands about the wider world. A dungeon may also contain friendly, neutral or intelligent inhabitants, and not every apparent threat has to be defeated.</p></div>
-  <div class="card"><h3>⚔️ Adventurers & Reputation</h3><p>Adventuring is dangerous work: monster nests, ruins, escorts, missing-person searches, relic recovery and settlement contracts are all common. Reputation is earned through what people actually see you do.</p><p>Relationships work the same way. Characters begin as strangers or acquaintances unless the story establishes otherwise. Trust, affection, respect and friendship must be earned through meaningful interactions. Positive changes are deliberately gradual rather than automatic.</p></div> </section> <section id="game" class="tab">
+  <div class="card"><h3>⚔️ Adventurers & Reputation</h3><p>Adventuring is dangerous work: monster nests, ruins, escorts, missing-person searches, relic recovery and settlement contracts are all common. Reputation is earned through what people actually see you do.</p><p>Relationships work the same way. Characters begin as strangers or acquaintances unless the story establishes otherwise. Trust, affection, respect and friendship must be earned through meaningful interactions. Positive changes are deliberately gradual rather than automatic.</p></div>
+  <div class="card"><h3>💜 Sylvara</h3><p>Sylvara Aelthara is not an ordinary elf. She is a goddess who has been brought into the mortal world without becoming truly mortal. Her divine power is heavily limited here, leaving her with only a fraction of what she once commanded. Healing is therefore her primary practical discipline.</p><p>She begins with Shane as an acquaintance. She may find him amusing, charming or unexpectedly interesting when he gives her genuine reason to, but she will not instantly fall for him. Her trust and affection should grow only when Shane puts in the work.</p></div>
+</section>
+
+<section id="game" class="tab">
   <div class="card"><h2>⚙️ Game</h2>
     <label>Text colour</label>
     <select id="theme" onchange="setTheme(this.value)"><option value="dark">White text / dark</option><option value="light">Black text / light</option></select>
@@ -312,7 +317,7 @@ function render(){
  const partyHtml=state.party.map(p=>`<div class="card character"><img class="portrait" src="${p.image||placeholder(p.name)}"><div><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${p.level} · ${esc(p.race||'Unknown race')}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div></div></div>`).join('');
  const npcHtml=(state.npcs||[]).filter(n=>n.persistence==='persistent').map(n=>`<div class="card npc-card"><img class="npc-mini" src="${n.appearance||placeholder(n.name)}"><div><b>${esc(n.name)}</b><div class="small">Persistent NPC · ${esc(n.race||'Unknown race')} · ${esc(n.age||'adult')}</div><div class="small">${esc(n.role||'resident')} · ${esc(n.location||state.currentLocation||'Unknown location')}</div><div class="small">${esc(n.personality||'')}</div></div></div>`).join('');
  document.getElementById('partyList').innerHTML=partyHtml+(npcHtml?`<div class="character-section-label">Persistent people in this world</div>${npcHtml}`:'');
- document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><b>${esc(p.name)}</b><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" aria-label="Character options" data-character-menu="${n}">⋮</button><div class="character-menu" data-character-menu-for="${n}" hidden><button type="button" data-character-action="upload" data-character-index="${n}">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" data-character-action="remove-picture" data-character-index="${n}">🗑️ Remove picture</button>`:''}${p.name!=='Shane'&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" data-character-action="remove-character" data-character-index="${n}">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
+ document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><b>${esc(p.name)}</b><div class="actions"><button class="btn" type="button" onclick="document.getElementById('pic${n}').click()">Replace picture</button>${p.image?`<button class="btn danger" type="button" onclick="removePic(${n})">Remove picture</button>`:''}${p.name!=='Shane'&&p.name!=='Sylvara Aelthara'?`<button class="btn danger" type="button" onclick="removeCharacter(${n})">Remove character</button>`:''}</div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
  document.getElementById('relationships').innerHTML=state.party.filter(p=>p.name!=='Shane').map(p=>{let i=state.party.indexOf(p);let bond=Math.max(0,Math.min(100,Number(p.bond)||20));let rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
  const re=document.getElementById('relationshipEvents'); if(re){const ev=Array.isArray(state.relationshipEvents)?state.relationshipEvents.slice(-5).reverse():[]; re.innerHTML=ev.length?'<b>Recent changes</b><br>'+ev.map(e=>`• ${esc(e.text)}`).join('<br>'):'No relationship changes yet. When a bond changes, the game will show you what improved or worsened.';}
   const log=document.getElementById('storyLog');
@@ -330,7 +335,7 @@ function render(){
     return `<div class="entry${actionClass}"><img class="entry-avatar" src="${avatar}" alt=""><div class="entry-body"><div class="speaker ${cls}">${esc(speaker)}</div>${text}</div></div>`;
   }).join('');
 }
-function openSceneImage(src){const w=window.open('', '_blank'); if(!w)return; w.document.write(`<title>Shane's Dark Fantasy RPG v3.7</title><style>html,body{margin:0;background:#080b12;height:100%;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img src="${src}">`); w.document.close();}
+function openSceneImage(src){const w=window.open('', '_blank'); if(!w)return; w.document.write(`<title>Dark Fantasy RPG</title><style>html,body{margin:0;background:#080b12;height:100%;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img src="${src}">`); w.document.close();}
 function renderRichText(raw){
   const parts=String(raw).split(/\*([^*]+)\*/g);
   let html='<p>';
@@ -434,7 +439,7 @@ WRITING RULES:
 - Keep prose atmospheric, dark-fantasy, immersive and reasonably concise. Longer responses are allowed when the immediate beat genuinely needs them, but do not advance the story beyond the current moment.
 - WORLD LORE: Humans, elves, dwarves, demonfolk and orcs generally coexist, though prejudice, old wars and local tensions remain. Mixed-race adventuring parties are normal. Orcs are not inherently evil or savage: they have diverse clans, tribes and settled communities, value endurance, loyalty, courage and honour, and may be allies, enemies, companions, traders, craftsmen, leaders or ordinary civilians. Judge individuals by their actions. Do not use "beastfolk" as a race.
 - WORLD LORE: Magic is present throughout the world but only some people can use it. A mage can learn all recognised schools but normally specialises in one. The schools are Healing, Elemental, Enhancement, Enchantment, Warding and forbidden Necromancy. Mana is spent to cast magic and gradually returns through sleep, meditation and rest. Severe overuse can cause migraines; reckless total overexpenditure can become life-threatening.
-${((state.party||[]).some(p=>p.name==='Sylvara Aelthara') || ((state.longTermMemory?.characterMemories?.['Sylvara Aelthara']||[]).length>0)) ? '- CHARACTER MEMORY — SYLVARA AELTHARA: Sylvara is a goddess brought into the mortal world whose divine power is heavily limited here. She specialises in Healing magic. She begins with Shane as an acquaintance; trust and affection must be earned through meaningful interactions. Apply these facts only because Sylvara is established in this campaign.' : ''}
+- SYLVARA LORE: Only apply this rule when Sylvara Aelthara is actually present in the current campaign/party or established in its world memory: she is a goddess whose divine power is heavily limited in the mortal world and she specialises in Healing magic. Shane cannot use Healing magic unless this campaign explicitly establishes a change. Do not introduce Sylvara into campaigns where she has not been established.
 - WORLD LORE: Monster nests and lairs are common adventuring work. Dungeons and ancient ruins are also part of the world and can contain multiple levels, traps, puzzles, hidden passages, environmental hazards, monsters, intelligent inhabitants, forgotten history and valuable rewards. A dungeon should have its own atmosphere, internal logic and history; it is not automatically a sequence of fights. The party may need to explore, investigate, negotiate, solve problems, manage resources or retreat. Creatures may include goblins, kobolds, giant spiders, magically altered wolves, bog imps, harpies, wyverns, drakes, basilisks, trolls, manticores, wraiths, revenants, treants and other region-specific mystical creatures.
 - LONG-TERM MEMORY RULE: Treat established memories as canonical campaign facts. Prefer retrieving an existing fact over inventing a replacement. Never silently rewrite a persistent character's name, race, role, history, relationship or established knowledge. If something is unknown, leave it unknown rather than guessing.
 - NPC MEMORY RULE: A persistent NPC is a real recurring person in the campaign. Once created, keep their established details consistent unless the story explicitly changes them. Background NPCs may remain lightweight and can disappear from memory unless they become relevant.
@@ -476,7 +481,7 @@ JSON schema:
   "world_updates":{"location":"current location or empty","day_delta":0,"time_of_day":"morning|afternoon|evening|night|unchanged"},
   "mana_cost":0
 }
-Only add memory_update when the player's action or your immediate response explicitly establishes the fact. Never invent hidden history. Major memories should remain important for the whole campaign. Use persistent NPCs for recurring figures such as tavern owners, blacksmiths, guild staff, named merchants, healers, faction contacts and other people the party is likely to meet again. Use background NPCs for ordinary patrons/passers-by unless they become important. When Shane enters a populated public place, make it feel inhabited and create a few background NPCs when appropriate. Do not create a named NPC every turn. Age may be vague. Persistent NPC facts must remain consistent. Use 1 entry normally, or 2 short entries only when a narrator beat followed immediately by a character reply is necessary. Never return more than 2 entries.`;
+Only add memory_update when the player's action or your immediate response explicitly establishes the fact. Never invent hidden history. Major memories should remain important for the whole campaign. Use persistent NPCs for recurring figures such as tavern owners, blacksmiths, guild staff, named merchants, healers, faction contacts and other people the party is likely to meet again. Use background NPCs for ordinary patrons/passers-by unless they become important. When Shane enters a populated public place, make it feel inhabited and create a few background NPCs when appropriate. Do not create a named NPC every turn. Age may be vague. Persistent NPC facts must remain consistent. Use at least 2 distinct short entries for a normal response, but do NOT impose a hard limit. When the scene naturally involves multiple people or beats, return as many separate entries as genuinely useful (usually 2-5, occasionally more). Each entry must add new information, reaction, dialogue, consequence or atmosphere. Do not split one sentence into multiple entries merely to inflate the count. If multiple named characters are present, let them participate naturally when appropriate; never force every character to speak.`;
   // Gemini text models via the current Interactions API. This keeps the same authentication path
   // that is already working in this game while allowing the user to choose a supported model.
   const model=String(aiSettings.model||'gemini-3.7-flash').trim()||'gemini-3.7-flash';
@@ -559,12 +564,43 @@ function normaliseAIText(text, type){
   return s;
 }
 function aiEntries(result){
-  return (result?.entries||[]).slice(0,2).map(e=>{
+  return (result?.entries||[]).slice(0,8).map(e=>{
     const type=e.type==='character'?'character':'gm';
     const speaker=type==='character'?String(e.speaker||'Narrator'):'Narrator';
     const known=type==='gm'||state.party.some(p=>p.name===speaker)||(state.npcs||[]).some(n=>n.name===speaker);
     return known?{type,speaker:type==='character'?speaker:undefined,text:normaliseAIText(e.text,type)}:null;
   }).filter(Boolean).map(e=>{if(!e.speaker)delete e.speaker;return e});
+}
+
+async function typewriteAIEntry(entry, initialPause=0){
+  if(initialPause) await wait(initialPause);
+  const finalText=String(entry.text||'');
+  if(!finalText)return;
+  // Put the entry into the story immediately so the layout reserves its space, then
+  // reveal the prose directly in the already-rendered entry instead of re-rendering
+  // the whole story for every character.
+  const storyEntry={...entry,text:''};
+  state.story.push(storyEntry);
+  render();
+  keepStoryAtLatest();
+  const log=document.getElementById('storyLog');
+  const domEntry=log?.lastElementChild;
+  const body=domEntry?.querySelector('.entry-body');
+  if(!body){storyEntry.text=finalText;render();keepStoryAtLatest();return;}
+  const speakerEl=body.querySelector('.speaker');
+  const speakerHtml=speakerEl?speakerEl.outerHTML:'';
+  let shown='';
+  for(let i=0;i<finalText.length;i++){
+    shown+=finalText[i];
+    body.innerHTML=speakerHtml+renderRichText(shown);
+    if(i%3===0)keepStoryAtLatest();
+    const ch=finalText[i];
+    const speed=ch===' ' ? 8 : /[,.!?;:]/.test(ch) ? 85 : /[\n]/.test(ch) ? 120 : 18;
+    await wait(speed);
+  }
+  storyEntry.text=finalText;
+  await save();
+  keepStoryAtLatest();
 }
 async function testAI(){
   const key=String(document.getElementById('aiKey')?.value||aiSettings.key||'').trim();
@@ -627,13 +663,14 @@ async function addAction(){
           if(state.mana===0){toast('Mana exhausted — rest or meditate before pushing further.');}
         }
         const entries=aiEntries(result);
-        for(const entry of entries){
-          state.story.push(entry);
-          await save();
-          render();
-          keepStoryAtLatest();
+        if(!entries.length){
+          toast('AI had no immediate response');
+        }else{
+          for(let i=0;i<entries.length;i++){
+            await typewriteAIEntry(entries[i],i===0?350:650);
+          }
+          toast('Story continues');
         }
-        if(!entries.length)toast('AI had no immediate response'); else toast('Story continues');
       }else{
         // Local fallback remains available when AI is disabled.
         const reaction=characterReaction(v);
@@ -732,7 +769,9 @@ function repLabel(v){if(v<=-75)return 'Hostile';if(v<=-45)return 'Unfriendly';if
 function repColor(v){if(v<0){let t=Math.abs(v)/100;let r=Math.round(13+130*t),g=Math.round(39-25*t),b=Math.round(66-38*t);return `rgb(${r},${g},${b})`}let t=v/100;let r=Math.round(23-20*t),g=Math.round(77-45*t),b=Math.round(120-70*t);return `rgb(${r},${g},${b})`}
 function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>p.name!=='Shane').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
 
-function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.'});document.getElementById('newChar').value='';save();render();toast('Companion added');} function removeCharacter(i){const p=state.party[i];if(!p)return;if(p.name==='Shane'||p.name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}if(!confirm('Remove '+p.name+' from the party?'))return;state.party.splice(i,1);delete state.characterKnowledge[p.name];if(state.longTermMemory?.characterMemories)delete state.longTermMemory.characterMemories[p.name];save();render();toast('Character removed');} function removePic(i){if(!state.party[i])return;state.party[i].image=null;save();render();toast('Picture removed');}
+function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.'});document.getElementById('newChar').value='';save();render();toast('Companion added');}
+function removeCharacter(i){if(!state.party[i])return;const name=state.party[i].name;if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}if(!confirm('Remove '+name+' from the party?'))return;state.party.splice(i,1);save();render();toast('Character removed');}
+function removePic(i){if(!state.party[i])return;state.party[i].image=null;save();render();toast('Picture removed');}
 function chooseBackground(){document.getElementById('bgFile').click()}
 function setBackground(file){if(!file)return;resizeImage(file,1600,0.78).then(data=>{state.background=data;applyBackground();save();toast('Background saved locally')}).catch(()=>toast('Background could not be saved'))}
 function clearBackground(){state.background=null;applyBackground();save();toast('Background cleared')}
@@ -808,7 +847,7 @@ function makeScenario(type){
   }
   base.characterKnowledge={Shane:[]};
   for(const p of base.party){if(!base.characterKnowledge[p.name])base.characterKnowledge[p.name]=[];}
-  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};if((t.type||type)==='sylvara'){base.longTermMemory.characterMemories['Sylvara Aelthara']=['Sylvara Aelthara is a goddess brought into the mortal world; her divine power is heavily limited here.','Sylvara specialises in Healing magic.','Sylvara begins with Shane as an acquaintance; trust and affection must be earned through meaningful interactions.'];}base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});
+  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});
   return base;
 }
 function scenarioRecords(){
@@ -908,8 +947,6 @@ document.addEventListener('click',function(ev){
   if(action){ev.preventDefault();ev.stopPropagation();document.querySelectorAll('.scenario-menu').forEach(m=>m.hidden=true);const id=action.dataset.scenarioId;const a=action.dataset.scenarioAction;if(a==='open')switchScenario(id);else if(a==='rename')renameScenario(id);else if(a==='delete')deleteScenario(id);return;}
   if(!ev.target.closest('.scenario-menu'))document.querySelectorAll('.scenario-menu').forEach(m=>m.hidden=true);
 });
-document.addEventListener('click',function(ev){const menuBtn=ev.target.closest&&ev.target.closest('[data-character-menu]');if(menuBtn){ev.preventDefault();ev.stopPropagation();document.querySelectorAll('.character-menu').forEach(m=>m.hidden=true);const i=menuBtn.dataset.characterMenu;const menu=document.querySelector(`.character-menu[data-character-menu-for="${CSS.escape(i)}"]`);if(menu)menu.hidden=false;return;}const action=ev.target.closest&&ev.target.closest('[data-character-action]');if(action){ev.preventDefault();ev.stopPropagation();document.querySelectorAll('.character-menu').forEach(m=>m.hidden=true);const i=Number(action.dataset.characterIndex);const a=action.dataset.characterAction;if(a==='upload')document.getElementById('pic'+i)?.click();else if(a==='remove-picture')removePic(i);else if(a==='remove-character')removeCharacter(i);return;}if(!ev.target.closest('.character-menu'))document.querySelectorAll('.character-menu').forEach(m=>m.hidden=true);});
-
 function showTab(id){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.id===id));
