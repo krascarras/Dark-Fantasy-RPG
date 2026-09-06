@@ -216,7 +216,13 @@ function normalizeState(s){
   out.attributes={...d.attributes,...(x.attributes||{})};
   out.items=Array.isArray(x.items)?x.items:[];
   out.party=Array.isArray(x.party)&&x.party.length?x.party:d.party;
-  out.party=out.party.map(p=>({level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.',...p}));
+  out.party=out.party.map(p=>({level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',...p}));
+  const sylvara=out.party.find(p=>p.name==='Sylvara Aelthara');
+  if(sylvara){
+    sylvara.visualCanon='Violet eyes are canonical and must never be changed to pale, blue, grey, silver, green or any other eye colour. Deep violet/purple fantasy presentation. Her appearance must remain consistent with her established portrait. Do not invent changes to her physical appearance unless the story explicitly causes them.';
+    sylvara.behaviourCanon='Perceptive, articulate, quietly protective, emotionally perceptive, reserved with strangers, warmer and more playful as trust grows. Use varied, situation-specific body language; do not repeatedly use eyebrow gestures, measured breaths, faint smiles, steady gazes or similar filler.';
+    sylvara.magicEffects='Healing magic can cause a subtle violet glow in her eyes and/or a soft violet radiance around her hands when she is actively channelling magic. The glow should be used only when magic is actually being used and can intensify for stronger magic.';
+  }
   if(!out.party.some(p=>p.name==='Shane'))out.party.unshift(d.party[0]);
   out.story=Array.isArray(x.story)&&x.story.length?x.story:d.story;
   out.story=out.story.filter(e=>e);
@@ -390,7 +396,7 @@ function buildStoryContext(){
     const who=e.type==='player'?'Shane':(e.speaker||'Narrator');
     return `${who}: ${String(e.text||'')}`;
   }).join('\n');
-  const party=state.party.map(p=>`${p.name} (${p.race||'Human'}, Lv ${p.level}, magic: ${p.magicSpecialisation||'Undeclared'}, bond ${Number(p.bond)||0}, reputation ${Number(p.reputation)||0})`).join('; ');
+  const party=state.party.map(p=>{const visual=p.visualCanon?` visual canon: ${p.visualCanon}`:' visual canon: not yet established';const behaviour=p.behaviourCanon?` behaviour canon: ${p.behaviourCanon}`:'';const magic=p.magicEffects?` magic effects: ${p.magicEffects}`:'';return `${p.name} (${p.race||'Human'}, Lv ${p.level}, magic: ${p.magicSpecialisation||'Undeclared'}, bond ${Number(p.bond)||0}, reputation ${Number(p.reputation)||0})${visual}${behaviour}${magic}`}).join('; ');
   const sharedFacts=state.sharedFacts.length?state.sharedFacts.map(f=>`- ${f}`).join('\n'):'- None recorded yet.';
   const memories=state.playerMemory.length?state.playerMemory.map(f=>`- ${f}`).join('\n'):'- Shane has not supplied any special past-memory details yet.';
   const knowledge=Object.entries(state.characterKnowledge).map(([name,facts])=>`${name}: ${facts.length?facts.map(f=>`[${f}]`).join(' '):'[No special private knowledge recorded]'}`).join('\n');
@@ -417,6 +423,16 @@ NON-NEGOTIABLE CONTINUITY RULES:
 - Do not retroactively treat a character as having helped with an injury or event unless the story explicitly showed that happening.
 - Do not introduce unexplained companions, relationships, injuries, powers, possessions, locations, or history.
 - Preserve established facts. Never contradict them just to make a scene more dramatic.
+
+CHARACTER CANON RULES:
+- The party context contains visual, behavioural and magical canon. Treat these as authoritative. Never contradict an established visual trait simply for variety.
+- Do not invent or alter eye colour, hair colour, skin tone, clothing, body features, race or other established appearance details. If a trait is not known, describe only what is actually established rather than guessing.
+- Never use a character's image as permission to invent extra physical details. The saved visual canon is the authoritative summary.
+- Avoid repetitive AI mannerisms. Do not repeatedly use phrases such as 'raises a dry eyebrow', 'pale eyes', 'measured breath', 'measured gaze', 'faint smile', 'knowing smile', 'steady gaze', 'tilts her head' or similar stock gestures. These are not forbidden individually, but they must never become default filler. Choose varied actions that fit the exact moment.
+- Show emotion through dialogue, action, expression and behaviour instead of explaining the emotion in abstract terms whenever possible.
+- Sylvara's eyes are VIOLET. Never call them pale. When she actively channels magic, her violet eyes may glow subtly violet and her magic may cast a violet radiance. Do not make her eyes glow during ordinary conversation.
+- If a character has an established magical visual effect, use it only when that character is actually using the relevant magic.
+- Characters should react to the specific latest action and to one another naturally. Do not make every beat centre on Sylvara.
 
 WRITING RULES:
 - Silently proofread the player's action: correct spelling, grammar, punctuation, capitalization, missing apostrophes, sentence breaks and awkward phrasing while preserving the exact meaning and intent.
@@ -769,7 +785,7 @@ function repLabel(v){if(v<=-75)return 'Hostile';if(v<=-45)return 'Unfriendly';if
 function repColor(v){if(v<0){let t=Math.abs(v)/100;let r=Math.round(13+130*t),g=Math.round(39-25*t),b=Math.round(66-38*t);return `rgb(${r},${g},${b})`}let t=v/100;let r=Math.round(23-20*t),g=Math.round(77-45*t),b=Math.round(120-70*t);return `rgb(${r},${g},${b})`}
 function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>p.name!=='Shane').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
 
-function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.'});document.getElementById('newChar').value='';save();render();toast('Companion added');}
+function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});document.getElementById('newChar').value='';save();render();toast('Companion added');}
 function removeCharacter(i){if(!state.party[i])return;const name=state.party[i].name;if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}if(!confirm('Remove '+name+' from the party?'))return;state.party.splice(i,1);save();render();toast('Character removed');}
 function removePic(i){if(!state.party[i])return;state.party[i].image=null;save();render();toast('Picture removed');}
 function chooseBackground(){document.getElementById('bgFile').click()}
@@ -778,7 +794,21 @@ function clearBackground(){state.background=null;applyBackground();save();toast(
 function applyBackground(){document.body.style.backgroundImage=state.background?`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url("${state.background}")`:'';document.body.style.backgroundSize=state.background?'cover':'';document.body.style.backgroundAttachment=state.background?'fixed':''}
 function addItem(){}
 function removeItem(i){state.items.splice(i,1);save();render();}
-function uploadPic(i,file){if(!file)return;resizeImage(file,800,0.82).then(data=>{state.party[i].image=data;save();render();toast('Picture saved locally')}).catch(()=>toast('Picture could not be saved'))}
+async function analyseCharacterImage(dataUrl,name){
+  if(!aiSettings.enabled||!aiSettings.key||!dataUrl)return null;
+  try{
+    const m=String(dataUrl).match(/^data:(image\/[^;]+);base64,(.+)$/);
+    if(!m)return null;
+    const prompt=`Analyse this portrait for the Dark Fantasy RPG character named ${name}. Create a concise canonical visual reference for future story generation. Describe only visible, stable traits: apparent race/species if visually clear, hair, eyes, skin/complexion, clothing/armour, notable accessories, body/face features and overall visual style. Do not invent hidden details, personality, age beyond a cautious appearance estimate, abilities or backstory. This is a visual reference, not prose. Return JSON with visualCanon and confidence. If something is unclear, say unknown rather than guessing.`;
+    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':aiSettings.key},body:JSON.stringify({model:aiSettings.model||'gemini-3.7-flash',input:[{type:'text',text:prompt},{type:'image',data:m[2],mime_type:m[1]}],response_format:{type:'text',mime_type:'application/json',schema:{type:'object',properties:{visualCanon:{type:'string'},confidence:{type:'string'}},required:['visualCanon','confidence']}},store:false})});
+    if(!response.ok)return null;
+    const data=await response.json(); const text=data?.output_text||data?.steps?.filter(s=>s?.type==='model_output').flatMap(s=>s?.content||[]).map(p=>p?.text||'').join('')||'';
+    if(!text)return null;
+    const parsed=JSON.parse(text.replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim());
+    return parsed?.visualCanon?String(parsed.visualCanon).trim():null;
+  }catch(err){console.warn('Character image analysis failed',err);return null;}
+}
+function uploadPic(i,file){if(!file)return;resizeImage(file,800,0.82).then(async data=>{state.party[i].image=data;const name=state.party[i].name;if(name==='Sylvara Aelthara'){state.party[i].visualCanon='Violet eyes are canonical and must never be changed to another colour. Keep her portrait-consistent appearance and do not invent physical changes.';state.party[i].magicEffects='When actively using Healing magic, her violet eyes may glow softly violet and a violet radiance may gather around her hands.';}else if(aiSettings.enabled&&aiSettings.key){toast('Picture saved — analysing character…');const profile=await analyseCharacterImage(data,name);if(profile)state.party[i].visualCanon=profile;}await save();render();toast(state.party[i].visualCanon?'Picture and visual reference saved':'Picture saved locally')}).catch(()=>toast('Picture could not be saved'))}
 function resizeImage(file,maxSide,quality){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=reject;r.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight,scale=Math.min(1,maxSide/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality));};img.src=r.result;};r.readAsDataURL(file);})}
 function setTheme(v){document.body.classList.toggle('light',v==='light');localStorage.setItem(KEY+'_theme',v)}
 function exportSave(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state)],{type:'application/json'}));a.download='shane-rpg-save.json';a.click();URL.revokeObjectURL(a.href)}
@@ -843,7 +873,7 @@ function makeScenario(type){
   const syl=defaultState.party.find(p=>p.name==='Sylvara Aelthara');
   for(const name of (t.party||[])){
     if(name==='Sylvara Aelthara'&&syl)base.party.push(structuredClone(syl));
-    else base.party.push({name,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.'});
+    else base.party.push({name,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});
   }
   base.characterKnowledge={Shane:[]};
   for(const p of base.party){if(!base.characterKnowledge[p.name])base.characterKnowledge[p.name]=[];}
