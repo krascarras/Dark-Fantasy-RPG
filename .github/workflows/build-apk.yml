@@ -39,6 +39,12 @@ jobs:
           # Keep the actual RPG index, including its embedded artwork.
           cp index.html app/src/main/assets/index.html
 
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF
+
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -81,11 +87,11 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 40
-                  versionName '4.0-local-ai'
+                  versionCode 41
+                  versionName '4.1-local-ai'
               }
 
-              // Keep Java and Kotlin on the same JVM target.
+              // Force Java and Kotlin to use exactly the same JVM target.
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
@@ -93,6 +99,14 @@ jobs:
 
               kotlinOptions {
                   jvmTarget = '17'
+              }
+
+              tasks.withType(JavaCompile).configureEach {
+                  options.release = 17
+              }
+
+              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                  kotlinOptions.jvmTarget = '17'
               }
           }
 
