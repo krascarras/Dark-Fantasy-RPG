@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG APK
+name: Build Dark Fantasy RPG - Local AI
 
 on:
   workflow_dispatch:
@@ -8,6 +8,7 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,144 +28,107 @@ jobs:
         shell: bash
         run: |
           set -e
-          mkdir -p app/src/main/java/com/darkfantasyrpg/app app/src/main/assets app/src/main/res/drawable app/src/main/res/mipmap-anydpi-v26 app/src/main/res/values
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/java/com/darkfantasyrpg/app
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
+
           cp index.html app/src/main/assets/index.html
-          for f in manifest.webmanifest sw.js favicon.png icon-192.png icon-512.png; do
-            [ -f "$f" ] && cp "$f" app/src/main/assets/ || true
-          done
-
-          # Prefer the repository icon; fall back to a simple vector if it is absent.
-          if [ -f icon-512.png ]; then
-            cp icon-512.png app/src/main/res/drawable/dark_fantasy_icon.png
-          elif [ -f favicon.png ]; then
-            cp favicon.png app/src/main/res/drawable/dark_fantasy_icon.png
-          else
-            cat > app/src/main/res/drawable/ic_launcher_fallback.xml <<'EOF'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-            <path android:fillColor="#111111" android:pathData="M0,0h108v108h-108z"/>
-            <path android:fillColor="#777777" android:pathData="M54,12a42,42 0,1 0,0 84a42,42 0,1 0,0 -84"/>
-          </vector>
-          EOF
-          fi
-
-          cat > app/src/main/res/drawable/ic_launcher_background.xml <<'EOF'
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-            <item android:drawable="@drawable/dark_fantasy_icon" />
-          </layer-list>
-          EOF
-          cat > app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-            <path android:fillColor="#00000000" android:pathData="M0,0h108v108h-108z" />
-          </vector>
-          EOF
-          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-            <background android:drawable="@drawable/ic_launcher_background" />
-            <foreground android:drawable="@drawable/ic_launcher_foreground" />
-          </adaptive-icon>
-          EOF
 
           cat > settings.gradle <<'EOF'
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name='DarkFantasyRPG'
-          include ':app'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "DarkFantasyRPG"
+          include(":app")
           EOF
 
           cat > build.gradle <<'EOF'
           plugins {
-            id 'com.android.application' version '8.7.3' apply false
+              id 'com.android.application' version '8.7.3' apply false
+              id 'org.jetbrains.kotlin.android' version '2.2.20' apply false
           }
           EOF
 
           cat > app/build.gradle <<'EOF'
-          plugins { id 'com.android.application' }
-          android { namespace 'com.darkfantasyrpg.app'; compileSdk 35
-            defaultConfig { applicationId 'com.darkfantasyrpg.app'; minSdk 23; targetSdk 35; versionCode 2; versionName '3.9' }
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
           }
-          EOF
 
-          cat > app/src/main/res/values/styles.xml <<'EOF'
-          <resources>
-            <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
-              <item name="android:fontFamily">sans</item>
-              <item name="android:windowFullscreen">true</item>
-              <item name="android:windowActionModeOverlay">true</item>
-            </style>
-          </resources>
+          android {
+              namespace 'com.darkfantasyrpg.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.darkfantasyrpg.app'
+                  minSdk 24
+                  targetSdk 35
+                  versionCode 40
+                  versionName '4.0-local-ai'
+              }
+          }
+
+          dependencies {
+              implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+          }
           EOF
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <application android:theme="@style/AppTheme" android:label="Dark Fantasy RPG" android:icon="@mipmap/ic_launcher" android:usesCleartextTraffic="true">
-              <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
-                <intent-filter>
-                  <action android:name="android.intent.action.MAIN" />
-                  <category android:name="android.intent.category.LAUNCHER" />
-                </intent-filter>
-              </activity>
-            </application>
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:theme="@style/AppTheme"
+                  android:label="Dark Fantasy RPG"
+                  android:hardwareAccelerated="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:screenOrientation="portrait"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/darkfantasyrpg/app/MainActivity.java <<'EOF'
-          package com.darkfantasyrpg.app;
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowFullscreen">true</item>
+                  <item name="android:fontFamily">sans</item>
+              </style>
+          </resources>
+          EOF
 
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.content.Intent;
-          import android.net.Uri;
-          import android.view.View;
-          import android.webkit.*;
-
-          public class MainActivity extends Activity {
-            private WebView webView;
-            private ValueCallback<Uri[]> filePathCallback;
-            private static final int FILE_CHOOSER = 1001;
-
-            private void hideSystemBars() {
-              getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_FULLSCREEN |
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            }
-
-            @Override protected void onCreate(Bundle state) {
-              super.onCreate(state);
-              hideSystemBars();
-              webView = new WebView(this);
-              WebSettings s = webView.getSettings();
-              s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true);
-              s.setAllowFileAccess(true); s.setAllowContentAccess(true);
-              webView.setWebViewClient(new WebViewClient());
-              webView.setWebChromeClient(new WebChromeClient() {
-                @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
-                  if (filePathCallback != null) filePathCallback.onReceiveValue(null);
-                  filePathCallback = cb;
-                  try { startActivityForResult(params.createIntent(), FILE_CHOOSER); return true; }
-                  catch (Exception e) { filePathCallback = null; return false; }
-                }
-              });
-              webView.loadUrl("file:///android_asset/index.html");
-              setContentView(webView);
-            }
-
-            @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-              super.onActivityResult(requestCode, resultCode, data);
-              if (requestCode == FILE_CHOOSER && filePathCallback != null) {
-                filePathCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
-                filePathCallback = null;
-              }
-              hideSystemBars();
-            }
-
-            @Override public void onWindowFocusChanged(boolean focus) { super.onWindowFocusChanged(focus); if (focus) hideSystemBars(); }
-            @Override public void onBackPressed() { if (webView.canGoBack()) webView.goBack(); else super.onBackPressed(); }
-          }
+          cat > app/src/main/res/drawable/dark_fantasy_icon.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#111111"
+                  android:pathData="M0,0h108v108h-108z" />
+              <path
+                  android:fillColor="#777777"
+                  android:pathData="M54,12a42,42 0,1 0,0 84a42,42 0,1 0,0 -84" />
+          </vector>
           EOF
 
       - name: Build APK
@@ -173,5 +137,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v3.9
+          name: Dark-Fantasy-RPG-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
