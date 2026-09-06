@@ -84,6 +84,16 @@ jobs:
                   versionCode 40
                   versionName '4.0-local-ai'
               }
+
+              // Keep Java and Kotlin on the same JVM target.
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
           }
 
           dependencies {
