@@ -10,5 +10,5 @@ Included:
 - icon-512.png — correct app icon
 - favicon.png — browser/favicon icon
 
-App name: Shane's Dark Fantasy RPG
+App name: Dark Fantasy RPG
 Home-screen name: Dark Fantasy RPG
