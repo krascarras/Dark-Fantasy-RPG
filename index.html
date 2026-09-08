@@ -31,7 +31,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.1</div>
+<div class="version-badge">v4.3</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -99,17 +99,18 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <select id="theme" onchange="setTheme(this.value)"><option value="dark">White text / dark</option><option value="light">Black text / light</option></select>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
-      <h3>✨ Story AI</h3>
-      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use Gemini to write the story</label>
-      <p class="small">AI mode understands free-form actions, cleans up spelling/grammar without changing your meaning, remembers recent events and character relationships, and writes only the next beat. Your key is stored locally on this device.</p>
-      <label for="aiModel">Model</label>
-      <select id="aiModel"><option value="gemini-3.7-flash">Gemini 3.7 Flash</option></select>
-      <label for="aiKey" style="display:block;margin-top:8px">Gemini API key</label>
-      <input id="aiKey" type="password" autocomplete="off" placeholder="Paste your Gemini API key here">
-      <div class="actions" style="margin-top:8px"><button class="btn" onclick="saveAISettings()">Save AI settings</button><button class="btn" onclick="testAI()">Test AI</button><button class="btn danger" onclick="clearAIKey()">Clear key</button></div>
-      <p class="small" id="aiStatus">AI is off — the built-in story system will be used.</p>
+      <h3>🧠 Local Story AI</h3>
+      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local AI to write the story</label>
+      <p class="small">The game no longer sends story data or API keys to local AI. It can use an Ollama-compatible local server instead. If the local AI is unavailable, the built-in story system continues to work offline.</p>
+      <label for="aiEndpoint">Local AI endpoint</label>
+      <input id="aiEndpoint" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434/api/chat">
+      <p class="small">Default: Ollama. On Android, <b>127.0.0.1</b> means the phone itself. If Ollama is running on your PC, enter the PC's local network address instead.</p>
+      <label for="aiModel">Local model</label>
+      <input id="aiModel" type="text" autocomplete="off" placeholder="qwen3:8b">
+      <div class="actions" style="margin-top:8px"><button class="btn" onclick="saveAISettings()">Save AI settings</button><button class="btn" onclick="testAI()">Test local AI</button><button class="btn danger" onclick="clearAISettings()">Clear local AI settings</button></div>
+      <p class="small" id="aiStatus">Local AI is off — the built-in story system will be used.</p>
     </div>
-    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; AI mode is optional. Without a key, the built-in local story system still works offline.</p>
+    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The built-in story system remains available offline.</p>
     <input id="bgFile" type="file" accept="image/*" hidden onchange="setBackground(this.files[0])">
   </div>
   <div class="card"><h3>🎭 Scenarios & saves</h3>
@@ -165,41 +166,69 @@ const defaultState={
 let state=loadState();
 
 let aiSettings=loadAISettings();
-aiSettings.model='gemini-3.7-flash';
-localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
+const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
+const LOCAL_AI_DEFAULT_MODEL='qwen3:8b';
 function loadAISettings(){
   try{
     const raw=localStorage.getItem(KEY+'_ai')||localStorage.getItem(LEGACY_KEY+'_ai');
-    if(raw){const x=JSON.parse(raw);const model='gemini-3.7-flash';return {enabled:!!x.enabled,key:String(x.key||''),model};}
+    if(raw){
+      const x=JSON.parse(raw);
+      return {
+        enabled:!!x.enabled,
+        endpoint:String(x.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT,
+        model:String(x.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL
+      };
+    }
   }catch(e){}
-  return {enabled:false,key:'',model:'gemini-3.7-flash'};
+  return {enabled:false,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
 }
 function saveAISettings(){
   const enabled=!!document.getElementById('aiEnabled')?.checked;
-  const key=String(document.getElementById('aiKey')?.value||'').trim();
-  const model='gemini-3.7-flash';
-  aiSettings={enabled,key,model};
+  const endpoint=String(document.getElementById('aiEndpoint')?.value||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT;
+  const model=String(document.getElementById('aiModel')?.value||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  aiSettings={enabled,endpoint,model};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   updateAIStatus();
-  toast(key?'AI settings saved':'AI settings saved — AI is off until a key is entered');
+  toast(enabled?'Local AI settings saved':'Local AI settings saved — local AI is off');
 }
-function clearAIKey(){
-  aiSettings={...aiSettings,key:'',enabled:false};
+function clearAISettings(){
+  aiSettings={enabled:false,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
-  if(document.getElementById('aiKey'))document.getElementById('aiKey').value='';
-  if(document.getElementById('aiEnabled'))document.getElementById('aiEnabled').checked=false;
-  updateAIStatus(); toast('AI key cleared');
+  updateAIStatus();
+  toast('Local AI settings cleared');
 }
 function updateAIStatus(){
   const box=document.getElementById('aiEnabled');
-  const key=document.getElementById('aiKey');
+  const endpoint=document.getElementById('aiEndpoint');
   const model=document.getElementById('aiModel');
   if(box)box.checked=!!aiSettings.enabled;
-  if(key)key.value=aiSettings.key||'';
-  if(model)model.value=aiSettings.model||'gemini-3.7-flash';
+  if(endpoint)endpoint.value=aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT;
+  if(model)model.value=aiSettings.model||LOCAL_AI_DEFAULT_MODEL;
   const status=document.getElementById('aiStatus');
-  if(status)status.textContent=aiSettings.enabled&&aiSettings.key?`AI is ON — Gemini 3.7 Flash. One beat at a time.`:'AI is off — the built-in story system will be used.';
+  if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — the built-in story system will be used.';
 }
+function localAIRequest(endpoint,payload){
+  if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
+    return new Promise((resolve,reject)=>{
+      const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+      if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
+      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},60000);
+      window.__darkFantasyAIResolvers[id]=(ok,body)=>{
+        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
+        if(ok){try{resolve(JSON.parse(body));}catch(e){reject(new Error('Local AI returned invalid JSON'))}}
+        else reject(new Error(String(body||'Local AI request failed')));
+      };
+      try{window.DarkFantasyLocalAI.post(String(endpoint),JSON.stringify(payload),id);}
+      catch(e){clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);}
+    });
+  }
+  return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(async res=>{const text=await res.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!res.ok)throw new Error(data?.error?.message||data?.error||text||('Local AI HTTP '+res.status));return data;});
+}
+window.__darkFantasyAIResolve=function(id,ok,body){
+  const fn=window.__darkFantasyAIResolvers?.[id];
+  if(fn)fn(!!ok,String(body||''));
+};
 function scrubInvalidLoreText(s){
   if(!s||typeof s!=='object')return s;
   const replace=(v)=>typeof v==='string'?v.replace(/\bElvhen\b/gi,'elven').replace(/\bbeastfolk\b/gi,'demonfolk'):v;
@@ -411,9 +440,10 @@ function buildStoryContext(){
   return {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary};
 }
 async function callStoryAI(action,correctedSource){
-  if(!aiSettings.key)throw new Error('No Gemini API key');
-  const {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary}=buildStoryContext();
-  const prompt=`You are the game master and narrative editor for Shane's Dark Fantasy RPG.
+  const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
+  const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  if(!endpoint)throw new Error('No local AI endpoint configured');
+    const prompt=`You are the game master and narrative editor for Shane's Dark Fantasy RPG.
 
 NON-NEGOTIABLE CONTINUITY RULES:
 - Shane is controlled ONLY by the player. Never invent Shane's thoughts, feelings, dialogue, choices, memories, injuries, abilities, secrets, or actions.
@@ -502,11 +532,7 @@ JSON schema:
   "mana_cost":0
 }
 Only add memory_update when the player's action or your immediate response explicitly establishes the fact. Never invent hidden history. Major memories should remain important for the whole campaign. Use persistent NPCs for recurring figures such as tavern owners, blacksmiths, guild staff, named merchants, healers, faction contacts and other people the party is likely to meet again. Use background NPCs for ordinary patrons/passers-by unless they become important. When Shane enters a populated public place, make it feel inhabited and create a few background NPCs when appropriate. Do not create a named NPC every turn. Age may be vague. Persistent NPC facts must remain consistent. Use at least 2 distinct short entries for a normal response, but do NOT impose a hard limit. When the scene naturally involves multiple people or beats, return as many separate entries as genuinely useful (usually 2-5, occasionally more). Each entry must add new information, reaction, dialogue, consequence or atmosphere. Do not split one sentence into multiple entries merely to inflate the count. If multiple named characters are present, let them participate naturally when appropriate; never force every character to speak.`;
-  // Gemini text models via the current Interactions API. This keeps the same authentication path
-  // that is already working in this game while allowing the user to choose a supported model.
-  const model=String(aiSettings.model||'gemini-3.7-flash').trim()||'gemini-3.7-flash';
-  const url='https://generativelanguage.googleapis.com/v1beta/interactions';
-  const responseSchema={type:'object',properties:{
+    const responseSchema={type:'object',properties:{
     corrected_action:{type:'string'},
     entries:{type:'array',items:{type:'object',properties:{type:{type:'string',enum:['gm','character']},speaker:{type:'string'},text:{type:'string'}},required:['type','text']}},
     relationship_changes:{type:'array',items:{type:'object',properties:{name:{type:'string'},bond_delta:{type:'number'},reputation_delta:{type:'number'},trust_delta:{type:'number'},affection_delta:{type:'number'},attraction_delta:{type:'number'},comfort_delta:{type:'number'},tension_delta:{type:'number'}},required:['name','bond_delta','reputation_delta','trust_delta','affection_delta','attraction_delta','comfort_delta','tension_delta']}},
@@ -515,24 +541,25 @@ Only add memory_update when the player's action or your immediate response expli
     world_updates:{type:'object',properties:{location:{type:'string'},day_delta:{type:'number'},time_of_day:{type:'string',enum:['morning','afternoon','evening','night','unchanged']}}},
     mana_cost:{type:'number'}
   },required:['corrected_action','entries','relationship_changes','memory_updates','npc_updates','world_updates','mana_cost']};
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),45000);
-  let res;
-  try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':aiSettings.key},signal:controller.signal,body:JSON.stringify({
-    model,input:prompt,
-    response_format:{type:'text',mime_type:'application/json',schema:responseSchema},
-    store:false
-  })});}catch(err){if(err?.name==='AbortError')throw new Error('Gemini request timed out after 45 seconds');throw err;}finally{clearTimeout(timeout);}
-  if(!res.ok){let msg='Gemini request failed';try{const j=await res.json();msg=j?.error?.message||msg}catch(e){}throw new Error(msg);}
-  const data=await res.json();
-  const text=data?.output_text || data?.steps?.filter(s=>s?.type==='model_output').flatMap(s=>s?.content||[]).map(p=>p?.text||'').join('') || '';
-  if(!text)throw new Error('Gemini returned no text');
+  const payload={
+    model,
+    messages:[
+      {role:'system',content:prompt},
+      {role:'user',content:action}
+    ],
+    stream:false,
+    format:'json',
+    options:{temperature:0.7}
+  };
+  const data=await localAIRequest(endpoint,payload);
+  const text=data?.message?.content || data?.choices?.[0]?.message?.content || data?.response || data?.output_text || '';
+  if(!text)throw new Error('Local AI returned no text');
   let parsed;
-  try{parsed=JSON.parse(text)}catch(e){
-    const cleaned=text.replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim();
+  try{parsed=typeof text==='string'?JSON.parse(text):text}catch(e){
+    const cleaned=String(text).replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim();
     parsed=JSON.parse(cleaned);
   }
-  if(!parsed||typeof parsed!=='object')throw new Error('Invalid AI response');
+  if(!parsed||typeof parsed!=='object')throw new Error('Invalid local AI response');
   parsed.corrected_action=String(parsed.corrected_action||correctedSource||action).trim();
   parsed.entries=Array.isArray(parsed.entries)?parsed.entries.filter(e=>e&&e.text):[];
   parsed.relationship_changes=Array.isArray(parsed.relationship_changes)?parsed.relationship_changes:[];
@@ -542,11 +569,6 @@ Only add memory_update when the player's action or your immediate response expli
   parsed.mana_cost=Math.max(0,Math.min(50,Number(parsed.mana_cost)||0));
   return parsed;
 }
-function pushUnique(arr,text,max=100){if(!Array.isArray(arr)||!text)return;if(!arr.includes(text))arr.push(text);if(arr.length>max)arr.splice(0,arr.length-max);}
-function applyAIMemory(result){if(!state.longTermMemory)state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};const ltm=state.longTermMemory;for(const m of(result?.memory_updates||[])){const text=String(m?.text||'').trim(),scope=String(m?.scope||'');if(!text)continue;if(scope==='shared'){pushUnique(state.sharedFacts,text,100);if(m.importance==='major'||m.kind==='fact')pushUnique(ltm.worldFacts,text,100);if(m.importance==='major'||m.kind==='event')ltm.events.push({day:state.inGameDay||1,location:state.currentLocation||'Unknown',text,at:Date.now()});}else if(scope==='player'){pushUnique(state.playerMemory,text,100);if(m.importance==='major'||m.kind==='event')ltm.events.push({day:state.inGameDay||1,location:state.currentLocation||'Unknown',text,at:Date.now()});}else if(scope==='character'){const name=String(m?.character||'').trim();if(!name)continue;if(!Array.isArray(state.characterKnowledge[name]))state.characterKnowledge[name]=[];pushUnique(state.characterKnowledge[name],text,100);if(!Array.isArray(ltm.characterMemories[name]))ltm.characterMemories[name]=[];pushUnique(ltm.characterMemories[name],text,100);if(m.importance==='major'||m.kind==='event')ltm.events.push({day:state.inGameDay||1,location:state.currentLocation||'Unknown',text:`${name}: ${text}`,at:Date.now()});}if(m.kind==='thread')pushUnique(ltm.unresolved,text,50);}const seen=new Set();ltm.events=(ltm.events||[]).filter(e=>{const k=`${e.day}|${e.location}|${e.text}`;if(seen.has(k))return false;seen.add(k);return true;}).slice(-200);}
-function applyAIWorldUpdates(result){const w=result?.world_updates||{};if(w.location&&String(w.location).trim())state.currentLocation=String(w.location).trim();const dd=Number(w.day_delta)||0;if(dd>0)state.inGameDay=Math.max(1,(Number(state.inGameDay)||1)+Math.min(dd,30));const tod=String(w.time_of_day||'').toLowerCase();if(['morning','afternoon','evening','night'].includes(tod))state.timeOfDay=tod;}
-function applyAINPCs(result){if(!Array.isArray(state.npcs))state.npcs=[];for(const raw of(result?.npc_updates||[]).slice(0,8)){const name=String(raw?.name||'').trim();if(!name)continue;let npc=state.npcs.find(n=>n.name.toLowerCase()===name.toLowerCase());const persistent=String(raw?.persistence||'background')==='persistent';if(!npc){npc={id:'npc-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),name,race:String(raw.race||'Human'),age:String(raw.age||'adult'),role:String(raw.role||'resident'),personality:String(raw.personality||'To be discovered'),description:String(raw.description||''),location:String(raw.location||state.currentLocation||'Unknown'),persistence:persistent?'persistent':'background',knowledge:Array.isArray(raw.knowledge)?raw.knowledge:[],goals:Array.isArray(raw.goals)?raw.goals:[],secrets:Array.isArray(raw.secrets)?raw.secrets:[],relationships:raw.relationships&&typeof raw.relationships==='object'?raw.relationships:{},firstSeenDay:state.inGameDay||1,lastSeenDay:state.inGameDay||1,appearance:null};state.npcs.push(npc);}else{npc.race=String(raw.race||npc.race);npc.age=String(raw.age||npc.age);npc.role=String(raw.role||npc.role);npc.personality=String(raw.personality||npc.personality);npc.description=String(raw.description||npc.description);npc.location=String(raw.location||npc.location||state.currentLocation);npc.lastSeenDay=state.inGameDay||npc.lastSeenDay||1;if(persistent)npc.persistence='persistent';for(const k of['knowledge','goals','secrets'])if(Array.isArray(raw[k]))for(const v of raw[k])pushUnique(npc[k],String(v),50);if(raw.relationships&&typeof raw.relationships==='object')npc.relationships={...npc.relationships,...raw.relationships};}}const bg=state.npcs.filter(n=>n.persistence!=='persistent');if(bg.length>60){const keep=bg.slice(-40),ids=new Set(keep.map(n=>n.id));state.npcs=state.npcs.filter(n=>n.persistence==='persistent'||ids.has(n.id));}}
-
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
   for(const ch of (result?.relationship_changes||[])){
@@ -628,32 +650,28 @@ async function typewriteAIEntry(entry, initialPause=0){
   keepStoryAtLatest();
 }
 async function testAI(){
-  const key=String(document.getElementById('aiKey')?.value||aiSettings.key||'').trim();
-  if(!key){toast('Enter a Gemini API key first');return;}
-  // Keep the test settings in sync with the visible controls without enabling AI for play.
-  const selectedModel=String(document.getElementById('aiModel')?.value||aiSettings.model||'gemini-3.7-flash').trim()||'gemini-3.7-flash';
-  aiSettings={...aiSettings,key,model:selectedModel};
+  const endpoint=String(document.getElementById('aiEndpoint')?.value||aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
+  const model=String(document.getElementById('aiModel')?.value||aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  if(!endpoint){toast('Enter a local AI endpoint first');return;}
+  aiSettings={...aiSettings,endpoint,model,enabled:true};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
+  const status=document.getElementById('aiStatus');
+  if(status)status.textContent='Testing local AI…';
+  toast('Testing local AI…');
   try{
-    const model=aiSettings.model||'gemini-3.7-flash';
-    const status=document.getElementById('aiStatus');
-    if(status)status.textContent='Testing '+model+'…';
-    toast('Testing Gemini AI…');
-    const testAction='*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"';
-    const r=await callStoryAI(testAction,testAction);
-    if(r.entries?.length){
-      if(status)status.textContent='✓ Gemini is working — '+model+' responded successfully. AI is ready for the story.';
-      toast('✓ Gemini works');
-    }else{ throw new Error('Gemini returned no scene beat'); }
+    const result=await callStoryAI('*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"','*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"');
+    if(result.entries?.length){
+      if(status)status.textContent='✓ Local AI is working — '+model+' responded successfully.';
+      toast('✓ Local AI works');
+    }else throw new Error('Local AI returned no scene beat');
   }catch(e){
     console.error(e);
     const msg=String(e?.message||e||'Unknown error').replace(/\s+/g,' ').trim();
-    const status=document.getElementById('aiStatus');
-    if(status)status.textContent='✗ Gemini test failed ('+(aiSettings.model||'unknown')+'): '+msg;
-    console.error('Gemini diagnostic', {model:aiSettings.model, error:msg});
-    toast('✗ Gemini test failed — see AI status');
+    if(status)status.textContent='✗ Local AI test failed: '+msg;
+    toast('✗ Local AI test failed — see AI status');
   }
 }
+
 async function addAction(){
   if(storyBusy)return;
   const area=document.getElementById('action'); if(!area)return;
@@ -672,7 +690,7 @@ async function addAction(){
     setStoryBusy(true);
     let result=null;
     try{
-      if(aiSettings.enabled&&aiSettings.key){
+      if(aiSettings.enabled&&aiSettings.endpoint){
         result=await callStoryAI(v,v);
         const corrected=String(result.corrected_action||'').trim();
         if(corrected && corrected!==v){
@@ -706,7 +724,7 @@ async function addAction(){
       }
     }catch(err){
       console.error(err);
-      toast(aiSettings.enabled?'AI failed — built-in response used. Your action is safe.':'Your action is safe.');
+      toast(aiSettings.enabled?'Local AI failed — built-in response used. Your action is safe.':'Your action is safe.');
       if(aiSettings.enabled){
         const reaction=characterReaction(v); const entries=reaction?reaction.entries.filter(e=>!isDuplicateEntry(e)):[];
         for(const entry of entries){state.story.push(entry);await save();render();keepStoryAtLatest();}
@@ -791,7 +809,15 @@ function autoLoot(text){
 
 function toggleCharacterMenu(i){document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const m=document.getElementById('charMenu'+i);if(m)m.classList.toggle('open');}
 function togglePictureMenu(i,ev){if(ev)ev.stopPropagation();document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));const m=document.getElementById('pictureMenu'+i);if(m)m.classList.toggle('open');}
-function pictureAction(ev,action,i){if(ev)ev.stopPropagation();document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));if(action==='upload')document.getElementById('pic'+i)?.click();else if(action==='remove-picture')removePic(i);else if(action==='remove-character')removeCharacter(i);}
+function pictureAction(ev,action,i){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));
+  if(action==='upload'){
+    const input=document.getElementById('pic'+i);
+    if(input){input.value='';input.click();}
+  }else if(action==='remove-picture')removePic(i);
+  else if(action==='remove-character')removeCharacter(i);
+}
 window.addEventListener('click',e=>{if(!e.target.closest('.picture-menu')&&!e.target.closest('.character-menu-btn'))document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));});
 function closeCharacterDetails(){document.getElementById('charModal')?.classList.remove('open');}
 function openCharacterDetails(i){const p=state.party[i];if(!p)return;document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const bond=Math.max(0,Math.min(100,Number(p.bond)||20));const rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));const trust=Math.max(0,Math.min(100,Number(p.trust??20)));const affection=Math.max(0,Math.min(100,Number(p.affection??20)));const attraction=Math.max(0,Math.min(100,Number(p.attraction||0)));const comfort=Math.max(0,Math.min(100,Number(p.comfort??20)));const tension=Math.max(0,Math.min(100,Number(p.tension||0)));const card=document.getElementById('charModalCard');if(!card)return;card.innerHTML=`<div class="row"><h2 style="margin:0">${esc(p.name)}</h2><button class="btn" onclick="closeCharacterDetails()">Close</button></div><div class="char-detail-head" style="margin-top:12px"><img class="char-detail-portrait" src="${p.image||placeholder(p.name)}"><div><div><b>${esc(p.race||'Unknown race')}</b> · Level ${Number(p.level)||1}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div><div class="small">${esc(p.personality||'Personality still developing.')}</div></div></div>${p.name!=='Shane'?`<h3 style="margin-bottom:6px">Relationship</h3><div class="stat-grid"><div class="mini-stat"><b>Bond</b>${bond}/100 · ${bondLabel(bond)}</div><div class="mini-stat"><b>Reputation</b>${rep>0?'+':''}${rep} · ${repLabel(rep)}</div><div class="mini-stat"><b>Trust</b>${trust}/100</div><div class="mini-stat"><b>Affection</b>${affection}/100</div><div class="mini-stat"><b>Attraction</b>${attraction}/100</div><div class="mini-stat"><b>Comfort</b>${comfort}/100</div><div class="mini-stat"><b>Tension</b>${tension}/100</div></div>`:''}<div class="canon-box"><b>Visual Canon</b><div class="small">${esc(p.visualCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Behavioural Canon</b><div class="small">${esc(p.behaviourCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Magic / Visual Effects</b><div class="small">${esc(p.magicEffects||'No special visual effects established.')}</div></div><div class="canon-box"><b>What they know</b><div class="small">${esc((state.characterKnowledge[p.name]||[]).slice(-12).join(' • ')||'No special private knowledge recorded.')}</div></div>`;document.getElementById('charModal')?.classList.add('open');}
@@ -802,7 +828,16 @@ function repColor(v){if(v<0){let t=Math.abs(v)/100;let r=Math.round(13+130*t),g=
 function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>p.name!=='Shane').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
 
 function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});document.getElementById('newChar').value='';save();render();toast('Companion added');}
-function removeCharacter(i){if(!state.party[i])return;const name=state.party[i].name;if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}if(!confirm('Remove '+name+' from the party?'))return;state.party.splice(i,1);save();render();toast('Character removed');}
+function removeCharacter(i){
+  if(!state.party[i])return;
+  const name=String(state.party[i].name||'').trim();
+  if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}
+  const message='Remove '+name+' from the party?';
+  if(typeof window.confirm==='function'&&!window.confirm(message))return;
+  state.party.splice(i,1);
+  save();render();
+  toast('Character removed');
+}
 function removePic(i){if(!state.party[i])return;state.party[i].image=null;save();render();toast('Picture removed');}
 function chooseBackground(){document.getElementById('bgFile').click()}
 function setBackground(file){if(!file)return;resizeImage(file,1600,0.78).then(data=>{state.background=data;applyBackground();save();toast('Background saved locally')}).catch(()=>toast('Background could not be saved'))}
@@ -811,20 +846,24 @@ function applyBackground(){document.body.style.backgroundImage=state.background?
 function addItem(){}
 function removeItem(i){state.items.splice(i,1);save();render();}
 async function analyseCharacterImage(dataUrl,name){
-  if(!aiSettings.enabled||!aiSettings.key||!dataUrl)return null;
-  try{
-    const m=String(dataUrl).match(/^data:(image\/[^;]+);base64,(.+)$/);
-    if(!m)return null;
-    const prompt=`Analyse this portrait for the Dark Fantasy RPG character named ${name}. Create a concise canonical visual reference for future story generation. Describe only visible, stable traits: apparent race/species if visually clear, hair, eyes, skin/complexion, clothing/armour, notable accessories, body/face features and overall visual style. Do not invent hidden details, personality, age beyond a cautious appearance estimate, abilities or backstory. This is a visual reference, not prose. Return JSON with visualCanon and confidence. If something is unclear, say unknown rather than guessing.`;
-    const response=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':aiSettings.key},body:JSON.stringify({model:aiSettings.model||'gemini-3.7-flash',input:[{type:'text',text:prompt},{type:'image',data:m[2],mime_type:m[1]}],response_format:{type:'text',mime_type:'application/json',schema:{type:'object',properties:{visualCanon:{type:'string'},confidence:{type:'string'}},required:['visualCanon','confidence']}},store:false})});
-    if(!response.ok)return null;
-    const data=await response.json(); const text=data?.output_text||data?.steps?.filter(s=>s?.type==='model_output').flatMap(s=>s?.content||[]).map(p=>p?.text||'').join('')||'';
-    if(!text)return null;
-    const parsed=JSON.parse(text.replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim());
-    return parsed?.visualCanon?String(parsed.visualCanon).trim():null;
-  }catch(err){console.warn('Character image analysis failed',err);return null;}
+  // Portraits are kept local. Do not send them to a cloud provider.
+  return null;
 }
-function uploadPic(i,file){if(!file)return;resizeImage(file,800,0.82).then(async data=>{state.party[i].image=data;const name=state.party[i].name;if(name==='Sylvara Aelthara'){state.party[i].visualCanon='Violet eyes are canonical and must never be changed to another colour. Keep her portrait-consistent appearance and do not invent physical changes.';state.party[i].magicEffects='When actively using Healing magic, her violet eyes may glow softly violet and a violet radiance may gather around her hands.';}else if(aiSettings.enabled&&aiSettings.key){toast('Picture saved — analysing character…');const profile=await analyseCharacterImage(data,name);if(profile)state.party[i].visualCanon=profile;}await save();render();toast(state.party[i].visualCanon?'Picture and visual reference saved':'Picture saved locally')}).catch(()=>toast('Picture could not be saved'))}
+
+function uploadPic(i,file){
+  if(!file||!state.party[i])return;
+  resizeImage(file,800,0.82).then(async data=>{
+    state.party[i].image=data;
+    const name=state.party[i].name;
+    if(name==='Sylvara Aelthara'){
+      state.party[i].visualCanon='Violet eyes are canonical and must never be changed to another colour. Keep her portrait-consistent appearance and do not invent physical changes.';
+      state.party[i].magicEffects='When actively using Healing magic, her violet eyes may glow softly violet and a violet radiance may gather around her hands.';
+    }
+    await save();
+    render();
+    toast(state.party[i].visualCanon?'Picture and visual reference saved':'Picture saved locally');
+  }).catch(()=>toast('Picture could not be saved'));
+}
 function resizeImage(file,maxSide,quality){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=reject;r.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight,scale=Math.min(1,maxSide/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality));};img.src=r.result;};r.readAsDataURL(file);})}
 function setTheme(v){document.body.classList.toggle('light',v==='light');localStorage.setItem(KEY+'_theme',v)}
 function exportSave(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state)],{type:'application/json'}));a.download='shane-rpg-save.json';a.click();URL.revokeObjectURL(a.href)}
