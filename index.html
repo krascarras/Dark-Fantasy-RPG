@@ -165,9 +165,9 @@ const defaultState={
 };
 let state=loadState();
 
-let aiSettings=loadAISettings();
 const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
 const LOCAL_AI_DEFAULT_MODEL='qwen3:8b';
+let aiSettings=loadAISettings();
 function loadAISettings(){
   try{
     const raw=localStorage.getItem(KEY+'_ai')||localStorage.getItem(LEGACY_KEY+'_ai');
