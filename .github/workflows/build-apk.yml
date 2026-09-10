@@ -32,8 +32,10 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/darkfantasyrpg/app
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
 
           cp index.html app/src/main/assets/index.html
+          cp icon-512.png app/src/main/res/drawable/icon.png
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -85,6 +87,8 @@ jobs:
               <application
                   android:theme="@style/AppTheme"
                   android:label="Dark Fantasy RPG"
+                  android:icon="@drawable/icon"
+                  android:roundIcon="@drawable/icon"
                   android:hardwareAccelerated="true"
                   android:usesCleartextTraffic="true">
                   <activity
@@ -164,9 +168,6 @@ jobs:
 
                   webView.setWebViewClient(new WebViewClient());
 
-                  // Required by Android WebView for <input type="file"> and JavaScript
-                  // confirm/alert dialogs. Without this, the portrait upload and
-                  // remove-character controls can appear to work but do nothing.
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
                       public boolean onShowFileChooser(
@@ -189,9 +190,6 @@ jobs:
                       }
                   });
 
-                  // Native bridge used by the APK for local AI requests. This avoids
-                  // browser CORS restrictions when the model server is on the local
-                  // device or local network.
                   webView.addJavascriptInterface(new LocalAIBridge(), "DarkFantasyLocalAI");
 
                   setImmersive();
@@ -321,7 +319,6 @@ jobs:
                                               + JSONObject.quote(finalBody) + ");";
                                       webView.evaluateJavascript(js, null);
                                   } catch (Exception ignored) {
-                                      // WebView may have been destroyed while the request finished.
                                   }
                               });
                           }
