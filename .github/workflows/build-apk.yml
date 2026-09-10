@@ -499,8 +499,8 @@ jobs:
               }
 
               private fun jsString(value: String): String =
-                  value.replace("\", "\\")
-                      .replace("'", "\'")
+                  value.replace("\\", "\\\\")
+                      .replace("'", "\\'")
                       .replace("\n", "\\n")
                       .replace("\r", "\\r")
                       .replace("</", "<\\/")
