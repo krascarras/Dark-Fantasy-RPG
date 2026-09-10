@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 43
-                  versionName '4.3-local-ai'
+                  versionCode 44
+                  versionName '4.3.1-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -192,10 +192,14 @@ jobs:
           import android.os.Handler
           import android.os.Looper
           import android.view.View
+import android.content.Intent
+import android.net.Uri
           import android.webkit.JavascriptInterface
           import android.webkit.WebSettings
           import android.webkit.WebView
           import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
+import android.webkit.ValueCallback
           import android.widget.Toast
           import com.google.ai.edge.litertlm.Backend
           import com.google.ai.edge.litertlm.Contents
@@ -221,6 +225,7 @@ jobs:
               private var engine: Engine? = null
               private var conversation: Conversation? = null
               private var engineLoading = false
+private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
               private val modelDir by lazy { File(filesDir, "models") }
               private val modelFile by lazy {
@@ -248,9 +253,44 @@ jobs:
                   settings.setSupportMultipleWindows(false)
 
                   webView.webViewClient = WebViewClient()
+                  webView.webChromeClient = object : WebChromeClient() {
+                      override fun onShowFileChooser(
+                          view: WebView?,
+                          filePath: ValueCallback<Array<Uri>>?,
+                          fileChooserParams: FileChooserParams?
+                      ): Boolean {
+                          this@MainActivity.filePathCallback?.onReceiveValue(null)
+                          this@MainActivity.filePathCallback = filePath
+                          return try {
+                              val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                  addCategory(Intent.CATEGORY_OPENABLE)
+                                  type = "image/*"
+                              }
+                              startActivityForResult(Intent.createChooser(intent, "Choose character picture"), 4201)
+                              true
+                          } catch (_: Exception) {
+                              this@MainActivity.filePathCallback = null
+                              false
+                          }
+                      }
+                  }
                   webView.addJavascriptInterface(LocalAI(), "AndroidLocalAI")
                   webView.loadUrl("file:///android_asset/index.html")
                   setContentView(webView)
+              }
+
+              @Deprecated("Deprecated in Android API  Activity Result API is not used in this generated wrapper.")
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == 4201) {
+                      val result = if (resultCode == RESULT_OK && data?.data != null) {
+                          arrayOf(data.data!!)
+                      } else {
+                          null
+                      }
+                      filePathCallback?.onReceiveValue(result)
+                      filePathCallback = null
+                  }
               }
 
               override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -305,7 +345,9 @@ jobs:
                                   Toast.makeText(this@MainActivity, "✓ Local AI installed. Tap Test AI.", Toast.LENGTH_LONG).show()
                               }
                           } catch (e: Exception) {
-                              postJsError("Model download failed: ${e.message ?: e.javaClass.simpleName}")
+                              val detail = e.message?.takeIf { it.isNotBlank() }
+                                  ?: e.javaClass.simpleName
+                              postJsError("✗ Model download failed: $detail")
                           }
                       }
                   }
@@ -513,5 +555,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3-local-AI
+          name: Dark-Fantasy-RPG-v4.3.1-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
