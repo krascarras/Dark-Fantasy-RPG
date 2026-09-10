@@ -101,13 +101,18 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <div class="card" style="margin-top:12px;background:var(--panel2)">
       <h3>🧠 Local Story AI</h3>
       <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local AI to write the story</label>
-      <p class="small">The game no longer sends story data or API keys to local AI. It can use an Ollama-compatible local server instead. If the local AI is unavailable, the built-in story system continues to work offline.</p>
+      <p class="small">On Android, the game can download and run its local narrative AI directly on the phone. On desktop/web, an Ollama-compatible local server can be used instead. If local AI is unavailable, the built-in story system continues to work offline.</p>
       <label for="aiEndpoint">Local AI endpoint</label>
       <input id="aiEndpoint" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434/api/chat">
       <p class="small">Default: Ollama. On Android, <b>127.0.0.1</b> means the phone itself. If Ollama is running on your PC, enter the PC's local network address instead.</p>
       <label for="aiModel">Local model</label>
       <input id="aiModel" type="text" autocomplete="off" placeholder="qwen3:8b">
-      <div class="actions" style="margin-top:8px"><button class="btn" onclick="saveAISettings()">Save AI settings</button><button class="btn" onclick="testAI()">Test local AI</button><button class="btn danger" onclick="clearAISettings()">Clear local AI settings</button></div>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn" id="downloadAIButton" onclick="downloadLocalAI()">⬇ Download local AI</button>
+        <button class="btn" onclick="saveAISettings()">Save AI settings</button>
+        <button class="btn" onclick="testAI()">Test local AI</button>
+        <button class="btn danger" onclick="clearAISettings()">Clear local AI settings</button>
+      </div>
       <p class="small" id="aiStatus">Local AI is off — the built-in story system will be used.</p>
     </div>
     <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The built-in story system remains available offline.</p>
@@ -208,6 +213,26 @@ function updateAIStatus(){
   if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — the built-in story system will be used.';
 }
 function localAIRequest(endpoint,payload){
+  if(window.AndroidLocalAI&&typeof window.AndroidLocalAI.generate==='function'){
+    return new Promise((resolve,reject)=>{
+      const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+      if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
+      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},120000);
+      window.__darkFantasyAIResolvers[id]=(ok,body)=>{
+        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
+        if(ok){
+          try{resolve(JSON.parse(body));}
+          catch(e){reject(new Error('Local AI returned invalid JSON'))}
+        }else reject(new Error(String(body||'Local AI request failed')));
+      };
+      try{
+        const prompt=payload?.messages?.find(m=>m.role==='system')?.content||payload?.messages?.[0]?.content||'';
+        window.AndroidLocalAI.generate(id,String(prompt));
+      }catch(e){
+        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);
+      }
+    });
+  }
   if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
     return new Promise((resolve,reject)=>{
       const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
@@ -225,9 +250,56 @@ function localAIRequest(endpoint,payload){
   return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(async res=>{const text=await res.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!res.ok)throw new Error(data?.error?.message||data?.error||text||('Local AI HTTP '+res.status));return data;});
 }
-window.__darkFantasyAIResolve=function(id,ok,body){
+function nativeAIAvailable(){return !!(window.AndroidLocalAI&&typeof window.AndroidLocalAI.generate==='function');}
+function localAIInstalled(){
+  try{return nativeAIAvailable() && !!window.AndroidLocalAI.isModelInstalled();}
+  catch(e){return false;}
+}
+function updateNativeAIControls(){
+  const btn=document.getElementById('downloadAIButton');
+  const endpoint=document.getElementById('aiEndpoint');
+  const model=document.getElementById('aiModel');
+  if(nativeAIAvailable()){
+    if(btn){
+      const installed=localAIInstalled();
+      btn.textContent=installed?'✓ Local AI downloaded':'⬇ Download local AI';
+      btn.disabled=installed;
+    }
+    if(endpoint)endpoint.disabled=true;
+    if(model){model.disabled=true;model.value='Gemma 4 E4B (on-device)';}
+    const status=document.getElementById('aiStatus');
+    if(status && !aiSettings.enabled)status.textContent=localAIInstalled()?'Local AI model is installed — tick the box to use it.':'Local AI model is not installed — tap Download local AI.';
+  }
+}
+function downloadLocalAI(){
+  if(!nativeAIAvailable()){
+    toast('Local AI download is available in the Android app.');
+    return;
+  }
+  if(localAIInstalled()){
+    updateNativeAIControls();
+    toast('✓ Local AI is already downloaded');
+    return;
+  }
+  const status=document.getElementById('aiStatus');
+  if(status)status.textContent='Downloading local AI model… keep the game open.';
+  toast('Downloading local AI model…');
+  try{window.AndroidLocalAI.downloadModel();}catch(e){
+    if(status)status.textContent='✗ Local AI download failed: '+(e?.message||e);
+  }
+}
+window.onLocalAIResult=function(id,text){
   const fn=window.__darkFantasyAIResolvers?.[id];
-  if(fn)fn(!!ok,String(body||''));
+  if(fn)fn(true,String(text||''));
+};
+window.onLocalAIError=function(id,message){
+  const fn=window.__darkFantasyAIResolvers?.[id];
+  if(fn)fn(false,String(message||'Local AI failed'));
+};
+window.__localAIStatus=function(message){
+  const status=document.getElementById('aiStatus');
+  if(status)status.textContent=String(message||'');
+  updateNativeAIControls();
 };
 function scrubInvalidLoreText(s){
   if(!s||typeof s!=='object')return s;
@@ -443,6 +515,7 @@ async function callStoryAI(action,correctedSource){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
+  const {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary}=buildStoryContext();
     const prompt=`You are the game master and narrative editor for Shane's Dark Fantasy RPG.
 
 NON-NEGOTIABLE CONTINUITY RULES:
@@ -652,7 +725,8 @@ async function typewriteAIEntry(entry, initialPause=0){
 async function testAI(){
   const endpoint=String(document.getElementById('aiEndpoint')?.value||aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(document.getElementById('aiModel')?.value||aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  if(!endpoint){toast('Enter a local AI endpoint first');return;}
+  if(nativeAIAvailable()&&!localAIInstalled()){const status=document.getElementById('aiStatus');if(status)status.textContent='✗ Download the local AI model first.';toast('Download the local AI model first');return;}
+  if(!endpoint&&!nativeAIAvailable()){toast('Enter a local AI endpoint first');return;}
   aiSettings={...aiSettings,endpoint,model,enabled:true};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   const status=document.getElementById('aiStatus');
@@ -1060,6 +1134,7 @@ loadSavedState().then(async()=>{
   await cleanDuplicateScenarios();
   render();
 }).catch(err=>console.warn(err));
+setTimeout(updateNativeAIControls,0);
 </script>
 </body>
 </html>
