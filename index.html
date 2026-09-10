@@ -113,6 +113,12 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
         <button class="btn" onclick="testAI()">Test local AI</button>
         <button class="btn danger" onclick="clearAISettings()">Clear local AI settings</button>
       </div>
+      <div id="aiProgressWrap" style="display:none;margin-top:10px">
+        <div style="height:12px;border-radius:999px;background:#24364d;overflow:hidden;border:1px solid #35516f">
+          <div id="aiProgressBar" style="height:100%;width:0%;transition:width .25s ease;background:#8B5CF6"></div>
+        </div>
+        <div class="small" id="aiProgressText" style="margin-top:5px">0%</div>
+      </div>
       <p class="small" id="aiStatus">Local AI is off — the built-in story system will be used.</p>
     </div>
     <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The built-in story system remains available offline.</p>
@@ -173,6 +179,7 @@ let state=loadState();
 const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
 const LOCAL_AI_DEFAULT_MODEL='qwen3:8b';
 let aiSettings=loadAISettings();
+let aiLastError=localStorage.getItem(KEY+'_ai_error')||'';
 function loadAISettings(){
   try{
     const raw=localStorage.getItem(KEY+'_ai')||localStorage.getItem(LEGACY_KEY+'_ai');
@@ -198,6 +205,8 @@ function saveAISettings(){
 }
 function clearAISettings(){
   aiSettings={enabled:false,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  aiLastError='';
+  localStorage.removeItem(KEY+'_ai_error');
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   updateAIStatus();
   toast('Local AI settings cleared');
@@ -255,20 +264,40 @@ function localAIInstalled(){
   try{return nativeAIAvailable() && !!window.AndroidLocalAI.isModelInstalled();}
   catch(e){return false;}
 }
+function setAIProgress(percent,message){
+  const wrap=document.getElementById('aiProgressWrap');
+  const bar=document.getElementById('aiProgressBar');
+  const text=document.getElementById('aiProgressText');
+  const p=Math.max(0,Math.min(100,Number(percent)||0));
+  const msg=String(message||'');
+  if(wrap)wrap.style.display=(p>0||/download|failed|error/i.test(msg))?'block':'none';
+  if(bar)bar.style.width=p+'%';
+  if(text)text.textContent=p+'%';
+  const status=document.getElementById('aiStatus');
+  if(status&&message)status.textContent=msg;
+}
 function updateNativeAIControls(){
   const btn=document.getElementById('downloadAIButton');
   const endpoint=document.getElementById('aiEndpoint');
   const model=document.getElementById('aiModel');
   if(nativeAIAvailable()){
+    const installed=localAIInstalled();
     if(btn){
-      const installed=localAIInstalled();
       btn.textContent=installed?'✓ Local AI downloaded':'⬇ Download local AI';
       btn.disabled=installed;
     }
     if(endpoint)endpoint.disabled=true;
     if(model){model.disabled=true;model.value='Gemma 4 E4B (on-device)';}
     const status=document.getElementById('aiStatus');
-    if(status && !aiSettings.enabled)status.textContent=localAIInstalled()?'Local AI model is installed — tick the box to use it.':'Local AI model is not installed — tap Download local AI.';
+    if(installed){
+      aiLastError='';
+      localStorage.removeItem(KEY+'_ai_error');
+      setAIProgress(100,'✓ Local AI model is installed.');
+    }else if(aiLastError){
+      setAIProgress(0,aiLastError);
+    }else if(status && !aiSettings.enabled){
+      status.textContent='Local AI model is not installed — tap Download local AI.';
+    }
   }
 }
 function downloadLocalAI(){
@@ -281,11 +310,15 @@ function downloadLocalAI(){
     toast('✓ Local AI is already downloaded');
     return;
   }
-  const status=document.getElementById('aiStatus');
-  if(status)status.textContent='Downloading local AI model… keep the game open.';
+  aiLastError='';
+  localStorage.removeItem(KEY+'_ai_error');
+  setAIProgress(0,'Downloading local AI model… 0% — keep the game open.');
   toast('Downloading local AI model…');
   try{window.AndroidLocalAI.downloadModel();}catch(e){
-    if(status)status.textContent='✗ Local AI download failed: '+(e?.message||e);
+    const msg='✗ Local AI download failed: '+(e?.message||e);
+    aiLastError=msg;
+    localStorage.setItem(KEY+'_ai_error',msg);
+    setAIProgress(0,msg);
   }
 }
 window.onLocalAIResult=function(id,text){
@@ -297,8 +330,15 @@ window.onLocalAIError=function(id,message){
   if(fn)fn(false,String(message||'Local AI failed'));
 };
 window.__localAIStatus=function(message){
-  const status=document.getElementById('aiStatus');
-  if(status)status.textContent=String(message||'');
+  const msg=String(message||'');
+  const match=msg.match(/(\\d{1,3})%/);
+  if(match)setAIProgress(Number(match[1]),msg);
+  else if(/download/i.test(msg))setAIProgress(0,msg);
+  else if(/installed|downloaded successfully|already installed/i.test(msg))setAIProgress(100,msg);
+  else{
+    const status=document.getElementById('aiStatus');
+    if(status)status.textContent=msg;
+  }
   updateNativeAIControls();
 };
 function scrubInvalidLoreText(s){
@@ -425,7 +465,7 @@ function render(){
  const partyHtml=state.party.map((p,i)=>`<div class="card character"><div class="character-top"><img class="portrait" src="${p.image||placeholder(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${p.level} · ${esc(p.race||'Unknown race')}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div>${p.name!=='Shane'?`<div class="small">${bondLabel(Number(p.bond)||20)} · Trust ${Number(p.trust??20)} · Affection ${Number(p.affection??20)}</div>`:''}</div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="toggleCharacterMenu(${i})" aria-label="Character options">⋮</button><div class="character-menu" id="charMenu${i}"><button type="button" onclick="openCharacterDetails(${i})">View character details</button>${p.name!=='Shane'?`<button type="button" onclick="openCharacterDetails(${i})">View relationship</button>`:''}</div></div></div></div>`).join('');
  const npcHtml=(state.npcs||[]).filter(n=>n.persistence==='persistent').map(n=>`<div class="card npc-card"><img class="npc-mini" src="${n.appearance||placeholder(n.name)}"><div><b>${esc(n.name)}</b><div class="small">Persistent NPC · ${esc(n.race||'Unknown race')} · ${esc(n.age||'adult')}</div><div class="small">${esc(n.role||'resident')} · ${esc(n.location||state.currentLocation||'Unknown location')}</div><div class="small">${esc(n.personality||'')}</div></div></div>`).join('');
  document.getElementById('partyList').innerHTML=partyHtml+(npcHtml?`<div class="character-section-label">Persistent people in this world</div>${npcHtml}`:'');
- document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><div class="character-top" style="flex:1;min-width:0"><img class="portrait" src="${p.image||placeholder(p.name)}" alt="${esc(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${Number(p.level)||1}</div></div></div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="togglePictureMenu(${n},event)" aria-label="Picture options">⋮</button><div class="picture-menu" id="pictureMenu${n}"><button type="button" onclick="pictureAction(event,'upload',${n})">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" onclick="pictureAction(event,'remove-picture',${n})">🗑️ Remove picture</button>`:''}${p.name!=='Shane'&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" onclick="pictureAction(event,'remove-character',${n})">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
+ document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><div class="character-top" style="flex:1;min-width:0"><img class="portrait" src="${p.image||placeholder(p.name)}" alt="${esc(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${Number(p.level)||1}</div></div></div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="togglePictureMenu(${n},event)" aria-label="Picture options">⋮</button><div class="picture-menu" id="pictureMenu${n}"><button type="button" onclick="pictureAction(event,'upload',${n})">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removePic(${n})">🗑️ Remove picture</button>`:''}${p.name!=='Shane'&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removeCharacter(${n})">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
  document.getElementById('relationships').innerHTML=state.party.filter(p=>p.name!=='Shane').map(p=>{let i=state.party.indexOf(p);let bond=Math.max(0,Math.min(100,Number(p.bond)||20));let rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
  const re=document.getElementById('relationshipEvents'); if(re){const ev=Array.isArray(state.relationshipEvents)?state.relationshipEvents.slice(-5).reverse():[]; re.innerHTML=ev.length?'<b>Recent changes</b><br>'+ev.map(e=>`• ${esc(e.text)}`).join('<br>'):'No relationship changes yet. When a bond changes, the game will show you what improved or worsened.';}
   const log=document.getElementById('storyLog');
@@ -735,13 +775,17 @@ async function testAI(){
   try{
     const result=await callStoryAI('*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"','*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"');
     if(result.entries?.length){
+      aiLastError='';
+      localStorage.removeItem(KEY+'_ai_error');
       if(status)status.textContent='✓ Local AI is working — '+model+' responded successfully.';
       toast('✓ Local AI works');
     }else throw new Error('Local AI returned no scene beat');
   }catch(e){
     console.error(e);
     const msg=String(e?.message||e||'Unknown error').replace(/\s+/g,' ').trim();
-    if(status)status.textContent='✗ Local AI test failed: '+msg;
+    aiLastError='✗ Local AI test failed: '+msg;
+    localStorage.setItem(KEY+'_ai_error',aiLastError);
+    if(status)status.textContent=aiLastError;
     toast('✗ Local AI test failed — see AI status');
   }
 }
@@ -906,13 +950,16 @@ function removeCharacter(i){
   if(!state.party[i])return;
   const name=String(state.party[i].name||'').trim();
   if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}
-  const message='Remove '+name+' from the party?';
-  if(typeof window.confirm==='function'&&!window.confirm(message))return;
   state.party.splice(i,1);
-  save();render();
+  save().then(()=>render()).catch(()=>{render();toast('Character removed from this session');});
   toast('Character removed');
 }
-function removePic(i){if(!state.party[i])return;state.party[i].image=null;save();render();toast('Picture removed');}
+function removePic(i){
+  if(!state.party[i])return;
+  state.party[i].image=null;
+  save().then(()=>render()).catch(()=>{render();toast('Picture removed from this session');});
+  toast('Picture removed');
+}
 function chooseBackground(){document.getElementById('bgFile').click()}
 function setBackground(file){if(!file)return;resizeImage(file,1600,0.78).then(data=>{state.background=data;applyBackground();save();toast('Background saved locally')}).catch(()=>toast('Background could not be saved'))}
 function clearBackground(){state.background=null;applyBackground();save();toast('Background cleared')}
@@ -1134,7 +1181,7 @@ loadSavedState().then(async()=>{
   await cleanDuplicateScenarios();
   render();
 }).catch(err=>console.warn(err));
-setTimeout(updateNativeAIControls,0);
+setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 </script>
 </body>
 </html>
