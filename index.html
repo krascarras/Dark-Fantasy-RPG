@@ -270,9 +270,13 @@ function setAIProgress(percent,message){
   const text=document.getElementById('aiProgressText');
   const p=Math.max(0,Math.min(100,Number(percent)||0));
   const msg=String(message||'');
-  if(wrap)wrap.style.display=(p>0||/download|failed|error/i.test(msg))?'block':'none';
-  if(bar)bar.style.width=p+'%';
-  if(text)text.textContent=p+'%';
+  const mb=msg.match(/(\\d+(?:\\.\\d+)?)\\s*MB downloaded/i);
+  if(wrap)wrap.style.display=(p>0||/download|failed|error|connecting/i.test(msg))?'block':'none';
+  if(bar){
+    bar.style.width=(mb&&p===0)?'100%':p+'%';
+    bar.style.opacity=(mb&&p===0)?'0.55':'1';
+  }
+  if(text)text.textContent=mb?(mb[1]+' MB downloaded — size not yet reported by server'):p+'%';
   const status=document.getElementById('aiStatus');
   if(status&&message)status.textContent=msg;
 }
