@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 46
-                  versionName '4.3.4-local-ai'
+                  versionCode 47
+                  versionName '4.3.5-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -216,9 +216,14 @@ jobs:
           import kotlinx.coroutines.delay
           import kotlinx.coroutines.launch
           import java.io.File
+          import java.io.FileInputStream
+          import java.security.MessageDigest
           import java.io.RandomAccessFile
           import java.net.HttpURLConnection
           import java.net.URL
+
+          private const val MODEL_SIZE_BYTES = 3659530240L
+          private const val MODEL_SHA256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
 
           class MainActivity : Activity() {
               private lateinit var webView: WebView
@@ -240,6 +245,19 @@ jobs:
                   File(modelDir, "gemma-4-E4B-it.litertlm")
               }
               private var downloadId: Long? = null
+
+              private fun modelSha256(): String {
+                  val digest = MessageDigest.getInstance("SHA-256")
+                  FileInputStream(modelFile).use { input ->
+                      val buffer = ByteArray(1024 * 1024)
+                      while (true) {
+                          val read = input.read(buffer)
+                          if (read < 0) break
+                          if (read > 0) digest.update(buffer, 0, read)
+                      }
+                  }
+                  return digest.digest().joinToString("") { "%02x".format(it) }
+              }
 
               private val modelUrl =
                   "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true"
@@ -326,7 +344,7 @@ jobs:
               inner class LocalAI {
                   @JavascriptInterface
                   fun isModelInstalled(): Boolean =
-                      modelFile.exists() && modelFile.length() > 100_000_000L
+                      modelFile.exists() && modelFile.length() == MODEL_SIZE_BYTES
 
                   @JavascriptInterface
                   fun downloadModel() {
@@ -427,15 +445,23 @@ jobs:
                                                       "Download reported success but the model file was not found"
                                                   )
                                               }
-                                              if (modelFile.length() < 100_000_000L) {
+                                              if (modelFile.length() != MODEL_SIZE_BYTES) {
                                                   throw IllegalStateException(
-                                                      "Downloaded model is only ${modelFile.length() / 1_048_576L} MB; expected a multi-GB model"
+                                                      "Downloaded model is ${modelFile.length()} bytes; expected $MODEL_SIZE_BYTES bytes"
+                                                  )
+                                              }
+
+                                              postJsStatus("✓ Download complete. Verifying model integrity…")
+                                              val actualSha256 = modelSha256()
+                                              if (!actualSha256.equals(MODEL_SHA256, ignoreCase = true)) {
+                                                  throw IllegalStateException(
+                                                      "Model SHA-256 mismatch. Expected $MODEL_SHA256 but got $actualSha256"
                                                   )
                                               }
 
                                               downloadId = null
                                               postJsStatus(
-                                                  "✓ Local AI model installed (${modelFile.length() / 1_048_576L} MB)."
+                                                  "✓ Local AI model installed and verified (${modelFile.length() / 1_048_576L} MB)."
                                               )
                                               mainHandler.post {
                                                   Toast.makeText(
@@ -587,5 +613,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3.4-local-AI
+          name: Dark-Fantasy-RPG-v4.3.5-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
