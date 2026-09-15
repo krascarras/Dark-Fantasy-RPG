@@ -92,7 +92,7 @@ jobs:
                   minSdk 24
                   targetSdk 35
                   versionCode 48
-                  versionName '4.3.7-local-ai'
+                  versionName '4.3.8-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -568,8 +568,11 @@ jobs:
                                   fluid fantasy prose rather than repetitive stock phrases.
 
                                   Follow the output format requested by the game.
-                                  """.trimIndent()
-                              )
+                                  Return ONLY the requested JSON object. Do not use Markdown fences,
+                                  explanations, or <think> blocks in the final answer.
+                                  """.trimIndent(),
+                              thinkingConfig = ThinkingConfig(enableThinking = false),
+                              maxOutputToken = 1200
                           )
                       )
                   } finally {
@@ -629,5 +632,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3.6-local-AI
+          name: Dark-Fantasy-RPG-v4.3.8-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
