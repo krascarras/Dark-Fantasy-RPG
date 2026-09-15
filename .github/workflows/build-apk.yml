@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 48
-                  versionName '4.3.8-local-ai'
+                  versionCode 49
+                  versionName '4.3.9-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -205,6 +205,7 @@ jobs:
           import android.webkit.ValueCallback
           import android.widget.Toast
           import com.google.ai.edge.litertlm.Backend
+          import com.google.ai.edge.litertlm.Content
           import com.google.ai.edge.litertlm.Contents
           import com.google.ai.edge.litertlm.Conversation
           import com.google.ai.edge.litertlm.ConversationConfig
@@ -556,23 +557,24 @@ jobs:
                       conversation = e.createConversation(
                           ConversationConfig(
                               systemInstruction = Contents.of(
-                                  """
-                                  You are the local narrative engine for Shane's Dark Fantasy RPG.
+                                  Content.Text(
+                                      """
+                                      You are the local narrative engine for Shane's Dark Fantasy RPG.
 
-                                  Treat the RPG's supplied canon, character descriptions,
-                                  relationship state, memories, current scene and player
-                                  action as authoritative.
+                                      Treat the RPG's supplied canon, character descriptions,
+                                      relationship state, memories, current scene and player
+                                      action as authoritative.
 
-                                  Never invent visual facts that contradict supplied character
-                                  canon. Preserve named character traits. Write natural,
-                                  fluid fantasy prose rather than repetitive stock phrases.
+                                      Never invent visual facts that contradict supplied character
+                                      canon. Preserve named character traits. Write natural,
+                                      fluid fantasy prose rather than repetitive stock phrases.
 
-                                  Follow the output format requested by the game.
-                                  Return ONLY the requested JSON object. Do not use Markdown fences,
-                                  explanations, or <think> blocks in the final answer.
-                                  """.trimIndent(),
-                              thinkingConfig = ThinkingConfig(enableThinking = false),
-                              maxOutputToken = 1200
+                                      Follow the output format requested by the game.
+                                      Return ONLY the requested JSON object. Do not use Markdown fences,
+                                      explanations, or <think> blocks in the final answer.
+                                      """.trimIndent()
+                                  )
+                              )
                           )
                       )
                   } finally {
