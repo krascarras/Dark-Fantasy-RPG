@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 45
-                  versionName '4.3.3-local-ai'
+                  versionCode 46
+                  versionName '4.3.4-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -188,10 +188,13 @@ jobs:
           package com.darkfantasyrpg.app
 
           import android.app.Activity
+          import android.app.DownloadManager
           import android.os.Bundle
           import android.os.Handler
           import android.os.Looper
+          import android.os.Environment
           import android.view.View
+          import android.content.Context
           import android.content.Intent
           import android.net.Uri
           import android.webkit.JavascriptInterface
@@ -227,13 +230,16 @@ jobs:
               private var engineLoading = false
               private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
-              private val modelDir by lazy { File(filesDir, "models") }
+              private val modelDir by lazy {
+                  File(
+                      getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir,
+                      "models"
+                  )
+              }
               private val modelFile by lazy {
                   File(modelDir, "gemma-4-E4B-it.litertlm")
               }
-              private val partFile by lazy {
-                  File(modelDir, "gemma-4-E4B-it.litertlm.part")
-              }
+              private var downloadId: Long? = null
 
               private val modelUrl =
                   "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true"
@@ -309,6 +315,7 @@ jobs:
               }
 
               override fun onDestroy() {
+                  downloadId = null
                   scope.launch(Dispatchers.IO) {
                       try { conversation?.close() } catch (_: Exception) {}
                       try { engine?.close() } catch (_: Exception) {}
@@ -324,30 +331,131 @@ jobs:
                   @JavascriptInterface
                   fun downloadModel() {
                       if (isModelInstalled()) {
-                          postJsStatus("Local AI model is already installed.")
-                          Toast.makeText(this@MainActivity, "Local AI is already installed.", Toast.LENGTH_LONG).show()
+                          postJsStatus("✓ Local AI model is already installed.")
                           return
                       }
-                      if (engineLoading) {
-                          postJsStatus("Local AI is already preparing.")
+                      if (downloadId != null) {
+                          postJsStatus("⬇ Local AI download is already running…")
                           return
                       }
-
-                      postJsStatus("⬇ Connecting to the local AI model server…")
-                      Toast.makeText(this@MainActivity, "Local AI model download started. Keep the game open.", Toast.LENGTH_LONG).show()
 
                       scope.launch(Dispatchers.IO) {
                           try {
                               modelDir.mkdirs()
-                              downloadWithResume()
-                              postJsStatus("✓ Local AI model installed. Tap Test AI.")
-                              mainHandler.post {
-                                  Toast.makeText(this@MainActivity, "✓ Local AI installed. Tap Test AI.", Toast.LENGTH_LONG).show()
+                              if (!modelDir.exists()) {
+                                  throw IllegalStateException("Cannot create model storage directory")
+                              }
+
+                              if (modelFile.exists()) modelFile.delete()
+
+                              val request = DownloadManager.Request(Uri.parse(modelUrl)).apply {
+                                  setTitle("Dark Fantasy RPG — Local AI")
+                                  setDescription("Downloading Gemma 4 E4B (on-device)")
+                                  setNotificationVisibility(
+                                      DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                                  )
+                                  setAllowedOverMetered(true)
+                                  setAllowedOverRoaming(false)
+                                  setMimeType("application/octet-stream")
+                                  setDestinationInExternalFilesDir(
+                                      this@MainActivity,
+                                      Environment.DIRECTORY_DOWNLOADS,
+                                      "models/gemma-4-E4B-it.litertlm"
+                                  )
+                                  addRequestHeader("User-Agent", "DarkFantasyRPG/LocalAI")
+                              }
+
+                              val manager =
+                                  getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+                              val id = manager.enqueue(request)
+                              downloadId = id
+
+                              postJsStatus("⬇ Download queued — Android Download Manager is starting…")
+
+                              while (true) {
+                                  val query = DownloadManager.Query().setFilterById(id)
+                                  manager.query(query).use { cursor ->
+                                      if (!cursor.moveToFirst()) {
+                                          throw IllegalStateException("Download disappeared from Android Download Manager")
+                                      }
+
+                                      val status = cursor.getInt(
+                                          cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
+                                      )
+                                      val bytes = cursor.getLong(
+                                          cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                                      )
+                                      val total = cursor.getLong(
+                                          cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                                      )
+
+                                      when (status) {
+                                          DownloadManager.STATUS_PENDING ->
+                                              postJsStatus("⬇ Download queued…")
+                                          DownloadManager.STATUS_RUNNING -> {
+                                              if (total > 0L) {
+                                                  val percent = ((bytes * 100L) / total).toInt()
+                                                  val downloadedMb = bytes / 1_048_576L
+                                                  val totalMb = total / 1_048_576L
+                                                  postJsStatus(
+                                                      "Downloading local AI model… $percent% ($downloadedMb / $totalMb MB)"
+                                                  )
+                                              } else {
+                                                  postJsStatus(
+                                                      "Downloading local AI model… ${bytes / 1_048_576L} MB downloaded"
+                                                  )
+                                              }
+                                          }
+                                          DownloadManager.STATUS_PAUSED -> {
+                                              val reason = cursor.getInt(
+                                                  cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)
+                                              )
+                                              postJsStatus("Download paused by Android (reason $reason)…")
+                                          }
+                                          DownloadManager.STATUS_FAILED -> {
+                                              val reason = cursor.getInt(
+                                                  cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)
+                                              )
+                                              throw IllegalStateException(
+                                                  "Android Download Manager failed (reason $reason)"
+                                              )
+                                          }
+                                          DownloadManager.STATUS_SUCCESSFUL -> {
+                                              if (!modelFile.exists()) {
+                                                  throw IllegalStateException(
+                                                      "Download reported success but the model file was not found"
+                                                  )
+                                              }
+                                              if (modelFile.length() < 100_000_000L) {
+                                                  throw IllegalStateException(
+                                                      "Downloaded model is only ${modelFile.length() / 1_048_576L} MB; expected a multi-GB model"
+                                                  )
+                                              }
+
+                                              downloadId = null
+                                              postJsStatus(
+                                                  "✓ Local AI model installed (${modelFile.length() / 1_048_576L} MB)."
+                                              )
+                                              mainHandler.post {
+                                                  Toast.makeText(
+                                                      this@MainActivity,
+                                                      "✓ Local AI installed.",
+                                                      Toast.LENGTH_LONG
+                                                  ).show()
+                                              }
+                                              break
+                                          }
+                                      }
+                                  }
+
+                                  delay(1000)
                               }
                           } catch (e: Exception) {
+                              downloadId = null
                               val detail = e.message?.takeIf { it.isNotBlank() }
                                   ?: e.javaClass.simpleName
-                              postJsError("✗ Model download failed: $detail")
+                              postJsError("Model download failed: $detail")
                           }
                       }
                   }
@@ -427,107 +535,7 @@ jobs:
                   }
               }
 
-              private fun downloadWithResume() {
-                  val existing = if (partFile.exists()) partFile.length() else 0L
 
-                  val connection =
-                      (URL(modelUrl).openConnection() as HttpURLConnection).apply {
-                          connectTimeout = 30_000
-                          readTimeout = 120_000
-                          instanceFollowRedirects = true
-                          setRequestProperty("User-Agent", "DarkFantasyRPG/LocalAI")
-                          if (existing > 0) {
-                              setRequestProperty("Range", "bytes=$existing-")
-                          }
-                      }
-
-                  try {
-                      val code = connection.responseCode
-                      val reportedLength = connection.contentLengthLong
-                      postJsStatus(
-                          if (reportedLength > 0)
-                              "Downloading local AI model… server reports ${reportedLength / 1_048_576} MB"
-                          else
-                              "Downloading local AI model… server did not report a total size yet."
-                      )
-
-                      if (code != HttpURLConnection.HTTP_OK &&
-                          code != HttpURLConnection.HTTP_PARTIAL) {
-                          throw IllegalStateException(
-                              "HTTP $code${connection.responseMessage?.let { " ($it)" } ?: ""}"
-                          )
-                      }
-
-                      val append =
-                          code == HttpURLConnection.HTTP_PARTIAL && existing > 0
-
-                      if (!append && existing > 0) {
-                          partFile.delete()
-                      }
-
-                      val total =
-                          if (code == HttpURLConnection.HTTP_PARTIAL) {
-                              existing + connection.contentLengthLong
-                          } else {
-                              connection.contentLengthLong
-                          }
-
-                      connection.inputStream.use { input ->
-                          RandomAccessFile(partFile, "rw").use { output ->
-                              if (append) output.seek(existing)
-                              else output.setLength(0)
-
-                              val buffer = ByteArray(1024 * 1024)
-                              var downloaded = if (append) existing else 0L
-                              var lastPercent = -1
-                              var lastReportedMb = downloaded / 1_048_576L
-
-                              while (true) {
-                                  val read = input.read(buffer)
-                                  if (read <= 0) break
-
-                                  output.write(buffer, 0, read)
-                                  downloaded += read
-
-                                  if (total > 0) {
-                                      val percent =
-                                          ((downloaded * 100L) / total).toInt()
-
-                                      if (percent != lastPercent && (percent % 2 == 0 || percent == 100)) {
-                                          lastPercent = percent
-                                          postJsStatus("Downloading local AI model… $percent%")
-                                      }
-                                  } else {
-                                      val currentMb = downloaded / 1_048_576L
-                                      if (currentMb >= lastReportedMb + 5L) {
-                                          lastReportedMb = currentMb
-                                          postJsStatus("Downloading local AI model… ${currentMb} MB downloaded")
-                                      }
-                                  }
-                              }
-
-                              postJsStatus(
-                                  if (total > 0)
-                                      "Download finished at ${downloaded / 1_048_576L} MB. Verifying model…"
-                                  else
-                                      "Download finished at ${downloaded / 1_048_576L} MB. Verifying model…"
-                              )
-                          }
-                      }
-
-                      if (!partFile.exists() || partFile.length() < 100_000_000L) {
-                          throw IllegalStateException("Downloaded file is incomplete")
-                      }
-
-                      if (modelFile.exists()) modelFile.delete()
-
-                      if (!partFile.renameTo(modelFile)) {
-                          throw IllegalStateException("Could not finalise model file")
-                      }
-                  } finally {
-                      connection.disconnect()
-                  }
-              }
 
               private fun postJsStatus(message: String) {
                   mainHandler.post {
@@ -579,5 +587,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3.3-local-AI
+          name: Dark-Fantasy-RPG-v4.3.4-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
