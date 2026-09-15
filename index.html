@@ -31,7 +31,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.3.6</div>
+<div class="version-badge">v4.3.8</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -230,12 +230,22 @@ function localAIRequest(endpoint,payload){
       window.__darkFantasyAIResolvers[id]=(ok,body)=>{
         clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
         if(ok){
-          try{resolve(JSON.parse(body));}
-          catch(e){reject(new Error('Local AI returned invalid JSON'))}
+          try{
+            const parsed=JSON.parse(body);
+            // Native LiteRT-LM returns the model's text, not an Ollama/OpenAI envelope.
+            // Accept either a native message envelope or raw model text.
+            if(parsed && (parsed.message||parsed.choices||parsed.response||parsed.output_text)) resolve(parsed);
+            else resolve({message:{content:String(body)}});
+          }catch(e){
+            // Raw model text is valid input to callStoryAI, which performs the JSON parse.
+            resolve({message:{content:String(body)}});
+          }
         }else reject(new Error(String(body||'Local AI request failed')));
       };
       try{
-        const prompt=payload?.messages?.find(m=>m.role==='system')?.content||payload?.messages?.[0]?.content||'';
+        const systemPrompt=payload?.messages?.find(m=>m.role==='system')?.content||'';
+        const userPrompt=payload?.messages?.find(m=>m.role==='user')?.content||'';
+        const prompt=[systemPrompt,userPrompt].filter(Boolean).join('\n\nPLAYER ACTION / REQUEST:\n');
         window.AndroidLocalAI.generate(id,String(prompt));
       }catch(e){
         clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);
@@ -682,7 +692,7 @@ Only add memory_update when the player's action or your immediate response expli
   if(!text)throw new Error('Local AI returned no text');
   let parsed;
   try{parsed=typeof text==='string'?JSON.parse(text):text}catch(e){
-    const cleaned=String(text).replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim();
+    const cleaned=String(text).replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim();
     parsed=JSON.parse(cleaned);
   }
   if(!parsed||typeof parsed!=='object')throw new Error('Invalid local AI response');
