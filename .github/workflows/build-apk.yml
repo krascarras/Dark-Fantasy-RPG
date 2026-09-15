@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 47
-                  versionName '4.3.5-local-ai'
+                  versionCode 48
+                  versionName '4.3.7-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -222,8 +222,8 @@ jobs:
           import java.net.HttpURLConnection
           import java.net.URL
 
-          private const val MODEL_SIZE_BYTES = 3659530240L
-          private const val MODEL_SHA256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
+          private const val MODEL_SIZE_BYTES = 2588147712L
+          private const val MODEL_SHA256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
 
           class MainActivity : Activity() {
               private lateinit var webView: WebView
@@ -242,7 +242,10 @@ jobs:
                   )
               }
               private val modelFile by lazy {
-                  File(modelDir, "gemma-4-E4B-it.litertlm")
+                  File(modelDir, "gemma-4-E2B-it.litertlm")
+              }
+              private val verifiedMarkerFile by lazy {
+                  File(modelDir, "gemma-4-E2B-it.litertlm.verified")
               }
               private var downloadId: Long? = null
 
@@ -260,7 +263,7 @@ jobs:
               }
 
               private val modelUrl =
-                  "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true"
+                  "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true"
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -344,7 +347,9 @@ jobs:
               inner class LocalAI {
                   @JavascriptInterface
                   fun isModelInstalled(): Boolean =
-                      modelFile.exists() && modelFile.length() == MODEL_SIZE_BYTES
+                      modelFile.exists() &&
+                          modelFile.length() == MODEL_SIZE_BYTES &&
+                          verifiedMarkerFile.exists()
 
                   @JavascriptInterface
                   fun downloadModel() {
@@ -365,10 +370,16 @@ jobs:
                               }
 
                               if (modelFile.exists()) modelFile.delete()
+                              if (verifiedMarkerFile.exists()) verifiedMarkerFile.delete()
+
+                              // Remove the invalid E4B model left by earlier builds so it
+                              // cannot consume several GB or be mistaken for the E2B model.
+                              File(modelDir, "gemma-4-E4B-it.litertlm").delete()
+                              File(modelDir, "gemma-4-E4B-it.litertlm.verified").delete()
 
                               val request = DownloadManager.Request(Uri.parse(modelUrl)).apply {
                                   setTitle("Dark Fantasy RPG — Local AI")
-                                  setDescription("Downloading Gemma 4 E4B (on-device)")
+                                  setDescription("Downloading Gemma 4 E2B (on-device)")
                                   setNotificationVisibility(
                                       DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                                   )
@@ -378,7 +389,7 @@ jobs:
                                   setDestinationInExternalFilesDir(
                                       this@MainActivity,
                                       Environment.DIRECTORY_DOWNLOADS,
-                                      "models/gemma-4-E4B-it.litertlm"
+                                      "models/gemma-4-E2B-it.litertlm"
                                   )
                                   addRequestHeader("User-Agent", "DarkFantasyRPG/LocalAI")
                               }
@@ -459,6 +470,10 @@ jobs:
                                                   )
                                               }
 
+                                              if (!verifiedMarkerFile.createNewFile() && !verifiedMarkerFile.exists()) {
+                                                  throw IllegalStateException("Model verified but the verification marker could not be created")
+                                              }
+
                                               downloadId = null
                                               postJsStatus(
                                                   "✓ Local AI model installed and verified (${modelFile.length() / 1_048_576L} MB)."
@@ -479,6 +494,7 @@ jobs:
                               }
                           } catch (e: Exception) {
                               downloadId = null
+                              if (verifiedMarkerFile.exists()) verifiedMarkerFile.delete()
                               val detail = e.message?.takeIf { it.isNotBlank() }
                                   ?: e.javaClass.simpleName
                               postJsError("Model download failed: $detail")
@@ -613,5 +629,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3.5-local-AI
+          name: Dark-Fantasy-RPG-v4.3.6-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
