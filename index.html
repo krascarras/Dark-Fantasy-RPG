@@ -31,7 +31,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.4.0</div>
+<div class="version-badge">v4.4.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -714,9 +714,33 @@ Only add memory_update when the player's action or your immediate response expli
   const text=data?.message?.content || data?.choices?.[0]?.message?.content || data?.response || data?.output_text || '';
   if(!text)throw new Error('Local AI returned no text');
   let parsed;
-  try{parsed=typeof text==='string'?JSON.parse(text):text}catch(e){
-    const cleaned=String(text).replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/^```json\s*/i,'').replace(/\s*```$/,'').trim();
-    parsed=JSON.parse(cleaned);
+  if(typeof text==='string'){
+    const tolerantJSONParse=(raw)=>{
+      let cleaned=String(raw)
+        .replace(/<think>[\s\S]*?<\/think>/gi,'')
+        .replace(/^\s*```(?:json)?\s*/i,'')
+        .replace(/\s*```\s*$/,'')
+        .trim();
+      // Gemma can occasionally add a short preamble/trailing sentence.
+      const first=cleaned.indexOf('{'), last=cleaned.lastIndexOf('}');
+      if(first>=0 && last>first) cleaned=cleaned.slice(first,last+1);
+      try{return JSON.parse(cleaned)}catch(primary){}
+      // Be forgiving of common small-model JSON mistakes: bare property names
+      // and trailing commas. This never changes quoted string contents.
+      const repaired=cleaned
+        .replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)\s*:/g,'$1"$2":')
+        .replace(/,\s*([}\]])/g,'$1');
+      try{return JSON.parse(repaired)}catch(repairErr){
+        // A final conservative pass for single-quoted simple values.
+        const repaired2=repaired.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g,(m,v)=>JSON.stringify(v));
+        return JSON.parse(repaired2);
+      }
+    };
+    try{parsed=tolerantJSONParse(text)}catch(e){
+      throw new Error('Local AI returned malformed JSON: '+String(e?.message||e));
+    }
+  }else{
+    parsed=text;
   }
   if(!parsed||typeof parsed!=='object')throw new Error('Invalid local AI response');
   parsed.corrected_action=String(parsed.corrected_action||correctedSource||action).trim();
