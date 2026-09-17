@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 50
-                  versionName '4.4.0-local-ai'
+                  versionCode 51
+                  versionName '4.4.1-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
