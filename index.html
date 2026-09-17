@@ -720,24 +720,30 @@ Only add memory_update when the player's action or your immediate response expli
         .replace(/<think>[\s\S]*?<\/think>/gi,'')
         .replace(/^\s*```(?:json)?\s*/i,'')
         .replace(/\s*```\s*$/,'')
+        .replace(/[“”]/g,'"').replace(/[‘’]/g,"'")
         .trim();
-      // Gemma can occasionally add a short preamble/trailing sentence.
       const first=cleaned.indexOf('{'), last=cleaned.lastIndexOf('}');
       if(first>=0 && last>first) cleaned=cleaned.slice(first,last+1);
-      try{return JSON.parse(cleaned)}catch(primary){}
-      // Be forgiving of common small-model JSON mistakes: bare property names
-      // and trailing commas. This never changes quoted string contents.
-      const repaired=cleaned
-        .replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)\s*:/g,'$1"$2":')
-        .replace(/,\s*([}\]])/g,'$1');
-      try{return JSON.parse(repaired)}catch(repairErr){
-        // A final conservative pass for single-quoted simple values.
-        const repaired2=repaired.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g,(m,v)=>JSON.stringify(v));
-        return JSON.parse(repaired2);
-      }
+      const attempts=[cleaned];
+      const quoteKeys=x=>x.replace(/([{,\n]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)\s*:/g,'$1"$2":');
+      const basic=quoteKeys(cleaned)
+        .replace(/,\s*([}\]])/g,'$1')
+        .replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false').replace(/\bNone\b/g,'null')
+        .replace(/\bNaN\b/g,'null');
+      attempts.push(basic);
+      // Recover the very common missing-comma error between JSON properties.
+      const withMissingCommas=basic
+        .replace(/(["}\]])\s*(?="[A-Za-z_$][A-Za-z0-9_$-]*"\s*:)/g,'$1,')
+        .replace(/([0-9])\s*(?="[A-Za-z_$][A-Za-z0-9_$-]*"\s*:)/g,'$1,');
+      attempts.push(withMissingCommas);
+      // Last conservative attempt for simple single-quoted values.
+      attempts.push(withMissingCommas.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g,(m,v)=>JSON.stringify(v)));
+      let lastErr=null;
+      for(const candidate of attempts){try{return JSON.parse(candidate)}catch(e){lastErr=e}}
+      throw new Error((lastErr&&lastErr.message)||'Invalid JSON');
     };
     try{parsed=tolerantJSONParse(text)}catch(e){
-      throw new Error('Local AI returned malformed JSON: '+String(e?.message||e));
+      throw new Error('Local AI returned malformed JSON: '+String(e?.message||e)+' | Preview: '+String(text).replace(/\s+/g,' ').slice(0,220));
     }
   }else{
     parsed=text;
