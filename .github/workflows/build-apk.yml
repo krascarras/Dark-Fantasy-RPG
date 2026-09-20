@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 53
-                  versionName '4.5.0-local-ai'
+                  versionCode 54
+                  versionName '4.5.1-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -290,11 +290,26 @@ jobs:
                           this@MainActivity.filePathCallback?.onReceiveValue(null)
                           this@MainActivity.filePathCallback = filePath
                           return try {
-                              val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                                  addCategory(Intent.CATEGORY_OPENABLE)
-                                  type = "image/*"
+                              val acceptTypes = fileChooserParams?.acceptTypes
+                                  ?.flatMap { it.split(",") }
+                                  ?.map { it.trim().lowercase() }
+                                  ?.filter { it.isNotEmpty() }
+                                  ?: emptyList()
+                              val wantsJson = acceptTypes.any {
+                                  it == "application/json" ||
+                                  it == "text/json" ||
+                                  it == ".json" ||
+                                  it.endsWith("/json")
                               }
-                              startActivityForResult(Intent.createChooser(intent, "Choose character picture"), 4201)
+                              val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                  addCategory(Intent.CATEGORY_OPENABLE)
+                                  type = if (wantsJson) "application/json" else "image/*"
+                                  if (wantsJson) {
+                                      putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/json", "*/*"))
+                                  }
+                              }
+                              val title = if (wantsJson) "Choose scenario or character JSON" else "Choose character picture"
+                              startActivityForResult(Intent.createChooser(intent, title), 4201)
                               true
                           } catch (_: Exception) {
                               this@MainActivity.filePathCallback = null
