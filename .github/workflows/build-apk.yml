@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 54
-                  versionName '4.5.1-local-ai'
+                  versionCode 55
+                  versionName '4.5.2-local-ai'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -574,19 +574,23 @@ jobs:
                               systemInstruction = Contents.of(
                                   Content.Text(
                                       """
-                                      You are the local narrative engine for Shane's Dark Fantasy RPG.
+                                      You are the local narrative engine for the RPG.
 
-                                      Treat the RPG's supplied canon, character descriptions,
+                                      The supplied scenario is the current world's canon. The app
+                                      may run many completely different scenarios, including modern,
+                                      realistic, fantasy, science-fiction or other settings.
+                                      Never assume the setting from the app name and never import
+                                      lore or characters from another campaign.
+
+                                      Treat supplied scenario canon, character descriptions,
                                       relationship state, memories, current scene and player
-                                      action as authoritative.
+                                      action as authoritative. Never invent facts that contradict
+                                      them.
 
-                                      Never invent visual facts that contradict supplied character
-                                      canon. Preserve named character traits. Write natural,
-                                      fluid fantasy prose rather than repetitive stock phrases.
-
-                                      Follow the output format requested by the game.
-                                      Return ONLY the requested JSON object. Do not use Markdown fences,
-                                      explanations, or <think> blocks in the final answer.
+                                      Return natural story prose only. Do not return JSON, code,
+                                      metadata, bullet summaries, or <think> blocks. Let the
+                                      scenario determine the genre, technology, races, magic,
+                                      supernatural elements, tone and available locations.
                                       """.trimIndent()
                                   )
                               )
