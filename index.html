@@ -31,7 +31,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.5.1</div>
+<div class="version-badge">v4.5.2</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -637,9 +637,9 @@ CHARACTER CANON:
 - Never use a character's image as permission to invent extra physical details.
 - Avoid repetitive AI mannerisms and stock gestures. Do not repeatedly use phrases such as 'raises a dry eyebrow', 'measured gaze', 'faint smile', 'knowing smile', 'steady gaze', 'tilts her head' or similar filler. Use varied actions that fit the exact moment.
 - Show emotion through dialogue, action, expression and behaviour instead of explaining every emotion.
-- Sylvara's eyes are VIOLET. Never call them pale. Her eyes may glow subtly violet when she actively channels magic, but not during ordinary conversation.
-- Use magical visual effects only when the relevant character is actually using magic.
-- Characters should react to the specific latest action and to one another naturally. Do not make every beat centre on Sylvara.
+- Never import facts, traits, races, powers, relationships or lore from another campaign. A character exists in this campaign only if this scenario or its imported characters establish them.
+- Use magical/supernatural visual effects only when this scenario establishes that such things exist and the current character actually uses them.
+- Characters should react to the specific latest action and to one another naturally. Do not make every beat centre on one character.
 
 CHARACTER AGENCY:
 - Characters are people, not response buttons. They can initiate conversation, make observations, joke, disagree, interrupt, ask questions, make plans, hesitate, leave, return, help, refuse, make mistakes and act on their own when their personality and circumstances support it.
@@ -666,10 +666,13 @@ PRESENTATION FORMAT:
 - Keep dialogue and actions natural within the prose. Do not label every sentence.
 - Do not include a 'corrected_action' field or any other machine-readable structure.
 
-WORLD-BUILDING FREEDOM:
-- Treat the imported scenario blueprint as the foundation, not a cage. Preserve everything explicitly established.
-- If a field is blank, missing or described as open, develop it naturally when useful. Build new lore, places, factions, customs, history and conflicts that fit the existing world.
-- Do not randomly overwrite supplied details. New lore should connect to what already exists and should remain consistent once established.
+WORLD-BUILDING AND SCENARIO CANON:
+- The CURRENT SCENARIO is the only world being played. Treat its imported blueprint, world profile, lore, rules, locations, factions, characters, timeline and starting situation as authoritative canon.
+- The application name does NOT define the setting. Do not assume dark fantasy, elves, dwarves, magic, monsters, medieval technology, kingdoms or supernatural events unless this scenario explicitly establishes them.
+- If this scenario is modern-day, contemporary, realistic or otherwise non-fantasy, keep it that way. Do not introduce fantasy races, magic, medieval settings or supernatural events merely because the RPG can support them.
+- Never import characters, lore, locations, creatures, factions, relationships or events from another scenario. Campaigns are isolated.
+- If a field is blank, missing or explicitly left open, develop it naturally only in a way that fits the established setting. An open field is not permission to contradict the setting.
+- Preserve established facts once introduced. New lore must connect to the current scenario and remain consistent.
 - Do not reveal character secrets merely because they exist in the blueprint. A secret is available to the character who knows it, not automatically to Shane or the narrator.
 
 CURRENT SCENARIO: ${state.scenarioName} (${state.scenarioType})
@@ -817,7 +820,7 @@ async function testAI(){
   if(status)status.textContent='Testing local AI…';
   toast('Testing local AI…');
   try{
-    const result=await callStoryAI('*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"','*Shane looks at Sylvara and speaks to her directly.* "My name is Shane. What is your name?"');
+    const testAction='*Local AI test: describe the current scene naturally in one or two short paragraphs without changing the player\'s action or inventing new canon.*'; const result=await callStoryAI(testAction,testAction);
     if(result.entries?.length){
       aiLastError='';
       localStorage.removeItem(KEY+'_ai_error');
@@ -886,8 +889,13 @@ async function addAction(){
       }
     }catch(err){
       console.error(err);
-      toast(aiSettings.enabled?'Local AI failed — built-in response used. Your action is safe.':'Your action is safe.');
+      const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
       if(aiSettings.enabled){
+        aiLastError='✗ Local AI failed: '+detail;
+        localStorage.setItem(KEY+'_ai_error',aiLastError);
+        const aiStatus=document.getElementById('aiStatus'); if(aiStatus)aiStatus.textContent=aiLastError;
+        toast('Local AI failed — built-in response used.');
+      }else{
         const reaction=characterReaction(v); const entries=reaction?reaction.entries.filter(e=>!isDuplicateEntry(e)):[];
         for(const entry of entries){state.story.push(entry);await save();render();keepStoryAtLatest();}
       }
