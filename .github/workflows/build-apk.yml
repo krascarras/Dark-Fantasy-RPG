@@ -92,7 +92,7 @@ jobs:
                   minSdk 24
                   targetSdk 35
                   versionCode 59
-                  versionName '4.5.7-redo'
+                  versionName '4.6.0-redo'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -643,5 +643,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.5.7-redo
+          name: Dark-Fantasy-RPG-v4.6.0-redo
           path: app/build/outputs/apk/debug/app-debug.apk
