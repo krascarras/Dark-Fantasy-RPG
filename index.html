@@ -42,12 +42,19 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </nav>
 
 <main>
+<div id="playerModal" class="char-modal" aria-hidden="true">
+  <div class="char-modal-card">
+    <div class="row"><div><h2 style="margin:0">🎭 Choose your player</h2><p class="small" style="margin:5px 0 0">Choose which imported character you will control in this campaign. Everyone else remains an NPC or stays inactive.</p></div></div>
+    <div id="playerChoices" style="margin-top:14px"></div>
+  </div>
+</div>
+
 <section id="story" class="tab active">
   <div class="card story-card">
     <div id="storyLog" class="story-log"></div>
   </div>
   <div class="card action-card compact-action">
-    <textarea id="action" placeholder="What does Shane do or say?"></textarea>
+    <textarea id="action" placeholder="What does your character do or say?"></textarea>
     <div class="actions compact-actions"><button class="btn" type="button" onclick="addAction()">Send</button></div>
   </div>
 </section>
@@ -86,15 +93,8 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </section>
 
 <section id="lore" class="tab">
-  <div class="card"><h2>📜 World Lore</h2><p class="small">The setting rules used by the story AI and the built-in world system. These rules are persistent and should not be casually contradicted.</p></div>
-  <div class="card"><h3>🌍 The World</h3><p>The mortal realms are old, dangerous and imperfectly understood. Humans, elves, dwarves, demonfolk and orcs share the same world. They generally coexist, but old wars, prejudice, cultural differences, territorial disputes and personal grudges mean there is still animosity between peoples.</p><p>Mixed-race adventuring parties are completely normal. When a nest needs clearing, a ruin needs exploring or a dungeon needs delving, competence and trust matter more than ancestry.</p><p>Most people live ordinary lives. Magic is part of the world and is not exceptionally rare, but only some people are born with the ability to wield it.</p></div>
-  <div class="card"><h3>🧬 Races</h3><ul><li><b>Humans</b> — adaptable, numerous and found almost everywhere.</li><li><b>Elves</b> — long-lived, perceptive and closely connected to ancient magic and old places.</li><li><b>Dwarves</b> — resilient, practical and renowned for stonework, metalwork and craftsmanship.</li><li><b>Demonfolk</b> — a varied people with many appearances, cultures and beliefs. Demonfolk are not inherently evil.</li><li><b>Orcs</b> — powerful, hardy people organised into many clans, tribes and settled communities. Orc culture places strong value on endurance, loyalty, courage, personal honour and keeping one's word. Orcs are not inherently savage or evil; some live peacefully, trade with other peoples, work as craftsmen or mercenaries, while others belong to hostile warbands. Individual orcs should be judged by their actions, not their race.</li></ul><p class="small">No race is automatically good or evil. Individual behaviour matters. Orcs can be allies, enemies, companions, leaders, traders, villagers or anything else the story naturally supports.</p></div>
-  <div class="card"><h3>✨ The Six Schools of Magic</h3><p>Mana is a natural energy present throughout the world. A person who can use magic can learn any recognised school, but serious practitioners normally specialise in one. Specialisation means deeper mastery, not exclusive access.</p><ul><li><b>Healing</b> — restoration, cleansing and recovery. <b>Sylvara specialises here.</b></li><li><b>Elemental</b> — fire, ice, lightning, wind, earth and other elemental forces.</li><li><b>Enhancement</b> — temporarily strengthens physical attributes such as speed, strength, reflexes and endurance.</li><li><b>Enchantment</b> — gives weapons, armour and objects magical properties.</li><li><b>Warding</b> — barriers, seals, protection and defensive magic.</li><li><b>Necromancy</b> — manipulation of death, corpses and life-force. It is forbidden, feared and dangerous.</li></ul><p>Mana gradually returns through sleep, meditation and proper rest. Using too much too quickly can cause severe headaches or migraines. Recklessly exhausting all available mana can cause catastrophic backlash and, in extreme cases, death.</p><p><b>Shane is an outlier.</b> He cannot use Healing magic, but his unusual aptitude lets him develop the other schools more freely than most specialists. He is not automatically better at everything — his advantage should become apparent gradually through actual use and effort.</p></div>
-  <div class="card"><h3>🌳 Magical Resources</h3><p>Some rare trees, herbs, crystals and other natural resources hold unusually concentrated mana. Certain old trees are known for producing materials used in healing, elemental, warding or enchanting work. Necromantic practitioners may seek corrupted resources, but such practices are dangerous and illegal in many regions.</p></div>
-  <div class="card"><h3>🐉 Creatures & Nest Jobs</h3><p>The wilds contain everything from nuisance pests to genuine monsters. Adventurers are regularly hired to clear nests, lairs and infestations, and new creatures can appear as the party travels.</p><p class="small">Possible threats include goblins, kobolds, giant spiders, magically altered wolves, bog imps, harpies, wyverns, drakes, basilisks, trolls, manticores, wraiths, revenants, treants, gargoyles, sirens, fae creatures, shadow beasts, gryphons and other region-specific mystical creatures. Not every creature is hostile, and danger varies by individual and circumstance.</p></div>
-  <div class="card"><h3>🏰 Dungeons & Ancient Ruins</h3><p>Dungeons are scattered throughout the world: buried temples, abandoned fortresses, forgotten mines, underground cities, crypts, magical laboratories, collapsed keeps and older places whose original purpose has been lost to history. Some are natural caverns that have become monster lairs; others were deliberately built and can contain multiple levels, sealed chambers, traps, puzzles, hidden passages and powerful guardians.</p><p>Dungeons are not simply combat arenas. Exploration, preparation, navigation, resource management, deciphering clues, negotiating with inhabitants and deciding when to retreat can matter as much as fighting. Different dungeons should have their own atmosphere, history, hazards and logic.</p><p>Rewards can include ordinary treasure, useful equipment, rare crafting materials, forgotten records, magical artefacts, maps, keys or information that changes what the party understands about the wider world. A dungeon may also contain friendly, neutral or intelligent inhabitants, and not every apparent threat has to be defeated.</p></div>
-  <div class="card"><h3>⚔️ Adventurers & Reputation</h3><p>Adventuring is dangerous work: monster nests, ruins, escorts, missing-person searches, relic recovery and settlement contracts are all common. Reputation is earned through what people actually see you do.</p><p>Relationships work the same way. Characters begin as strangers or acquaintances unless the story establishes otherwise. Trust, affection, respect and friendship must be earned through meaningful interactions. Positive changes are deliberately gradual rather than automatic.</p></div>
-  <div class="card"><h3>💜 Sylvara</h3><p>Sylvara Aelthara is not an ordinary elf. She is a goddess who has been brought into the mortal world without becoming truly mortal. Her divine power is heavily limited here, leaving her with only a fraction of what she once commanded. Healing is therefore her primary practical discipline.</p><p>She begins with Shane as an acquaintance. She may find him amusing, charming or unexpectedly interesting when he gives her genuine reason to, but she will not instantly fall for him. Her trust and affection should grow only when Shane puts in the work.</p></div>
+  <div class="card"><h2>📜 World Lore</h2><p class="small">This page is loaded from the active scenario. The story AI treats the imported scenario as this campaign's canon.</p></div>
+  <div id="scenarioLoreContent"></div>
 </section>
 
 <section id="game" class="tab">
@@ -102,6 +102,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <label>Text colour</label>
     <select id="theme" onchange="setTheme(this.value)"><option value="dark">White text / dark</option><option value="light">Black text / light</option></select>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
+    <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPlayerPicker()">🎭 Change player character</button><span id="activePlayerLabel" class="small"></span></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
       <h3>🧠 Local Story AI</h3>
       <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local AI to write the story</label>
@@ -110,7 +111,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
       <input id="aiEndpoint" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434/api/chat">
       <p class="small">Default: Ollama. On Android, <b>127.0.0.1</b> means the phone itself. If Ollama is running on your PC, enter the PC's local network address instead.</p>
       <label for="aiModel">Local model</label>
-      <input id="aiModel" type="text" autocomplete="off" placeholder="qwen3:8b">
+      <input id="aiModel" type="text" autocomplete="off" placeholder="Gemma 4 E2B (on-device)">
       <div class="actions" style="margin-top:8px">
         <button class="btn" id="downloadAIButton" onclick="downloadLocalAI()">⬇ Download local AI</button>
         <button class="btn" onclick="saveAISettings()">Save AI settings</button>
@@ -182,12 +183,12 @@ const defaultState={
    {type:'gm',text:"Far ahead, a faint violet light appears. It is little more than a pinprick at first, but it slowly grows brighter, drawing closer without seeming to move."},
    {type:'gm',text:"The darkness finally gives way to an enormous ancient chamber. Violet runes glow across towering stone pillars, their light spilling across worn stone beneath Shane's feet."},
    {type:'gm',text:"At the far end of the chamber stands a woman in a deep violet cloak. Sylvara Aelthara watches him in silence. Her expression is difficult to read, but there is no obvious hostility in her eyes."},
-  ], background:null, scenarioId:'default-sylvara', scenarioName:'First Sight of Sylvara', scenarioType:'sylvara', playerMemory:[], sharedFacts:[], characterKnowledge:{Shane:[]}, relationshipEvents:[], inGameDay:1, timeOfDay:'morning', currentLocation:'Unknown location', scenarioSpec:{}, longTermMemory:{worldFacts:[],events:[],characterMemories:{},unresolved:[]}, npcs:[]
+  ], background:null, scenarioId:'default-sylvara', scenarioName:'First Sight of Sylvara', scenarioType:'sylvara', playerCharacterName:'Shane', playerCandidates:['Shane'], openingComplete:true, playerMemory:[], sharedFacts:[], characterKnowledge:{Shane:[]}, relationshipEvents:[], inGameDay:1, timeOfDay:'morning', currentLocation:'Unknown location', scenarioSpec:{}, longTermMemory:{worldFacts:[],events:[],characterMemories:{},unresolved:[]}, npcs:[]
 };
 let state=loadState();
 
 const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
-const LOCAL_AI_DEFAULT_MODEL='qwen3:8b';
+const LOCAL_AI_DEFAULT_MODEL='Gemma 4 E2B (on-device)';
 let aiSettings=loadAISettings();
 let aiLastError=localStorage.getItem(KEY+'_ai_error')||'';
 function loadAISettings(){
@@ -236,7 +237,7 @@ function localAIRequest(endpoint,payload){
     return new Promise((resolve,reject)=>{
       const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
       if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
-      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},120000);
+      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out after 180 seconds'));},180000);
       window.__darkFantasyAIResolvers[id]=(ok,body)=>{
         clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
         if(ok){
@@ -374,15 +375,51 @@ window.__localAIStatus=function(message){
   }
   updateNativeAIControls();
 };
-function scrubInvalidLoreText(s){
-  if(!s||typeof s!=='object')return s;
-  const replace=(v)=>typeof v==='string'?v.replace(/\bElvhen\b/gi,'elven').replace(/\bbeastfolk\b/gi,'demonfolk'):v;
-  if(Array.isArray(s.story))s.story=s.story.map(e=>({...e,text:replace(e?.text)}));
-  if(Array.isArray(s.sharedFacts))s.sharedFacts=s.sharedFacts.map(replace);
-  if(Array.isArray(s.playerMemory))s.playerMemory=s.playerMemory.map(replace);
-  if(s.characterKnowledge&&typeof s.characterKnowledge==='object')Object.keys(s.characterKnowledge).forEach(k=>{s.characterKnowledge[k]=Array.isArray(s.characterKnowledge[k])?s.characterKnowledge[k].map(replace):[]});
-  return s;
+function scrubInvalidLoreText(s){ return s; }
+function activePlayer(){
+  const name=String(state?.playerCharacterName||'').trim();
+  return (state?.party||[]).find(p=>p.name===name) || null;
 }
+function playerName(){ return activePlayer()?.name || 'your character'; }
+function isActivePlayer(p){ return !!p && String(p.name||'')===String(state?.playerCharacterName||''); }
+function isPlayerCandidate(p){ return !!p && (p.control==='player' || p.control==='inactive-player' || /\bplayer(?: character)?\b/i.test(String(p.role||'')) || p.playerControlled===true); }
+function playerModalOpen(){ return document.getElementById('playerModal')?.classList.contains('open'); }
+function openPlayerPicker(){
+  const choices=document.getElementById('playerChoices'); if(!choices)return;
+  const names=Array.isArray(state.playerCandidates)?state.playerCandidates:[];
+  const candidates=names.map(n=>state.party.find(p=>p.name===n)).filter(Boolean);
+  if(!candidates.length){closePlayerPicker();return;}
+  choices.innerHTML=candidates.map((p,i)=>`<button class="btn" style="display:block;width:100%;text-align:left;margin:8px 0;padding:14px" type="button" onclick="selectPlayerCharacter(${i})"><b>${esc(p.name)}</b><div class="small" style="margin-top:4px">${esc(p.role||'Player character')} · ${esc(p.age||'')} · ${esc(p.race||'Human')}</div><div class="small" style="margin-top:5px">${esc(p.personality||'Personality loaded from character file.')}</div></button>`).join('');
+  choices.dataset.names=JSON.stringify(names);
+  const modal=document.getElementById('playerModal'); if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');}
+}
+function closePlayerPicker(){const modal=document.getElementById('playerModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');}}
+async function selectPlayerCharacter(index){
+  let names=[];try{names=JSON.parse(document.getElementById('playerChoices')?.dataset.names||'[]')}catch(e){}
+  const name=names[index]; const chosen=state.party.find(p=>p.name===name); if(!chosen)return;
+  state.playerCharacterName=name;
+  for(const p of state.party){
+    if(isPlayerCandidate(p)){p.control=(p.name===name?'player':'inactive-player');p.playerControlled=(p.name===name);}
+  }
+  if(!state.characterKnowledge[name])state.characterKnowledge[name]=Array.isArray(chosen.knowledge)?structuredClone(chosen.knowledge):[];
+  await save(); render(); closePlayerPicker(); toast(`You are playing as ${name}`);
+}
+function maybeOpenPlayerPicker(){
+  if(state.playerCharacterName && activePlayer())return;
+  if(Array.isArray(state.playerCandidates)&&state.playerCandidates.length)openPlayerPicker();
+}
+function scenarioLoreHtml(spec){
+  const escv=v=>esc(typeof v==='string'?v:JSON.stringify(v,null,2));
+  const list=(arr)=>Array.isArray(arr)&&arr.length?`<ul>${arr.map(v=>`<li>${escv(typeof v==='object'?(v.name?`${v.name}: ${v.description||''}`:v):v)}</li>`).join('')}</ul>`:'<p class="small">None established.</p>';
+  const s=spec||{}; const w=s.world||{}, l=s.lore||{};
+  return `<div class="card"><h3>🌍 ${escv(w.setting||s.name||'Current world')}</h3><p>${escv(s.description||'')}</p><div class="canon-box"><b>Setting</b><div class="small">${escv(w.setting||'Not specified')}</div><div class="small">Region: ${escv(w.region||'Not specified')}</div><div class="small">Magic / supernatural: ${escv(w.magic||l.magicLore||'Not specified')}</div></div></div>
+  <div class="card"><h3>📖 Lore & history</h3><p>${escv(l.history||'No additional history established.')}</p>${Array.isArray(l.cultures)&&l.cultures.length?`<b>Cultures</b>${list(l.cultures)}`:''}</div>
+  <div class="card"><h3>🏛️ Factions</h3>${list(s.factions)}</div>
+  <div class="card"><h3>📍 Locations</h3>${list(s.locations)}</div>
+  <div class="card"><h3>📜 Rules</h3>${list(s.rules)}</div>
+  <div class="card"><h3>🧵 Story threads</h3>${list(s.storyThreads)}</div>`;
+}
+
 function normalizeState(s){
   s=scrubInvalidLoreText(s);
   const d=structuredClone(defaultState);
@@ -391,14 +428,13 @@ function normalizeState(s){
   out.attributes={...d.attributes,...(x.attributes||{})};
   out.items=Array.isArray(x.items)?x.items:[];
   out.party=Array.isArray(x.party)&&x.party.length?x.party:d.party;
-  out.party=out.party.map(p=>({level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',...p}));
-  const sylvara=out.party.find(p=>p.name==='Sylvara Aelthara');
-  if(sylvara){
-    sylvara.visualCanon='Violet eyes are canonical and must never be changed to pale, blue, grey, silver, green or any other eye colour. Deep violet/purple fantasy presentation. Her appearance must remain consistent with her established portrait. Do not invent changes to her physical appearance unless the story explicitly causes them.';
-    sylvara.behaviourCanon='Perceptive, articulate, quietly protective, emotionally perceptive, reserved with strangers, warmer and more playful as trust grows. Use varied, situation-specific body language; do not repeatedly use eyebrow gestures, measured breaths, faint smiles, steady gazes or similar filler.';
-    sylvara.magicEffects='Healing magic can cause a subtle violet glow in her eyes and/or a soft violet radiance around her hands when she is actively channelling magic. The glow should be used only when magic is actually being used and can intensify for stronger magic.';
-  }
-  if(!out.party.some(p=>p.name==='Shane'))out.party.unshift(d.party[0]);
+  out.party=out.party.map(p=>({level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',control:'npc',playerControlled:false,...p}));
+  out.playerCharacterName=String(x.playerCharacterName||'').trim() || (String(x.scenarioType||'')==='sylvara'?'Shane':'');
+  out.playerCandidates=Array.isArray(x.playerCandidates)?x.playerCandidates.slice():out.party.filter(isPlayerCandidate).map(p=>p.name);
+  if(!out.playerCandidates.length)out.playerCandidates=out.party.filter(isPlayerCandidate).map(p=>p.name);
+  if(String(out.scenarioType||'')==='sylvara' && !out.party.some(p=>p.name==='Shane')){const sh=structuredClone(d.party[0]);sh.control='player';sh.playerControlled=true;out.party.unshift(sh);}
+  for(const p of out.party){if(p.name===out.playerCharacterName){p.control='player';p.playerControlled=true;}else if(isPlayerCandidate(p)){p.control='inactive-player';p.playerControlled=false;}}
+  out.openingComplete=x.openingComplete!==undefined?!!x.openingComplete:(String(out.scenarioType||'')!=='imported-scenario');
   out.story=Array.isArray(x.story)&&x.story.length?x.story:d.story;
   out.story=out.story.filter(e=>e);
   if(out.scenarioType==='sylvara'&&!out.story.some(e=>e.type==='image')){const idx=out.story.findIndex(e=>String(e.text||'').includes('Sylvara Aelthara watches')); out.story.splice(idx>=0?idx+1:out.story.length,0,{type:'image',src:OPENING_SCENE_IMAGE,caption:'The First Sight of Sylvara'});}
@@ -488,7 +524,7 @@ function toast(t){let x=document.getElementById('toast');x.textContent=t;x.style
 function render(){
  const title=document.querySelector('#story h2'); if(title)title.textContent=state.scenarioName||'Story';
  renderScenarios();
- document.getElementById('level').textContent=state.level;
+ const ap=activePlayer(); const apName=ap?.name||'Player'; document.getElementById('level').textContent=state.level; const statsTitle=document.querySelector('#stats h2'); if(statsTitle)statsTitle.innerHTML=`${esc(apName)} — Level <span id="level">${state.level}</span>`;
  document.getElementById('hp').textContent=state.hp+' / '+state.maxHp;
  document.getElementById('mana').textContent=state.mana+' / '+state.maxMana;
  document.getElementById('xp').textContent=state.xp;
@@ -496,15 +532,18 @@ function render(){
  document.getElementById('attributes').innerHTML=Object.entries(state.attributes).map(([k,v],i)=>`<div class="row"><span>${i+1}. ${k}</span><b>${v}</b></div>`).join('');
  document.getElementById('items').innerHTML=state.items.length?state.items.map((i,n)=>`<div class="row"><span>${esc(i.name)}</span><span>x${i.qty} <button class="btn" onclick="removeItem(${n})">Remove</button></span></div>`).join(''):'<p class="small">Nothing in inventory.</p>';
  const pt=document.getElementById('partyTitle');if(pt)pt.textContent=`👥 Characters — ${state.scenarioName||'Current World'}`;
- const partyHtml=state.party.map((p,i)=>`<div class="card character"><div class="character-top"><img class="portrait" src="${p.image||placeholder(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${p.level} · ${esc(p.race||'Unknown race')}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div>${p.name!=='Shane'?`<div class="small">${bondLabel(Number(p.bond)||20)} · Trust ${Number(p.trust??20)} · Affection ${Number(p.affection??20)}</div>`:''}</div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="toggleCharacterMenu(${i})" aria-label="Character options">⋮</button><div class="character-menu" id="charMenu${i}"><button type="button" onclick="openCharacterDetails(${i})">View character details</button><button type="button" onclick="exportCharacter(${i})">📤 Export character</button>${p.name!=='Shane'?`<button type="button" onclick="openCharacterDetails(${i})">View relationship</button>`:''}</div></div></div></div>`).join('');
+ const partyHtml=state.party.map((p,i)=>`<div class="card character"><div class="character-top"><img class="portrait" src="${p.image||placeholder(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${isActivePlayer(p)?'Player Character':(p.control==='inactive-player'?'Playable Character':'AI Character')} · Level ${p.level} · ${esc(p.race||'Unknown race')}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div>${!isActivePlayer(p)?`<div class="small">${bondLabel(Number(p.bond)||20)} · Trust ${Number(p.trust??20)} · Affection ${Number(p.affection??20)}</div>`:''}</div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="toggleCharacterMenu(${i})" aria-label="Character options">⋮</button><div class="character-menu" id="charMenu${i}"><button type="button" onclick="openCharacterDetails(${i})">View character details</button><button type="button" onclick="exportCharacter(${i})">📤 Export character</button>${!isActivePlayer(p)?`<button type="button" onclick="openCharacterDetails(${i})">View relationship</button>`:''}</div></div></div></div>`).join('');
  const npcHtml=(state.npcs||[]).filter(n=>n.persistence==='persistent').map(n=>`<div class="card npc-card"><img class="npc-mini" src="${n.appearance||placeholder(n.name)}"><div><b>${esc(n.name)}</b><div class="small">Persistent NPC · ${esc(n.race||'Unknown race')} · ${esc(n.age||'adult')}</div><div class="small">${esc(n.role||'resident')} · ${esc(n.location||state.currentLocation||'Unknown location')}</div><div class="small">${esc(n.personality||'')}</div></div></div>`).join('');
  document.getElementById('partyList').innerHTML=partyHtml+(npcHtml?`<div class="character-section-label">Persistent people in this world</div>${npcHtml}`:'');
- document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><div class="character-top" style="flex:1;min-width:0"><img class="portrait" src="${p.image||placeholder(p.name)}" alt="${esc(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${p.name==='Shane'?'Player Character':'Companion'} · Level ${Number(p.level)||1}</div></div></div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="togglePictureMenu(${n},event)" aria-label="Picture options">⋮</button><div class="picture-menu" id="pictureMenu${n}"><button type="button" onclick="pictureAction(event,'upload',${n})">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removePic(${n})">🗑️ Remove picture</button>`:''}${p.name!=='Shane'&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removeCharacter(${n})">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
- document.getElementById('relationships').innerHTML=state.party.filter(p=>p.name!=='Shane').map(p=>{let i=state.party.indexOf(p);let bond=Math.max(0,Math.min(100,Number(p.bond)||20));let rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
+ document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><div class="character-top" style="flex:1;min-width:0"><img class="portrait" src="${p.image||placeholder(p.name)}" alt="${esc(p.name)}"><div class="character-info"><b>${esc(p.name)}</b><div class="small">${isActivePlayer(p)?'Player Character':(p.control==='inactive-player'?'Playable Character':'AI Character')} · Level ${Number(p.level)||1}</div></div></div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="togglePictureMenu(${n},event)" aria-label="Picture options">⋮</button><div class="picture-menu" id="pictureMenu${n}"><button type="button" onclick="pictureAction(event,'upload',${n})">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removePic(${n})">🗑️ Remove picture</button>`:''}${!isPlayerCandidate(p)&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removeCharacter(${n})">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
+ document.getElementById('relationships').innerHTML=state.party.filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').map(p=>{let i=state.party.indexOf(p);let bond=Math.max(0,Math.min(100,Number(p.bond)||20));let rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
  const re=document.getElementById('relationshipEvents'); if(re){const ev=Array.isArray(state.relationshipEvents)?state.relationshipEvents.slice(-5).reverse():[]; re.innerHTML=ev.length?'<b>Recent changes</b><br>'+ev.map(e=>`• ${esc(e.text)}`).join('<br>'):'No relationship changes yet. When a bond changes, the game will show you what improved or worsened.';}
+  const apl=document.getElementById('activePlayerLabel'); if(apl)apl.textContent=activePlayer()?`Playing as ${activePlayer().name}`:'No player selected';
+  const loreEl=document.getElementById('scenarioLoreContent'); if(loreEl) loreEl.innerHTML=scenarioLoreHtml(state.scenarioSpec||{});
+  const picker=document.getElementById('playerChoices'); if(picker&&!playerModalOpen()&&(!state.playerCharacterName||!activePlayer())&&Array.isArray(state.playerCandidates)&&state.playerCandidates.length){}
   const log=document.getElementById('storyLog');
   log.innerHTML=state.story.map(e=>{
-    const speaker=e.type==='player'?'Shane':(e.speaker||'Narrator');
+    const speaker=e.type==='player'?playerName():(e.speaker||'Narrator');
     const isNarrator=!e.speaker && e.type!=='player';
     const cls=isNarrator?'narrator':'character';
     const person=state.party.find(p=>p.name===speaker);
@@ -559,32 +598,48 @@ function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;',
 let storyBusy=false;
 function setStoryBusy(busy){
   storyBusy=busy;
-  const area=document.getElementById('action');
+  const area=document.getElementById('action'); if(area){area.placeholder=activePlayer()?`What does ${playerName()} do or say?`:'Choose your player character first';area.disabled=!!busy||!activePlayer();}
   const button=document.querySelector('.action-card .btn');
   if(area){area.classList.toggle('story-busy',busy);}
-  if(button){button.disabled=busy; button.textContent=busy?'Writing…':'Send';}
+  if(button){button.disabled=busy||!activePlayer(); button.textContent=busy?'Writing…':'Send';}
   const hint=document.querySelector('.action-card .small');
   if(hint) hint.textContent=busy?'The story is responding… take a moment to read.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function buildStoryContext(){
-  const recent=state.story.slice(-16).map(e=>{
-    const who=e.type==='player'?'Shane':(e.speaker||'Narrator');
+  const recent=state.story.slice(-12).map(e=>{
+    const who=e.type==='player'?playerName():(e.speaker||'Narrator');
     return `${who}: ${String(e.text||'')}`;
   }).join('\n');
-  const party=state.party.map(p=>{const visual=p.visualCanon?` visual canon: ${p.visualCanon}`:' visual canon: not yet established';const behaviour=p.behaviourCanon?` behaviour canon: ${p.behaviourCanon}`:'';const magic=p.magicEffects?` magic effects: ${p.magicEffects}`:'';return `${p.name} (${p.race||'Human'}, Lv ${p.level}, magic: ${p.magicSpecialisation||'Undeclared'}, bond ${Number(p.bond)||0}, reputation ${Number(p.reputation)||0})${visual}${behaviour}${magic}`}).join('; ');
-  const sharedFacts=state.sharedFacts.length?state.sharedFacts.map(f=>`- ${f}`).join('\n'):'- None recorded yet.';
-  const memories=state.playerMemory.length?state.playerMemory.map(f=>`- ${f}`).join('\n'):'- Shane has not supplied any special past-memory details yet.';
-  const knowledge=Object.entries(state.characterKnowledge).map(([name,facts])=>`${name}: ${facts.length?facts.map(f=>`[${f}]`).join(' '):'[No special private knowledge recorded]'}`).join('\n');
+  const activeParty=state.party.filter(p=>p.control!=='inactive-player'); const party=activeParty.map(p=>`${p.name} (${p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED'}, ${p.race||'Human'}, role: ${p.role||'unknown'}, bond ${Number(p.bond)||0}, trust ${Number(p.trust)||0}, affection ${Number(p.affection)||0}, tension ${Number(p.tension)||0})`).join('; ');
+  const sharedFacts=state.sharedFacts.length?state.sharedFacts.slice(-30).map(f=>`- ${f}`).join('\n'):'- None recorded yet.';
+  const memories=state.playerMemory.length?state.playerMemory.slice(-20).map(f=>`- ${f}`).join('\n'):'- None supplied.';
+  const knowledge=Object.entries(state.characterKnowledge).map(([name,facts])=>`${name}: ${facts.length?facts.slice(-8).map(f=>`[${f}]`).join(' '):'[No private knowledge recorded]'}`).join('\n');
   const ltm=state.longTermMemory||{};
-  const worldMemory=(ltm.worldFacts||[]).slice(-40).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  const eventMemory=(ltm.events||[]).slice(-50).map(e=>`- Day ${e.day||'?'} (${e.location||'unknown'}): ${e.text}`).join('\n')||'- None recorded.';
-  const unresolved=(ltm.unresolved||[]).slice(-20).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  const npcMemory=(state.npcs||[]).filter(n=>n.persistence==='persistent').slice(-40).map(n=>`${n.name} | ${n.race} | ${n.role} | ${n.age} | ${n.location} | ${n.personality} | ${n.description||''} | knows: ${(n.knowledge||[]).slice(-8).join('; ')}`).join('\n')||'No persistent NPCs yet.';
+  const worldMemory=(ltm.worldFacts||[]).slice(-25).map(f=>`- ${f}`).join('\n')||'- None recorded.';
+  const eventMemory=(ltm.events||[]).slice(-25).map(e=>`- Day ${e.day||'?'} (${e.location||'unknown'}): ${e.text}`).join('\n')||'- None recorded.';
+  const unresolved=(ltm.unresolved||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
+  const npcMemory=(state.npcs||[]).filter(n=>n.persistence==='persistent').slice(-20).map(n=>`${n.name} | ${n.race} | ${n.role} | ${n.age} | ${n.location} | ${n.personality} | knows: ${(n.knowledge||[]).slice(-6).join('; ')}`).join('\n')||'No persistent NPCs yet.';
   const worldProfile=state.worldProfile||{};
-  const worldSummary=Object.entries(worldProfile).filter(([k,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v}`).join('\n')||'Use the established core world rules.';
-  const scenarioSpec=state.scenarioSpec&&Object.keys(state.scenarioSpec).length?JSON.stringify(state.scenarioSpec,null,2):'No imported scenario blueprint; use the established campaign facts.';
-  const characterProfiles=state.party.map(p=>({name:p.name,race:p.race,age:p.age||'',role:p.role||'',personality:p.personality||'',appearance:p.appearance||'',visualCanon:p.visualCanon||'',behaviourCanon:p.behaviourCanon||'',speechStyle:p.speechStyle||'',likes:p.likes||[],dislikes:p.dislikes||[],fears:p.fears||[],goals:p.goals||[],secrets:p.secrets||[],morals:p.morals||'',relationshipGuidance:p.relationshipGuidance||'',knowledge:state.characterKnowledge[p.name]||[]}));
+  const worldSummary=Object.entries(worldProfile).filter(([k,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v}`).join('\n')||'Use established campaign rules.';
+  // The imported blueprint may contain the full character list. Do not send it twice.
+  // Keep the world/setting canon here and send character canon separately in compact form.
+  let spec={};
+  if(state.scenarioSpec&&typeof state.scenarioSpec==='object'){
+    spec=structuredClone(state.scenarioSpec);
+    delete spec.characters;
+    delete spec.currentState;
+  }
+  const scenarioSpec=Object.keys(spec).length?JSON.stringify(spec,null,2):'No imported scenario blueprint; use the established campaign facts.';
+  const characterProfiles=activeParty.map(p=>({
+    name:p.name,control:p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED',race:p.race||'Human',age:p.age||'',role:p.role||'',
+    personality:p.personality||'',appearance:p.appearance||'',
+    speechStyle:p.speechStyle||'',behaviourCanon:p.behaviourCanon||'',
+    likes:(p.likes||[]).slice(0,8),dislikes:(p.dislikes||[]).slice(0,8),
+    goals:(p.goals||[]).slice(0,6),fears:(p.fears||[]).slice(0,6),secrets:(p.secrets||[]).slice(0,6),morals:p.morals||'',
+    relationshipGuidance:p.relationshipGuidance||'',magicEffects:p.magicEffects||'',
+    knowledge:(state.characterKnowledge[p.name]||[]).slice(-8)
+  }));
   return {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary,scenarioSpec,characterProfiles};
 }
 function parseNarrativeEntries(text){
@@ -614,7 +669,7 @@ async function callStoryAI(action,correctedSource){
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
   const {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary,scenarioSpec,characterProfiles}=buildStoryContext();
-  const prompt=`You are the game master and narrative engine for Shane's Dark Fantasy RPG.
+  const prompt=`You are the game master and narrative engine for the current imported RPG scenario.
 
 YOUR JOB:
 - Run the world and write the next natural scene in response to Shane's latest action.
@@ -622,9 +677,9 @@ YOUR JOB:
 - Write the scene itself. Let the world, characters, atmosphere, dialogue and consequences flow naturally.
 
 NON-NEGOTIABLE CONTINUITY RULES:
-- Shane is controlled ONLY by the player. Never invent Shane's thoughts, feelings, dialogue, choices, memories, injuries, abilities, secrets, or actions beyond what the player explicitly supplied.
-- Shane keeps his normal personal memories. Do NOT make him astrally sensitive, psychically aware, magically omniscient, or mysteriously amnesiac unless the player explicitly establishes that in the story.
-- Past-life memories may appear only when the player supplies them or when the story has already established a credible reason for a memory to surface. Do not invent the content of Shane's past.
+- The active player character is ${playerName()}. They are controlled ONLY by the player. Never invent their thoughts, feelings, dialogue, choices, memories, injuries, abilities, secrets, or actions beyond what the player explicitly supplied.
+- The active player character keeps the personal memories supplied by their character file. Do not invent supernatural awareness, hidden abilities, amnesia or other major traits unless the scenario or player establishes them.
+- Do not invent past-life memories or hidden history for the active player character.
 - A character can know only what they personally witnessed, were explicitly told, or is already listed in that character's knowledge. Never give a character information merely because the narrator or another character knows it.
 - Never have someone identify a hidden injury, secret, private conversation, item, event, or intention they could not have observed or learned about.
 - Do not retroactively treat a character as having helped with an injury or event unless the story explicitly showed that happening.
@@ -685,7 +740,7 @@ ${JSON.stringify(characterProfiles,null,2)}
 IN-GAME DATE: Day ${state.inGameDay||1}, ${state.timeOfDay||'morning'}
 CURRENT LOCATION: ${state.currentLocation||'Unknown location'}
 CURRENT PARTY: ${party}
-SHANE'S SUPPLIED PERSONAL MEMORIES:
+PLAYER'S SUPPLIED PERSONAL MEMORIES:
 ${memories}
 SHARED ESTABLISHED FACTS:
 ${sharedFacts}
@@ -817,18 +872,20 @@ async function testAI(){
   aiSettings={...aiSettings,endpoint,model,enabled:true};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   const status=document.getElementById('aiStatus');
-  if(status)status.textContent='Testing local AI…';
+  if(status)status.textContent='Testing the local model directly…';
   toast('Testing local AI…');
   try{
-    const testAction='*Local AI test: describe the current scene naturally in one or two short paragraphs without changing the player\'s action or inventing new canon.*'; const result=await callStoryAI(testAction,testAction);
-    if(result.entries?.length){
-      aiLastError='';
-      localStorage.removeItem(KEY+'_ai_error');
-      if(status)status.textContent='✓ Local AI is working — '+model+' responded successfully.';
-      toast('✓ Local AI works');
-    }else throw new Error('Local AI returned no scene beat');
+    const payload={model,messages:[
+      {role:'system',content:'You are a local RPG narrative model. Reply with one natural, short paragraph. Do not use JSON, headings or metadata.'},
+      {role:'user',content:'A player has just entered a modern English house and looks around. Describe what happens next in 2 or 3 natural sentences.'}
+    ],stream:false};
+    const data=await localAIRequest(endpoint,payload);
+    const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
+    if(!text)throw new Error('Local AI returned no text');
+    aiLastError='';localStorage.removeItem(KEY+'_ai_error');
+    if(status)status.textContent='✓ Local AI is responding — '+model+'.';
+    toast('✓ Local AI works');
   }catch(e){
-    console.error(e);
     const msg=String(e?.message||e||'Unknown error').replace(/\s+/g,' ').trim();
     aiLastError='✗ Local AI test failed: '+msg;
     localStorage.setItem(KEY+'_ai_error',aiLastError);
@@ -836,8 +893,8 @@ async function testAI(){
     toast('✗ Local AI test failed — see AI status');
   }
 }
-
 async function addAction(){
+  if(!activePlayer()){openPlayerPicker();toast('Choose your player character first');return;}
   if(storyBusy)return;
   const area=document.getElementById('action'); if(!area)return;
   const raw=area.value; if(!raw.trim())return;
@@ -890,14 +947,14 @@ async function addAction(){
     }catch(err){
       console.error(err);
       const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
-      if(aiSettings.enabled){
-        aiLastError='✗ Local AI failed: '+detail;
-        localStorage.setItem(KEY+'_ai_error',aiLastError);
-        const aiStatus=document.getElementById('aiStatus'); if(aiStatus)aiStatus.textContent=aiLastError;
-        toast('Local AI failed — built-in response used.');
-      }else{
-        const reaction=characterReaction(v); const entries=reaction?reaction.entries.filter(e=>!isDuplicateEntry(e)):[];
+      aiLastError='✗ Local AI failed: '+detail;
+      localStorage.setItem(KEY+'_ai_error',aiLastError);
+      const aiStatus=document.getElementById('aiStatus'); if(aiStatus)aiStatus.textContent=aiLastError;
+      const reaction=characterReaction(v); const entries=reaction?reaction.entries.filter(e=>!isDuplicateEntry(e)):[];
+      if(entries.length){
         for(const entry of entries){state.story.push(entry);await save();render();keepStoryAtLatest();}
+      }else{
+        toast('Local AI failed — your action was saved.');
       }
     }finally{setStoryBusy(false);area.focus({preventScroll:true});}
   }catch(err){
@@ -924,40 +981,10 @@ function isDuplicateEntry(entry){
 }
 
 function characterReaction(text){
-  let lower=text.toLowerCase();
-  let target=state.party.filter(p=>p.name!=='Shane').find(p=>lower.includes(p.name.toLowerCase())) || state.party.find(p=>p.name==='Sylvara Aelthara') || state.party.find(p=>p.name!=='Shane');
-  if(!target)return null;
-
-  let delta=0,rep=0;
-  if(/\b(hello|hi|hey|beautiful|lovely|thank|thanks|care|trust|safe|protect|sorry|apolog|please|kind|love|like|friend|help|stay|with me)\b/.test(lower)){delta=2;rep=2}
-  if(/\b(you\s+are\s+(?:safe|not alone)|i\s+(?:trust|care about|need)|i\s+will\s+protect)\b/.test(lower)){delta=4;rep=3}
-  if(/\b(leave|hate|idiot|stupid|shut up|threat|attack|hurt|betray|betrayal)\b/.test(lower)){rep=-5}
-
-  const hasApproach=/\b(walk|approach|step|move|go|near|closer)\b/.test(lower);
-  const hasObserve=/\b(look|watch|study|examine|observe|see|stare)\b/.test(lower);
-  const hasQuestion=/\b(ask|who|what|where|why|how|name|may i know)\b/.test(lower);
-  const actionType=hasApproach?'approach':
-    hasObserve&&hasQuestion?'observe-question':
-    hasObserve?'observe':
-    hasQuestion?'question':
-    /\b(wait|stand|sit|stay|pause)\b/.test(lower)?'wait':'general';
-
-  if(delta>0) target.bond=Math.max(0,Math.min(100,(Number(target.bond)||20)+delta));
-  target.reputation=Math.max(-100,Math.min(100,(Number(target.reputation)||0)+rep));
-
-  let entry;
-  if(target.name==='Sylvara Aelthara'){
-    if(rep<0) entry={type:'character',speaker:target.name,text:"Sylvara's expression stills. She studies Shane carefully, then says quietly, \"Choose your words carefully, Shane.\" The warning is clear, but she does not step away."};
-    else if(actionType==='approach') entry={type:'character',speaker:target.name,text:"As Shane approaches, Sylvara remains where she is and meets his gaze. A faint, curious smile touches her expression. \"You are awake, then,\" she says softly."};
-    else if(actionType==='observe-question') entry={type:'character',speaker:target.name,text:"Sylvara notices that Shane is openly studying her before answering his question. She does not seem offended; instead, one eyebrow lifts with quiet amusement. \"You may call me Sylvara,\" she says, holding his gaze."};
-    else if(actionType==='observe') entry={type:'character',speaker:target.name,text:"Sylvara notices Shane openly taking her in rather than merely surveying the chamber. She gives him a moment, meeting his gaze without looking away. \"Something has caught your attention,\" she says softly."};
-    else if(actionType==='question') entry={type:'character',speaker:target.name,text:"Sylvara listens to Shane's question without rushing to answer. Her eyes remain on him. \"Ask, Shane. I will answer what I can.\""};
-    else if(actionType==='wait') entry={type:'character',speaker:target.name,text:"The silence settles between them. Sylvara does not seem uncomfortable with it; she simply watches Shane patiently. \"Take your time,\" she says."};
-    else if(delta>0) entry={type:'character',speaker:target.name,text:"Sylvara's guarded expression softens slightly. She seems to appreciate the warmth behind Shane's words. \"That is kind of you,\" she says quietly."};
-    else entry={type:'character',speaker:target.name,text:"Sylvara studies Shane with quiet curiosity. She seems more interested in what he means than in judging how he says it. \"Tell me what you are thinking,\" she says."};
-  }else{
-    entry={type:'character',speaker:target.name,text:target.name+' listens carefully and responds to what Shane has just done. The moment settles there, leaving the next move to Shane.'};
-  }
+  const lower=String(text||'').toLowerCase();const candidates=state.party.filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player');
+  let target=candidates.find(p=>lower.includes(String(p.name||'').toLowerCase()))||candidates[0];if(!target)return null;
+  const promptName=playerName();
+  const entry={type:'character',speaker:target.name,text:`${target.name} responds to ${promptName}'s action in a way that fits their established personality. The conversation remains open for the next action.`};
   return {name:target.name,entries:[entry]};
 }
 
@@ -990,18 +1017,19 @@ function pictureAction(ev,action,i){
 }
 window.addEventListener('click',e=>{if(!e.target.closest('.picture-menu')&&!e.target.closest('.character-menu-btn'))document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));});
 function closeCharacterDetails(){document.getElementById('charModal')?.classList.remove('open');}
-function openCharacterDetails(i){const p=state.party[i];if(!p)return;document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const bond=Math.max(0,Math.min(100,Number(p.bond)||20));const rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));const trust=Math.max(0,Math.min(100,Number(p.trust??20)));const affection=Math.max(0,Math.min(100,Number(p.affection??20)));const attraction=Math.max(0,Math.min(100,Number(p.attraction||0)));const comfort=Math.max(0,Math.min(100,Number(p.comfort??20)));const tension=Math.max(0,Math.min(100,Number(p.tension||0)));const card=document.getElementById('charModalCard');if(!card)return;card.innerHTML=`<div class="row"><h2 style="margin:0">${esc(p.name)}</h2><button class="btn" onclick="closeCharacterDetails()">Close</button></div><div class="char-detail-head" style="margin-top:12px"><img class="char-detail-portrait" src="${p.image||placeholder(p.name)}"><div><div><b>${esc(p.race||'Unknown race')}</b> · Level ${Number(p.level)||1}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div><div class="small">${esc(p.personality||'Personality still developing.')}</div></div></div>${p.name!=='Shane'?`<h3 style="margin-bottom:6px">Relationship</h3><div class="stat-grid"><div class="mini-stat"><b>Bond</b>${bond}/100 · ${bondLabel(bond)}</div><div class="mini-stat"><b>Reputation</b>${rep>0?'+':''}${rep} · ${repLabel(rep)}</div><div class="mini-stat"><b>Trust</b>${trust}/100</div><div class="mini-stat"><b>Affection</b>${affection}/100</div><div class="mini-stat"><b>Attraction</b>${attraction}/100</div><div class="mini-stat"><b>Comfort</b>${comfort}/100</div><div class="mini-stat"><b>Tension</b>${tension}/100</div></div>`:''}<div class="canon-box"><b>Visual Canon</b><div class="small">${esc(p.visualCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Behavioural Canon</b><div class="small">${esc(p.behaviourCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Magic / Visual Effects</b><div class="small">${esc(p.magicEffects||'No special visual effects established.')}</div></div><div class="canon-box"><b>What they know</b><div class="small">${esc((state.characterKnowledge[p.name]||[]).slice(-12).join(' • ')||'No special private knowledge recorded.')}</div></div>`;document.getElementById('charModal')?.classList.add('open');}
+function openCharacterDetails(i){const p=state.party[i];if(!p)return;document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const bond=Math.max(0,Math.min(100,Number(p.bond)||20));const rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));const trust=Math.max(0,Math.min(100,Number(p.trust??20)));const affection=Math.max(0,Math.min(100,Number(p.affection??20)));const attraction=Math.max(0,Math.min(100,Number(p.attraction||0)));const comfort=Math.max(0,Math.min(100,Number(p.comfort??20)));const tension=Math.max(0,Math.min(100,Number(p.tension||0)));const card=document.getElementById('charModalCard');if(!card)return;card.innerHTML=`<div class="row"><h2 style="margin:0">${esc(p.name)}</h2><button class="btn" onclick="closeCharacterDetails()">Close</button></div><div class="char-detail-head" style="margin-top:12px"><img class="char-detail-portrait" src="${p.image||placeholder(p.name)}"><div><div><b>${esc(p.race||'Unknown race')}</b> · Level ${Number(p.level)||1}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div><div class="small">${esc(p.personality||'Personality still developing.')}</div></div></div>${!isActivePlayer(p)?`<h3 style="margin-bottom:6px">Relationship</h3><div class="stat-grid"><div class="mini-stat"><b>Bond</b>${bond}/100 · ${bondLabel(bond)}</div><div class="mini-stat"><b>Reputation</b>${rep>0?'+':''}${rep} · ${repLabel(rep)}</div><div class="mini-stat"><b>Trust</b>${trust}/100</div><div class="mini-stat"><b>Affection</b>${affection}/100</div><div class="mini-stat"><b>Attraction</b>${attraction}/100</div><div class="mini-stat"><b>Comfort</b>${comfort}/100</div><div class="mini-stat"><b>Tension</b>${tension}/100</div></div>`:''}<div class="canon-box"><b>Visual Canon</b><div class="small">${esc(p.visualCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Behavioural Canon</b><div class="small">${esc(p.behaviourCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Magic / Visual Effects</b><div class="small">${esc(p.magicEffects||'No special visual effects established.')}</div></div><div class="canon-box"><b>What they know</b><div class="small">${esc((state.characterKnowledge[p.name]||[]).slice(-12).join(' • ')||'No special private knowledge recorded.')}</div></div>`;document.getElementById('charModal')?.classList.add('open');}
 window.addEventListener('click',e=>{if(!e.target.closest('.character-menu-wrap'))document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));});
 function bondLabel(v){if(v<20)return 'Stranger';if(v<40)return 'Acquaintance';if(v<60)return 'Trusting';if(v<80)return 'Close';return 'Devoted'}
 function repLabel(v){if(v<=-75)return 'Hostile';if(v<=-45)return 'Unfriendly';if(v<=-15)return 'Wary';if(v<15)return 'Neutral';if(v<45)return 'Friendly';if(v<75)return 'Respected';return 'Honoured'}
 function repColor(v){if(v<0){let t=Math.abs(v)/100;let r=Math.round(13+130*t),g=Math.round(39-25*t),b=Math.round(66-38*t);return `rgb(${r},${g},${b})`}let t=v/100;let r=Math.round(23-20*t),g=Math.round(77-45*t),b=Math.round(120-70*t);return `rgb(${r},${g},${b})`}
-function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>p.name!=='Shane').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
+function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
 
 function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});document.getElementById('newChar').value='';save();render();toast('Companion added');}
 function removeCharacter(i){
   if(!state.party[i])return;
   const name=String(state.party[i].name||'').trim();
-  if(name==='Shane'||name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}
+  if(isPlayerCandidate(state.party[i])||isActivePlayer(state.party[i])){toast('Playable characters cannot be removed from this campaign');return;}
+  if(name==='Sylvara Aelthara'){toast('Core characters cannot be removed');return;}
   state.party.splice(i,1);
   save().then(()=>render()).catch(()=>{render();toast('Character removed from this session');});
   toast('Character removed');
@@ -1028,10 +1056,6 @@ function uploadPic(i,file){
   resizeImage(file,800,0.82).then(async data=>{
     state.party[i].image=data;
     const name=state.party[i].name;
-    if(name==='Sylvara Aelthara'){
-      state.party[i].visualCanon='Violet eyes are canonical and must never be changed to another colour. Keep her portrait-consistent appearance and do not invent physical changes.';
-      state.party[i].magicEffects='When actively using Healing magic, her violet eyes may glow softly violet and a violet radiance may gather around her hands.';
-    }
     await save();
     render();
     toast(state.party[i].visualCanon?'Picture and visual reference saved':'Picture saved locally');
@@ -1046,7 +1070,7 @@ function downloadJson(filename,data){
 function normaliseImportedCharacter(raw){
   const x=(raw&&typeof raw==='object')?raw:{};const name=String(x.name||'').trim();if(!name)throw new Error('Character file is missing a name.');
   const p={name,level:Math.max(1,Number(x.level)||1),race:String(x.race||'Human'),age:String(x.age||''),role:String(x.role||''),magicSpecialisation:String(x.magicSpecialisation||x.magic_specialisation||'Undeclared'),image:x.image||x.imageDataUrl||null,bond:Math.max(0,Math.min(100,Number(x.bond??20))),reputation:Math.max(-100,Math.min(100,Number(x.reputation??0))),affection:Math.max(0,Math.min(100,Number(x.affection??20))),trust:Math.max(0,Math.min(100,Number(x.trust??20))),attraction:Math.max(0,Math.min(100,Number(x.attraction??0))),comfort:Math.max(0,Math.min(100,Number(x.comfort??20))),tension:Math.max(0,Math.min(100,Number(x.tension??0))),personality:String(x.personality||''),appearance:String(x.appearance||''),visualCanon:String(x.visualCanon||x.visual_canon||x.appearance||''),behaviourCanon:String(x.behaviourCanon||x.behaviour_canon||''),speechStyle:String(x.speechStyle||x.speech_style||''),likes:Array.isArray(x.likes)?x.likes:[],dislikes:Array.isArray(x.dislikes)?x.dislikes:[],fears:Array.isArray(x.fears)?x.fears:[],goals:Array.isArray(x.goals)?x.goals:[],secrets:Array.isArray(x.secrets)?x.secrets:[],morals:String(x.morals||''),relationshipGuidance:String(x.relationshipGuidance||x.relationship_guidance||''),magicEffects:String(x.magicEffects||x.magic_effects||''),knowledge:Array.isArray(x.knowledge)?x.knowledge:[]};
-  if(!p.behaviourCanon&&p.personality)p.behaviourCanon=p.personality;return p;
+  p.control=(x.control==='player'||x.playerControlled===true||/\bplayer(?: character)?\b/i.test(String(p.role||'')))?'inactive-player':'npc';p.playerControlled=false;if(!p.behaviourCanon&&p.personality)p.behaviourCanon=p.personality;return p;
 }
 function normaliseImportedScenario(raw){
   const x=(raw&&typeof raw==='object')?raw:{};const kind=String(x.kind||x.type||'').toLowerCase();if(kind&&kind!=='scenario'&&kind!=='dark-fantasy-scenario'&&kind!=='scenario-blueprint')throw new Error('That JSON file is not a recognised scenario blueprint.');
@@ -1057,36 +1081,36 @@ function normaliseImportedScenario(raw){
   const worldProfile={setting:String(world.setting||x.setting||'Imported world'),region:String(world.region||world.location||location),start:location,situation:String(world.situation||starting.situation||x.premise||''),tone,threat:String(world.threat||'unknown'),weather:String(world.weather||''),generator:'scenario blueprint'};
   return {name,type:'imported-scenario',intro,party,embeddedCharacters:embedded,worldProfile,scenarioSpec:spec,npcs:Array.isArray(x.npcs)?x.npcs:[]};
 }
+function buildImportedOpening(t, embedded){
+  const modern=String(t.worldProfile?.setting||'').toLowerCase().includes('modern') || String(t.name||'').toLowerCase().includes('promise between families');
+  if(!modern)return structuredClone(t.intro||[]);
+  const names=new Set(embedded.map(p=>p.name));
+  const has=n=>names.has(n);
+  const entries=[];
+  entries.push({type:'gm',text:"Shane arrives at the Morningstar estate on his Yamaha R1, wearing a dark blue suit. Gerald greets him at the entrance and leads him inside, where the Morningstar daughters are gathered."});
+  if(has('Gerald Morningstar')) entries.push({type:'character',speaker:'Gerald Morningstar',text:'Gerald looks around the room before settling his attention on Shane. "Before we get into anything else, I want you to understand why I asked you here. Finch left you his fifty percent share of Cerberon outright. There is no condition attached to it."'});
+  if(has('Luci Morningstar')) entries.push({type:'character',speaker:'Luci Morningstar',text:'Luci folds her arms lightly. "And Dad wants us to meet the man Finch trusted enough to leave half the company to."'});
+  if(has('Mana Morningstar')) entries.push({type:'character',speaker:'Mana Morningstar',text:'Mana gives Shane an assessing look, a hint of amusement in her expression. "That makes this a rather unusual introduction. Most people do not walk into this house carrying a fifty-percent stake in the family business."'});
+  if(has('Bell Morningstar')) entries.push({type:'character',speaker:'Bell Morningstar',text:'Bell glances between the others. "Can we at least let him breathe before we turn dinner into a business meeting?"'});
+  if(has('Evie Morningstar')) entries.push({type:'character',speaker:'Evie Morningstar',text:'Evie smiles. "I agree with Bell. Although I do have questions. Quite a lot of them, actually."'});
+  if(has('Rosaline Morningstar')) entries.push({type:'character',speaker:'Rosaline Morningstar',text:'Rosaline gives the room a quick look. "Maybe we could start with introductions and see where the conversation goes."'});
+  if(has('Ira Morningstar')) entries.push({type:'character',speaker:'Ira Morningstar',text:'Ira leans back slightly. "Fair. But I still want to know what he actually wants from all this."'});
+  if(has('Freya Morningstar')) entries.push({type:'character',speaker:'Freya Morningstar',text:'Freya stays quiet for a moment before speaking softly. "He should get to decide that for himself."'});
+  if(has('Gerald Morningstar')) entries.push({type:'character',speaker:'Gerald Morningstar',text:`Gerald gives his daughters a measured look. "Exactly. Finch's final wish was that Shane meet you all and genuinely give you a chance to become part of his life. What happens after that is not something I can decide for any of you."`});
+  entries.push({type:'gm',text:'The conversation settles for a moment. Then the door to the room opens.'});
+  return entries;
+}
 function makeScenarioFromTemplate(t){
-  const base=structuredClone(defaultState);base.scenarioId='imported-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';base.story=structuredClone(t.intro||[]);base.party=base.party.filter(p=>p.name==='Shane');
-  const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];const byName=new Map(embedded.map(p=>[p.name.toLowerCase(),p]));for(const name of(t.party||[])){if(String(name).toLowerCase()==='shane')continue;const p=byName.get(String(name).toLowerCase());base.party.push(p?structuredClone(p):{name:String(name),level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});}
-  base.characterKnowledge={Shane:[]};for(const p of base.party)base.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];base.playerMemory=[];base.sharedFacts=[];base.relationshipEvents=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];if(!base.story.length)base.story=[{type:'gm',text:`The story begins in ${base.currentLocation}.`}];return base;
+  const base=structuredClone(defaultState);base.scenarioId='imported-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';
+  const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];const byName=new Map(embedded.map(p=>[p.name.toLowerCase(),p]));base.party=[];
+  for(const name of(t.party||[])){const p=byName.get(String(name).toLowerCase());const entry=p?structuredClone(p):{name:String(name),level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',control:'npc',playerControlled:false};if(isPlayerCandidate(entry)){entry.control='inactive-player';entry.playerControlled=false;}base.party.push(entry);}
+  base.playerCandidates=base.party.filter(isPlayerCandidate).map(p=>p.name);base.playerCharacterName='';base.openingComplete=true;
+  base.story=buildImportedOpening(t,base.party);base.characterKnowledge={};for(const p of base.party)base.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];
+  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
+  return base;
 }
-async function importScenario(file){if(!file)return;try{const raw=JSON.parse(await file.text());const t=normaliseImportedScenario(raw);state=makeScenarioFromTemplate(t);await persistScenario();render();showTab('story');keepStoryAtLatest();toast(`Imported scenario: ${state.scenarioName}`);}catch(e){console.error('Scenario import failed',e);alert('Scenario import failed: '+(e?.message||e));}finally{const el=document.getElementById('scenarioImportFile');if(el)el.value='';}}
-async function importCharacter(file){if(!file)return;try{const p=normaliseImportedCharacter(JSON.parse(await file.text()));const existing=state.party.findIndex(x=>x.name.toLowerCase()===p.name.toLowerCase());if(existing>=0)state.party[existing]={...state.party[existing],...p};else state.party.push(p);if(!state.characterKnowledge)state.characterKnowledge={};state.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];if(!state.longTermMemory)state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};if(!state.longTermMemory.characterMemories)state.longTermMemory.characterMemories={};if(!Array.isArray(state.longTermMemory.characterMemories[p.name]))state.longTermMemory.characterMemories[p.name]=[];await save();render();toast(`${existing>=0?'Updated':'Imported'} character: ${p.name}`);}catch(e){console.error('Character import failed',e);alert('Character import failed: '+(e?.message||e));}finally{const el=document.getElementById('characterImportFile');if(el)el.value='';}}
-function exportScenarioBlueprint(){const spec=(state.scenarioSpec&&Object.keys(state.scenarioSpec).length)?structuredClone(state.scenarioSpec):{schemaVersion:1,kind:'dark-fantasy-scenario',name:state.scenarioName,description:'Exported from Dark Fantasy RPG.',world:structuredClone(state.worldProfile||{}),lore:{},factions:[],locations:[state.currentLocation],rules:[],secrets:[],storyThreads:[],generatorGuidance:'Preserve established facts and expand missing details coherently.'};spec.schemaVersion=1;spec.kind='dark-fantasy-scenario';spec.name=state.scenarioName;spec.currentState={location:state.currentLocation,day:state.inGameDay,timeOfDay:state.timeOfDay,sharedFacts:state.sharedFacts.slice(-50),unresolved:(state.longTermMemory?.unresolved||[]).slice(-30)};downloadJson((state.scenarioName||'scenario').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'scenario',spec);}
-function exportCharacter(i){const p=state.party[i];if(!p)return;const out={schemaVersion:1,kind:'dark-fantasy-character',name:p.name,race:p.race,age:p.age||'',role:p.role||'',level:p.level,magicSpecialisation:p.magicSpecialisation,personality:p.personality,appearance:p.appearance||'',visualCanon:p.visualCanon||'',behaviourCanon:p.behaviourCanon||'',speechStyle:p.speechStyle||'',likes:p.likes||[],dislikes:p.dislikes||[],fears:p.fears||[],goals:p.goals||[],secrets:p.secrets||[],morals:p.morals||'',relationshipGuidance:p.relationshipGuidance||'',magicEffects:p.magicEffects||'',knowledge:state.characterKnowledge?.[p.name]||[]};if(p.image)out.image=p.image;downloadJson((p.name||'character').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()+'.character.json',out);}
-function exportSave(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state)],{type:'application/json'}));a.download='shane-rpg-save.json';a.click();URL.revokeObjectURL(a.href)}
-function importSave(file){if(!file)return;let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();render();toast('Save imported')}catch(e){alert('That save file could not be read.')}};r.readAsText(file)}
-function scenarioTemplates(){
-  return {
-    sylvara:{name:'The First Sight of Sylvara',type:'sylvara',intro:[
-      {type:'gm',text:'Darkness. Absolute and endless. Shane wakes without knowing whether he has been asleep for seconds or centuries. There is no ground beneath his feet, yet somehow he is standing.'},
-      {type:'gm',text:'He cannot see a ceiling, walls, or even his own hands. There is no wind and no sound. Only the strange sensation of being somewhere he does not recognise.'},
-      {type:'gm',text:'Far ahead, a faint violet light appears. It is little more than a pinprick at first, but it slowly grows brighter.'},
-      {type:'gm',text:'The darkness gives way to an enormous ancient chamber. Violet runes glow across towering stone pillars, their light spilling over worn stone beneath Shane\'s feet.'},
-      {type:'gm',text:'At the far end of the chamber stands a woman in deep violet. Sylvara Aelthara watches him in silence. Her expression is difficult to read, but there is no obvious hostility in her eyes.'},
-      {type:'image',src:OPENING_SCENE_IMAGE,caption:'The First Sight of Sylvara'}
-    ],party:['Sylvara Aelthara'],worldProfile:{setting:'Established mortal realms',region:'Unknown',tone:'mysterious',threat:'unknown'}},
-    crater:{name:'Waking in a Crater',type:'crater',intro:[{type:'gm',text:'Pain is the first thing Shane notices.'},{type:'gm',text:'Then cold earth beneath him. He opens his eyes to a grey sky and the steep walls of a vast crater surrounding him.'},{type:'gm',text:'Dust drifts through the air. Broken stone and splintered earth lie scattered around the crater floor. There is no obvious sign of what caused it.'},{type:'gm',text:'Shane has no idea how he arrived here. Nothing else moves within sight.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Unknown crater',tone:'mysterious',threat:'unknown'}},
-    road:{name:'The Silent Road',type:'road',intro:[{type:'gm',text:'Night has already fallen when Shane reaches the abandoned road.'},{type:'gm',text:'The road disappears into black woodland on both sides. No moon breaks through the clouds.'},{type:'gm',text:'Ahead, a single lantern burns beside a ruined milestone. There is no one nearby.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Remote woodland road',tone:'dark',threat:'unknown'}},
-    tower:{name:'The Locked Tower',type:'tower',intro:[{type:'gm',text:'Shane wakes on cold stone inside a circular tower room. A single door stands ahead of him, locked from the outside.'},{type:'gm',text:'There are no windows. A thin line of pale light shines beneath the door, and somewhere beyond it something moves.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Unknown tower',tone:'mysterious',threat:'unknown'}},
-    shore:{name:'The Black Shore',type:'shore',intro:[{type:'gm',text:"Cold water pulls away from Shane's boots as he stands on a black-sand shore beneath a storm-dark sky."},{type:'gm',text:'A wrecked ship lies farther along the beach. No voices carry from it, and the sea behind him offers no obvious way back.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Black-sand coast',tone:'ominous',threat:'unknown'}},
-    forest:{name:'The Watching Forest',type:'forest',intro:[{type:'gm',text:'Shane stands alone beneath ancient trees. Mist hangs low between their roots, and the forest is unnaturally silent.'},{type:'gm',text:'Somewhere deeper among the trees, a branch snaps. Whatever caused it is not yet visible.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Ancient forest',tone:'mysterious',threat:'unknown'}},
-    battlefield:{name:'After the Battle',type:'battlefield',intro:[{type:'gm',text:'Smoke drifts across a field of broken weapons and churned earth. Shane stands among the aftermath of a battle he does not remember witnessing.'},{type:'gm',text:'There are no obvious allies nearby. In the distance, something metallic strikes stone once, then falls silent.'}],party:[],worldProfile:{setting:'Established mortal realms',region:'Battlefield',tone:'grim',threat:'unknown'}},
-    random:{name:'A Strange Beginning',type:'random',intro:[{type:'gm',text:'Shane wakes somewhere he has never seen before.'},{type:'gm',text:'The place is quiet enough that he can hear his own breathing. Something about the surroundings feels wrong, but nothing immediately explains why.'}],party:[],worldProfile:{setting:'Generated',region:'Unknown',tone:'unknown',threat:'unknown'}}
-  };
-}
+async function importScenario(file){if(!file)return;try{const raw=JSON.parse(await file.text());const t=normaliseImportedScenario(raw);state=makeScenarioFromTemplate(t);await persistScenario();render();showTab('story');keepStoryAtLatest();toast(`Imported scenario: ${state.scenarioName}`);setTimeout(()=>maybeOpenPlayerPicker(),120);}catch(e){console.error('Scenario import failed',e);alert('Scenario import failed: '+(e?.message||e));}finally{const el=document.getElementById('scenarioImportFile');if(el)el.value='';}}
+async function importCharacter(file){if(!file)return;try{const p=normaliseImportedCharacter(JSON.parse(await file.text()));const existing=state.party.findIndex(x=>x.name.toLowerCase()===p.name.toLowerCase());if(existing>=0){const wasActive=isActivePlayer(state.party[existing]);state.party[existing]={...state.party[existing],...p};if(wasActive){state.party[existing].control='player';state.party[existing].playerControlled=true;state.playerCharacterName=p.name;}}else state.party.push(p);if(p.control==='inactive-player'){if(!Array.isArray(state.playerCandidates))state.playerCandidates=[];if(!state.playerCandidates.includes(p.name))state.playerCandidates.push(p.name);}if(!state.characterKnowledge)state.characterKnowledge={};state.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];if(!state.longTermMemory)state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};if(!state.longTermMemory.characterMemories)state.longTermMemory.characterMemories={};if(!Array.isArray(state.longTermMemory.characterMemories[p.name]))state.longTermMemory.characterMemories[p.name]=[];await save();render();toast(`${existing>=0?'Updated':'Imported'} character: ${p.name}`);if(p.control==='inactive-player'&&!state.playerCharacterName)setTimeout(()=>openPlayerPicker(),120);}catch(e){console.error('Character import failed',e);alert('Character import failed: '+(e?.message||e));}finally{const el=document.getElementById('characterImportFile');if(el)el.value='';}}
 const RANDOM_WORLD={
   settings:['frontier kingdom','hidden valley','island realm','old mountain province','borderlands after a war','isolated coastal settlement','ancient forest territory','underground settlement network','ruined civilisation reclaimed by nature'],
   regions:['misty highlands','blackwood forest','storm coast','marsh frontier','mountain pass','forgotten valley','old trade road','buried ruins','remote farming country','crumbling city outskirts'],
@@ -1259,6 +1283,7 @@ loadSavedState().then(async()=>{
   if(!scenarioRecords().some(r=>r.id===state.scenarioId))await save();
   await cleanDuplicateScenarios();
   render();
+setTimeout(()=>maybeOpenPlayerPicker(),200);
 }).catch(err=>console.warn(err));
 setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 </script>
