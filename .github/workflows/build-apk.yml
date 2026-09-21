@@ -22,7 +22,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '8.11.1'
+          gradle-version: '8.14.4'
 
       - name: Create complete Android project
         shell: bash
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 56
-                  versionName '4.5.4-scenario-characters'
+                  versionCode 57
+                  versionName '4.5.5-player-ai-fix'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -353,7 +353,6 @@ jobs:
               override fun onDestroy() {
                   downloadId = null
                   scope.launch(Dispatchers.IO) {
-                      try { conversation?.close() } catch (_: Exception) {}
                       try { engine?.close() } catch (_: Exception) {}
                   }
                   super.onDestroy()
