@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 55
-                  versionName '4.5.2-local-ai'
+                  versionCode 56
+                  versionName '4.5.4-scenario-characters'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -232,7 +232,6 @@ jobs:
               private val mainHandler = Handler(Looper.getMainLooper())
 
               private var engine: Engine? = null
-              private var conversation: Conversation? = null
               private var engineLoading = false
               private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
@@ -527,16 +526,39 @@ jobs:
 
                       scope.launch(Dispatchers.IO) {
                           try {
-                              ensureEngine()
-                              val conv = conversation
-                                  ?: throw IllegalStateException("Local AI conversation unavailable")
+                              postJsStatus("Generating with Gemma 4 E2B on-device…")
+                              val e = ensureEngine()
+                              // Fresh conversation per turn prevents the large scenario prompt
+                              // from accumulating in the model's conversation history.
+                              val conv = e.createConversation(
+                                  ConversationConfig(
+                                      systemInstruction = Contents.of(
+                                          Content.Text(
+                                              """
+                                              You are the local narrative engine for an RPG.
+                                              Follow the scenario and character canon supplied in the
+                                              current request. The setting can be modern, realistic,
+                                              fantasy, science-fiction or anything else explicitly
+                                              established by that scenario. Never import lore from
+                                              another campaign.
+                                              Return natural story prose only. Never return JSON,
+                                              code, metadata, bullet summaries or <think> blocks.
+                                              Shane is player-controlled: never invent Shane's thoughts,
+                                              feelings, dialogue, intentions, decisions or actions.
+                                              """.trimIndent()
+                                          )
+                                      )
+                                  )
+                              )
 
                               val result = StringBuilder()
                               conv.sendMessageAsync(prompt).collect { chunk ->
                                   result.append(chunk)
                               }
-
-                              postJsResult(requestId, result.toString())
+                              val text = result.toString().trim()
+                              if (text.isEmpty()) throw IllegalStateException("Model returned empty text")
+                              postJsResult(requestId, text)
+                              postJsStatus("✓ Local AI response received")
                           } catch (e: Exception) {
                               postJsError(
                                   requestId,
@@ -547,61 +569,30 @@ jobs:
                   }
               }
 
-              private suspend fun ensureEngine() {
-                  if (conversation != null) return
+              private suspend fun ensureEngine(): Engine {
+                  engine?.let { return it }
 
                   if (engineLoading) {
                       while (engineLoading) delay(100)
-                      if (conversation != null) return
+                      engine?.let { return it }
                   }
 
                   engineLoading = true
                   try {
                       val cacheDir = File(cacheDir, "litertlm-cache").apply { mkdirs() }
-
                       val config = EngineConfig(
                           modelPath = modelFile.absolutePath,
                           backend = Backend.CPU(),
                           cacheDir = cacheDir.absolutePath
                       )
-
                       val e = Engine(config)
                       e.initialize()
                       engine = e
-
-                      conversation = e.createConversation(
-                          ConversationConfig(
-                              systemInstruction = Contents.of(
-                                  Content.Text(
-                                      """
-                                      You are the local narrative engine for the RPG.
-
-                                      The supplied scenario is the current world's canon. The app
-                                      may run many completely different scenarios, including modern,
-                                      realistic, fantasy, science-fiction or other settings.
-                                      Never assume the setting from the app name and never import
-                                      lore or characters from another campaign.
-
-                                      Treat supplied scenario canon, character descriptions,
-                                      relationship state, memories, current scene and player
-                                      action as authoritative. Never invent facts that contradict
-                                      them.
-
-                                      Return natural story prose only. Do not return JSON, code,
-                                      metadata, bullet summaries, or <think> blocks. Let the
-                                      scenario determine the genre, technology, races, magic,
-                                      supernatural elements, tone and available locations.
-                                      """.trimIndent()
-                                  )
-                              )
-                          )
-                      )
+                      return e
                   } finally {
                       engineLoading = false
                   }
               }
-
-
 
               private fun postJsStatus(message: String) {
                   mainHandler.post {
@@ -653,5 +644,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.3.8-local-AI
+          name: Dark-Fantasy-RPG-v4.5.3-local-AI
           path: app/build/outputs/apk/debug/app-debug.apk
