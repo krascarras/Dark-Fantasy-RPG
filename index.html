@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.5.6</div>
+<div class="version-badge">v4.6.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -618,7 +618,6 @@ function setStoryBusy(busy){
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function buildStoryContext(){
-  ensureRuntimeEngine();
   const recent=state.story.slice(-8).map(e=>{
     const who=e.type==='player'?playerName():(e.speaker||'Narrator');
     return `${who}: ${String(e.text||'')}`;
