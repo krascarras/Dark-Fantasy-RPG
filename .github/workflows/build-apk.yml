@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 60
-                  versionName '4.6.1-ai-fix'
+                  versionCode 61
+                  versionName '4.6.2-npc-fix'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -643,5 +643,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.6.1-ai-fix
+          name: Dark-Fantasy-RPG-v4.6.2-npc-fix
           path: app/build/outputs/apk/debug/app-debug.apk
