@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.6.2</div>
+<div class="version-badge">v4.7.0</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -609,7 +609,7 @@ function updateRedoButton(){
 function setStoryBusy(busy){
   storyBusy=busy;
   const area=document.getElementById('action'); if(area){area.placeholder=activePlayer()?`What does ${playerName()} do or say?`:'Choose your player character first';area.disabled=!!busy||!activePlayer();}
-  const button=document.querySelector('.action-card .btn');
+  const button=document.querySelector('.action-card .actions .btn');
   if(area){area.classList.toggle('story-busy',busy);}
   if(button){button.disabled=busy||!activePlayer(); button.textContent=busy?'Writing…':'Send';}
   updateRedoButton();
@@ -618,71 +618,86 @@ function setStoryBusy(busy){
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
-function relevantNPCs(){
-  const list=Array.isArray(state?.npcs)?state.npcs:[];
-  const here=String(state?.currentLocation||'').trim().toLowerCase();
-  const player=activePlayer();
-  const playerNameValue=String(player?.name||'').trim().toLowerCase();
-
-  return list.map(n=>{
-    const runtime=n.runtime&&typeof n.runtime==='object'?n.runtime:{};
-    const location=String(runtime.currentLocation||n.location||'').trim();
-    const name=String(n.name||'Unnamed NPC');
-    const rel=(n.relationships&&typeof n.relationships==='object')?n.relationships:{};
-    const relToPlayer=rel[player?.name]||rel[playerNameValue]||null;
-    let score=0;
-
-    if(location && here && location.toLowerCase()===here) score+=5;
-    if(!location || !here || /unknown|anywhere|roaming|mobile/i.test(location)) score+=1;
-    if(relToPlayer) score+=3;
-    if(runtime.currentGoal||runtime.currentConcern||runtime.currentTopic) score+=1;
-    if(runtime.currentMood) score+=1;
-    if(Array.isArray(runtime.memories)&&runtime.memories.length) score+=1;
-
-    return {
-      ...n,
-      runtime,
-      _relevanceScore:score,
-      _relationshipToPlayer:relToPlayer
-    };
-  })
-  .sort((a,b)=>b._relevanceScore-a._relevanceScore)
-  .slice(0,10)
-  .map(n=>{
-    const copy={...n};
-    delete copy._relevanceScore;
-    delete copy._relationshipToPlayer;
-    return copy;
-  });
+function characterRuntime(n){
+  return n&&n.runtime&&typeof n.runtime==='object'?n.runtime:{};
 }
-
-function buildStoryContext(){
-  const recent=state.story.slice(-8).map(e=>{
-    const who=e.type==='player'?playerName():(e.speaker||'Narrator');
-    return `${who}: ${String(e.text||'')}`;
-  }).join('\n');
+function relevanceScore(n, player, here){
+  const r=characterRuntime(n);
+  const loc=String(r.currentLocation||n.location||'').trim().toLowerCase();
+  const current=String(here||'').trim().toLowerCase();
+  const rels=(n.relationships&&typeof n.relationships==='object')?n.relationships:{};
+  let score=0;
+  if(loc && current && loc===current) score+=100;
+  else if(!loc || /unknown|anywhere|roaming|mobile/i.test(loc)) score+=10;
+  if(player && rels[player.name]) score+=80;
+  if(r.currentGoal||r.currentConcern||r.currentTopic) score+=20;
+  if(r.currentMood) score+=10;
+  if(Array.isArray(r.memories)&&r.memories.length) score+=10;
+  return score;
+}
+function relevantNPCs(limit=4){
+  const list=Array.isArray(state?.npcs)?state.npcs:[];
   const player=activePlayer();
-  const sceneNPCs=relevantNPCs();
-  const scenePartyNPCs=state.party.filter(p=>p.control==='npc' && p.name!==playerName()).slice(0,8);
-  const allSceneNPCs=[...sceneNPCs,...scenePartyNPCs.filter(p=>!sceneNPCs.some(n=>n.name===p.name))].slice(0,10);
-  const sceneNames=new Set([playerName(),...allSceneNPCs.map(n=>n.name)]);
-  const activeParty=state.party.filter(p=>sceneNames.has(p.name)||p.control==='player');
-  const party=activeParty.map(p=>`${p.name} (${p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED'}, role: ${p.role||'unknown'}, personality: ${p.personality||'not supplied'})`).join('; ');
-  const sharedFacts=(state.sharedFacts||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
+  const here=state?.currentLocation||'';
+  return list.map(n=>({...n,_relevanceScore:relevanceScore(n,player,here)}))
+    .sort((a,b)=>b._relevanceScore-a._relevanceScore)
+    .slice(0,Math.max(1,limit));
+}
+function compactCharacter(n, isPlayer=false){
+  const r=characterRuntime(n);
+  const out={
+    name:n.name,
+    role:compactText(n.role||'',120),
+    control:isPlayer?'PLAYER':'NPC',
+    personality:compactText(n.personality||'',360),
+    speechStyle:compactText(n.speechStyle||'',220),
+    goal:compactText(r.currentGoal||(Array.isArray(n.goals)?n.goals[0]:'')||'',180),
+    concern:compactText(r.currentConcern||'',180),
+    mood:compactText(r.currentMood||'neutral',80),
+    location:compactText(r.currentLocation||n.location||'',100)
+  };
+  return out;
+}
+function buildStoryContext(action=''){
+  const player=activePlayer();
+  const npcs=relevantNPCs(4);
+  const recent=state.story.slice(-4).map(e=>{
+    const who=e.type==='player'?playerName():(e.speaker||'Narrator');
+    return `${who}: ${compactText(e.text,420)}`;
+  }).join('\n');
+
+  // Character data is segmented: canon, runtime state, memories and relationships stay
+  // in the campaign, while Gemma receives only the slices relevant to this scene.
+  const activeCharacters=[
+    player?{...compactCharacter(player,true),knowledge:(state.characterKnowledge?.[player.name]||[]).slice(-2).map(x=>compactText(x,160))}:null,
+    ...npcs.map(n=>{
+      const c=compactCharacter(n,false), r=characterRuntime(n);
+      const rel=(n.relationships&&player)?(n.relationships[player.name]||null):null;
+      c.relationship=rel?{
+        bond:Number(rel.bond??n.bond??0),trust:Number(rel.trust??n.trust??0),affection:Number(rel.affection??n.affection??0),attraction:Number(rel.attraction??n.attraction??0),comfort:Number(rel.comfort??n.comfort??0),tension:Number(rel.tension??n.tension??0)
+      }:null;
+      c.memories=(Array.isArray(r.memories)?r.memories:[]).slice(-2).map(x=>compactText(x,220));
+      c.knownFacts=(r.knownFacts||n.knowledge||[]).slice(-2).map(x=>compactText(x,180));
+      return c;
+    })
+  ].filter(Boolean);
+
   const ltm=state.longTermMemory||{};
-  const worldMemory=(ltm.worldFacts||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  const eventMemory=(ltm.events||[]).slice(-12).map(e=>`- Day ${e.day||'?'} (${e.location||'unknown'}): ${e.text}`).join('\n')||'- None recorded.';
-  const unresolved=(ltm.unresolved||[]).slice(-8).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  let spec={};
-  if(state.scenarioSpec&&typeof state.scenarioSpec==='object'){
-    spec=structuredClone(state.scenarioSpec); delete spec.characters; delete spec.currentState;
-  }
-  const scenarioSpec=Object.keys(spec).length?JSON.stringify(spec):'Use the established campaign facts.';
-  const characterProfiles=activeParty.map(p=>({
-    name:p.name,control:p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED',role:p.role||'',personality:p.personality||'',appearance:p.appearance||'',speechStyle:p.speechStyle||'',behaviourCanon:p.behaviourCanon||'',goals:(p.goals||[]).slice(0,4),fears:(p.fears||[]).slice(0,4),morals:p.morals||'',knowledge:(state.characterKnowledge?.[p.name]||[]).slice(-5)
-  }));
-  const npcProfiles=allSceneNPCs.map(n=>({name:n.name,control:'AI CONTROLLED',role:n.role,personality:n.personality,description:n.description,goals:n.goals,knowledge:(n.runtime?.knownFacts||n.knowledge||[]).slice(-5),memories:(n.runtime?.memories||[]).slice(-5),location:n.runtime?.currentLocation||n.location,mood:n.runtime?.currentMood||'neutral'}));
-  return {recent,party,sharedFacts,worldMemory,eventMemory,unresolved,scenarioSpec,characterProfiles,npcProfiles,playerProfile:player?{name:player.name,appearance:player.appearance,personality:player.personality,knowledge:(state.characterKnowledge?.[player.name]||[]).slice(-6)}:{}};
+  const relevantFacts=(state.sharedFacts||[]).slice(-3).map(f=>compactText(f,220));
+  const events=(ltm.events||[]).slice(-3).map(e=>compactText(e.text,260));
+  const threads=(ltm.unresolved||[]).slice(-2).map(x=>compactText(x,220));
+
+  // Only keep essential scenario canon. Full scenario JSON remains stored in state.
+  const rawSpec=state.scenarioSpec&&typeof state.scenarioSpec==='object'?state.scenarioSpec:{};
+  const world=rawSpec.world||{};
+  const essentialCanon={
+    name:rawSpec.name||state.name||'',
+    description:compactText(rawSpec.description||'',500),
+    world:{setting:compactText(world.setting||world.description||'',500),era:compactText(world.era||'',100),rules:Array.isArray(rawSpec.rules)?rawSpec.rules.slice(0,4).map(x=>compactText(x,180)):[]},
+    lore:Array.isArray(rawSpec.lore)?rawSpec.lore.slice(0,4).map(x=>compactText(x,180)):[],
+    storyThreads:Array.isArray(rawSpec.storyThreads)?rawSpec.storyThreads.slice(0,3).map(x=>compactText(x,180)):[]
+  };
+  return {recent,activeCharacters,essentialCanon,relevantFacts,events,threads,playerAction:compactText(action,1800)};
 }
 function parseNarrativeEntries(text){
   const known=[...state.party.map(p=>p.name),...(state.npcs||[]).map(n=>n.name)].filter(Boolean).sort((a,b)=>b.length-a.length);
@@ -710,55 +725,64 @@ async function callStoryAI(action,correctedSource){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
-  const ctx=buildStoryContext();
-  const prompt=`You are the narrative engine for the CURRENT RPG SCENE. The game engine owns canon, memory, state and player control. Your job is only to write natural story prose.
+  const ctx=buildStoryContext(action);
+  const prompt=`You are the narrative engine for the CURRENT RPG SCENE. The game engine owns canon, memory, relationships and player control. Write only natural story prose.
 
-PLAYER CONTROL:
-${JSON.stringify(ctx.playerProfile)}
-Never write the player's dialogue, thoughts, feelings, choices or actions beyond the supplied player action.
+PLAYER CONTROL
+${JSON.stringify(ctx.activeCharacters[0]||{})}
+Never write Shane's dialogue, thoughts, feelings, choices or actions. The supplied player action is authoritative.
 
-CURRENT WORLD CANON:
-${ctx.scenarioSpec}
+ESSENTIAL SCENARIO CANON
+${JSON.stringify(ctx.essentialCanon)}
 
-CURRENT SCENE:
-Location: ${state.currentLocation||'Unknown'}
-Participants: ${ctx.party}
+CURRENT SCENE
+Location: ${compactText(state.currentLocation||'Unknown',120)}
+Relevant characters only: ${JSON.stringify(ctx.activeCharacters)}
 
-RELEVANT NPCs ONLY:
-${JSON.stringify(ctx.npcProfiles,null,2)}
+RELEVANT FACTS
+${ctx.relevantFacts.join('\n')||'None'}
 
-RELEVANT CHARACTER CANON:
-${JSON.stringify(ctx.characterProfiles,null,2)}
+RECENT EVENTS
+${ctx.events.join('\n')||'None'}
 
-RECENT EVENTS:
-${ctx.eventMemory}
+OPEN THREADS
+${ctx.threads.join('\n')||'None'}
 
-RELEVANT SHARED FACTS:
-${ctx.sharedFacts}
+RECENT STORY
+${ctx.recent||'None'}
 
-RECENT STORY:
-${ctx.recent}
+LATEST PLAYER ACTION
+${ctx.playerAction}
 
-UNRESOLVED THREADS:
-${ctx.unresolved}
-
-LATEST PLAYER ACTION:
-${action}
-
-RULES:
-- React specifically to the latest action.
-- Use the established personality and speech style of the NPC who is responding.
-- NPCs may react to and speak with one another when appropriate.
-- Do not make every NPC speak.
+RULES
+- React specifically to the latest player action.
+- Use the established personality and speech style of the relevant NPC.
+- NPCs may react to one another when appropriate, but irrelevant NPCs stay out of the scene.
+- Preserve established relationships and memories without dumping their full histories into the prose.
 - Do not introduce lore from another campaign.
-- Do not invent fantasy elements unless this scenario establishes them.
 - Keep secrets limited to characters who know them.
-- The world may move naturally, but do not manufacture a major event every turn.
+- Do not make every NPC speak.
+- Do not control the player character.
 - Write natural prose with dialogue and action. No JSON, headings, metadata or analysis.
 - Do not end with a generic 'What do you do?' question.
-- Vary response length naturally; do not pad.
 RETURN ONLY THE STORY.`;
-  const payload={model,messages:[{role:'system',content:prompt}],stream:false,options:{temperature:0.82}};
+
+  // Gemma 4 E2B accepts at most 4096 input tokens. Keep a hard character budget with
+  // the player action protected at the end. The segmented context above is deliberately
+  // small; this guard is a final safety net, not the normal retrieval mechanism.
+  const MAX_PROMPT_CHARS=11800;
+  let finalPrompt=prompt;
+  if(finalPrompt.length>MAX_PROMPT_CHARS){
+    const actionMarker='LATEST PLAYER ACTION\n';
+    const ruleMarker='\nRULES\n';
+    const ai=finalPrompt.indexOf(actionMarker);
+    const ri=finalPrompt.indexOf(ruleMarker);
+    const actionBlock=ai>=0?finalPrompt.slice(ai,ri>=0?ri:finalPrompt.length):`LATEST PLAYER ACTION\n${compactText(action,1800)}`;
+    const rules=ri>=0?finalPrompt.slice(ri):'';
+    const headBudget=Math.max(2500,MAX_PROMPT_CHARS-actionBlock.length-rules.length-2);
+    finalPrompt=finalPrompt.slice(0,headBudget)+'\n\n'+actionBlock+rules;
+  }
+  const payload={model,messages:[{role:'system',content:finalPrompt}],stream:false,options:{temperature:0.82}};
   const data=await localAIRequest(endpoint,payload);
   const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
   if(!text)throw new Error('Local AI returned no story text');
