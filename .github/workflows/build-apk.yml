@@ -92,7 +92,7 @@ jobs:
                   minSdk 24
                   targetSdk 35
                   versionCode 61
-                  versionName '4.6.2-npc-fix'
+                  versionName '4.7.0-segmented-context'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -643,5 +643,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v4.6.2-npc-fix
+          name: Dark-Fantasy-RPG-v4.7.0-segmented-context
           path: app/build/outputs/apk/debug/app-debug.apk
