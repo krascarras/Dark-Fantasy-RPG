@@ -456,7 +456,8 @@ function normalizeState(s){
   out.relationshipEvents=Array.isArray(x.relationshipEvents)?x.relationshipEvents:[];
   out.inGameDay=Math.max(1,Number(x.inGameDay)||1); out.timeOfDay=String(x.timeOfDay||'morning'); out.currentLocation=String(x.currentLocation||'Unknown location');
   out.longTermMemory=(x.longTermMemory&&typeof x.longTermMemory==='object')?x.longTermMemory:{}; out.longTermMemory.worldFacts=Array.isArray(out.longTermMemory.worldFacts)?out.longTermMemory.worldFacts:[]; out.longTermMemory.events=Array.isArray(out.longTermMemory.events)?out.longTermMemory.events:[]; out.longTermMemory.characterMemories=(out.longTermMemory.characterMemories&&typeof out.longTermMemory.characterMemories==='object')?out.longTermMemory.characterMemories:{}; out.longTermMemory.unresolved=Array.isArray(out.longTermMemory.unresolved)?out.longTermMemory.unresolved:[];
-  out.npcs=Array.isArray(x.npcs)?x.npcs:[]; out.npcs=out.npcs.map(n=>({id:'npc-'+Math.random().toString(36).slice(2),name:'Unnamed',race:'Human',age:'adult',role:'resident',personality:'To be discovered',description:'',location:out.currentLocation,persistence:'background',knowledge:[],goals:[],secrets:[],relationships:{},firstSeenDay:out.inGameDay,lastSeenDay:out.inGameDay,appearance:null,...n}));
+  out.runtimeEngine=(x.runtimeEngine&&typeof x.runtimeEngine==='object')?structuredClone(x.runtimeEngine):{version:1,currentScene:{participants:[],location:'',focus:'',lastAction:''},snapshots:[],turn:0};
+    out.npcs=Array.isArray(x.npcs)?x.npcs:[]; out.npcs=out.npcs.map(n=>({id:'npc-'+Math.random().toString(36).slice(2),name:'Unnamed',race:'Human',age:'adult',role:'resident',personality:'To be discovered',description:'',location:out.currentLocation,persistence:'background',knowledge:[],goals:[],secrets:[],relationships:{},firstSeenDay:out.inGameDay,lastSeenDay:out.inGameDay,appearance:null,...n}));
   for(const n of out.npcs){if(!Array.isArray(n.knowledge))n.knowledge=[];if(!Array.isArray(n.goals))n.goals=[];if(!Array.isArray(n.secrets))n.secrets=[];if(!n.relationships||typeof n.relationships!=='object')n.relationships={};}
   for(const p of out.party){if(!Array.isArray(out.characterKnowledge[p.name]))out.characterKnowledge[p.name]=[]; if(!Array.isArray(out.longTermMemory.characterMemories[p.name]))out.longTermMemory.characterMemories[p.name]=[];}
   // Opening artwork is part of the Sylvara scene; other image entries are preserved.
@@ -617,40 +618,33 @@ function setStoryBusy(busy){
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function buildStoryContext(){
-  const recent=state.story.slice(-12).map(e=>{
+  ensureRuntimeEngine();
+  const recent=state.story.slice(-8).map(e=>{
     const who=e.type==='player'?playerName():(e.speaker||'Narrator');
     return `${who}: ${String(e.text||'')}`;
   }).join('\n');
-  const activeParty=state.party.filter(p=>p.control!=='inactive-player'); const party=activeParty.map(p=>`${p.name} (${p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED'}, ${p.race||'Human'}, role: ${p.role||'unknown'}, bond ${Number(p.bond)||0}, trust ${Number(p.trust)||0}, affection ${Number(p.affection)||0}, tension ${Number(p.tension)||0})`).join('; ');
-  const sharedFacts=state.sharedFacts.length?state.sharedFacts.slice(-30).map(f=>`- ${f}`).join('\n'):'- None recorded yet.';
-  const memories=state.playerMemory.length?state.playerMemory.slice(-20).map(f=>`- ${f}`).join('\n'):'- None supplied.';
-  const knowledge=Object.entries(state.characterKnowledge).map(([name,facts])=>`${name}: ${facts.length?facts.slice(-8).map(f=>`[${f}]`).join(' '):'[No private knowledge recorded]'}`).join('\n');
+  const player=activePlayer();
+  const sceneNPCs=relevantNPCs();
+  const scenePartyNPCs=state.party.filter(p=>p.control==='npc' && p.name!==playerName()).slice(0,8);
+  const allSceneNPCs=[...sceneNPCs,...scenePartyNPCs.filter(p=>!sceneNPCs.some(n=>n.name===p.name))].slice(0,10);
+  const sceneNames=new Set([playerName(),...allSceneNPCs.map(n=>n.name)]);
+  const activeParty=state.party.filter(p=>sceneNames.has(p.name)||p.control==='player');
+  const party=activeParty.map(p=>`${p.name} (${p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED'}, role: ${p.role||'unknown'}, personality: ${p.personality||'not supplied'})`).join('; ');
+  const sharedFacts=(state.sharedFacts||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
   const ltm=state.longTermMemory||{};
-  const worldMemory=(ltm.worldFacts||[]).slice(-25).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  const eventMemory=(ltm.events||[]).slice(-25).map(e=>`- Day ${e.day||'?'} (${e.location||'unknown'}): ${e.text}`).join('\n')||'- None recorded.';
-  const unresolved=(ltm.unresolved||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
-  const npcMemory=(state.npcs||[]).filter(n=>n.persistence==='persistent').slice(-20).map(n=>`${n.name} | ${n.race} | ${n.role} | ${n.age} | ${n.location} | ${n.personality} | knows: ${(n.knowledge||[]).slice(-6).join('; ')}`).join('\n')||'No persistent NPCs yet.';
-  const worldProfile=state.worldProfile||{};
-  const worldSummary=Object.entries(worldProfile).filter(([k,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v}`).join('\n')||'Use established campaign rules.';
-  // The imported blueprint may contain the full character list. Do not send it twice.
-  // Keep the world/setting canon here and send character canon separately in compact form.
+  const worldMemory=(ltm.worldFacts||[]).slice(-12).map(f=>`- ${f}`).join('\n')||'- None recorded.';
+  const eventMemory=(ltm.events||[]).slice(-12).map(e=>`- Day ${e.day||'?'} (${e.location||'unknown'}): ${e.text}`).join('\n')||'- None recorded.';
+  const unresolved=(ltm.unresolved||[]).slice(-8).map(f=>`- ${f}`).join('\n')||'- None recorded.';
   let spec={};
   if(state.scenarioSpec&&typeof state.scenarioSpec==='object'){
-    spec=structuredClone(state.scenarioSpec);
-    delete spec.characters;
-    delete spec.currentState;
+    spec=structuredClone(state.scenarioSpec); delete spec.characters; delete spec.currentState;
   }
-  const scenarioSpec=Object.keys(spec).length?JSON.stringify(spec,null,2):'No imported scenario blueprint; use the established campaign facts.';
+  const scenarioSpec=Object.keys(spec).length?JSON.stringify(spec):'Use the established campaign facts.';
   const characterProfiles=activeParty.map(p=>({
-    name:p.name,control:p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED',race:p.race||'Human',age:p.age||'',role:p.role||'',
-    personality:p.personality||'',appearance:p.appearance||'',
-    speechStyle:p.speechStyle||'',behaviourCanon:p.behaviourCanon||'',
-    likes:(p.likes||[]).slice(0,8),dislikes:(p.dislikes||[]).slice(0,8),
-    goals:(p.goals||[]).slice(0,6),fears:(p.fears||[]).slice(0,6),secrets:(p.secrets||[]).slice(0,6),morals:p.morals||'',
-    relationshipGuidance:p.relationshipGuidance||'',magicEffects:p.magicEffects||'',
-    knowledge:(state.characterKnowledge[p.name]||[]).slice(-8)
+    name:p.name,control:p.control==='player'?'PLAYER CONTROLLED':'AI CONTROLLED',role:p.role||'',personality:p.personality||'',appearance:p.appearance||'',speechStyle:p.speechStyle||'',behaviourCanon:p.behaviourCanon||'',goals:(p.goals||[]).slice(0,4),fears:(p.fears||[]).slice(0,4),morals:p.morals||'',knowledge:(state.characterKnowledge?.[p.name]||[]).slice(-5)
   }));
-  return {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary,scenarioSpec,characterProfiles};
+  const npcProfiles=allSceneNPCs.map(n=>({name:n.name,control:'AI CONTROLLED',role:n.role,personality:n.personality,description:n.description,goals:n.goals,knowledge:(n.runtime?.knownFacts||n.knowledge||[]).slice(-5),memories:(n.runtime?.memories||[]).slice(-5),location:n.runtime?.currentLocation||n.location,mood:n.runtime?.currentMood||'neutral'}));
+  return {recent,party,sharedFacts,worldMemory,eventMemory,unresolved,scenarioSpec,characterProfiles,npcProfiles,playerProfile:player?{name:player.name,appearance:player.appearance,personality:player.personality,knowledge:(state.characterKnowledge?.[player.name]||[]).slice(-6)}:{}};
 }
 function parseNarrativeEntries(text){
   const known=[...state.party.map(p=>p.name),...(state.npcs||[]).map(n=>n.name)].filter(Boolean).sort((a,b)=>b.length-a.length);
@@ -678,121 +672,61 @@ async function callStoryAI(action,correctedSource){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
-  const {recent,party,sharedFacts,memories,knowledge,worldMemory,eventMemory,unresolved,npcMemory,worldSummary,scenarioSpec,characterProfiles}=buildStoryContext();
-  const prompt=`You are the game master and narrative engine for the current imported RPG scenario.
+  const ctx=buildStoryContext();
+  const prompt=`You are the narrative engine for the CURRENT RPG SCENE. The game engine owns canon, memory, state and player control. Your job is only to write natural story prose.
 
-YOUR JOB:
-- Run the world and write the next natural scene in response to Shane's latest action.
-- You are NOT filling out a database form. You are NOT writing JSON. You are a storyteller and roleplayer.
-- Write the scene itself. Let the world, characters, atmosphere, dialogue and consequences flow naturally.
+PLAYER CONTROL:
+${JSON.stringify(ctx.playerProfile)}
+Never write the player's dialogue, thoughts, feelings, choices or actions beyond the supplied player action.
 
-NON-NEGOTIABLE CONTINUITY RULES:
-- The active player character is ${playerName()}. They are controlled ONLY by the player. Never invent their thoughts, feelings, dialogue, choices, memories, injuries, abilities, secrets, or actions beyond what the player explicitly supplied.
-- The active player character keeps the personal memories supplied by their character file. Do not invent supernatural awareness, hidden abilities, amnesia or other major traits unless the scenario or player establishes them.
-- Do not invent past-life memories or hidden history for the active player character.
-- A character can know only what they personally witnessed, were explicitly told, or is already listed in that character's knowledge. Never give a character information merely because the narrator or another character knows it.
-- Never have someone identify a hidden injury, secret, private conversation, item, event, or intention they could not have observed or learned about.
-- Do not retroactively treat a character as having helped with an injury or event unless the story explicitly showed that happening.
-- Do not introduce unexplained companions, relationships, injuries, powers, possessions, locations, or history.
-- Preserve established facts. Never contradict them just to make a scene more dramatic.
+CURRENT WORLD CANON:
+${ctx.scenarioSpec}
 
-CHARACTER CANON:
-- Treat imported character profiles and saved visual/behavioural canon as authoritative.
-- Do not invent or alter established appearance details.
-- Never use a character's image as permission to invent extra physical details.
-- Avoid repetitive AI mannerisms and stock gestures. Do not repeatedly use phrases such as 'raises a dry eyebrow', 'measured gaze', 'faint smile', 'knowing smile', 'steady gaze', 'tilts her head' or similar filler. Use varied actions that fit the exact moment.
-- Show emotion through dialogue, action, expression and behaviour instead of explaining every emotion.
-- Never import facts, traits, races, powers, relationships or lore from another campaign. A character exists in this campaign only if this scenario or its imported characters establish them.
-- Use magical/supernatural visual effects only when this scenario establishes that such things exist and the current character actually uses them.
-- Characters should react to the specific latest action and to one another naturally. Do not make every beat centre on one character.
+CURRENT SCENE:
+Location: ${state.currentLocation||'Unknown'}
+Participants: ${ctx.party}
 
-CHARACTER AGENCY:
-- Characters are people, not response buttons. They can initiate conversation, make observations, joke, disagree, interrupt, ask questions, make plans, hesitate, leave, return, help, refuse, make mistakes and act on their own when their personality and circumstances support it.
-- The world can move without Shane pushing it every turn. An NPC can notice something, an animal can react, weather can change, someone can arrive, a distant event can occur, or a character can decide to do something.
-- Do not manufacture an event every turn. Quiet moments are allowed.
-- Do not make every character agreeable or fascinated by Shane.
+RELEVANT NPCs ONLY:
+${JSON.stringify(ctx.npcProfiles,null,2)}
 
-WRITING STYLE:
-- This should feel like Shane is actually inside the world, not like he is operating a chatbot.
-- Do not mechanically begin every response with a character noticing Shane.
-- Do not mechanically end every response with a question.
-- Do not make every response the same length or structure.
-- Do NOT shorten a response merely to fit a perceived length limit. If the scene genuinely needs several paragraphs or a full page, write it. If two sentences are enough, use two sentences. Never pad and never truncate meaningful content.
-- Dialogue should sound like real people with individual personalities, not exposition disguised as conversation.
-- Allow humour, awkwardness, warmth, tension, silence, danger, curiosity and ordinary moments where appropriate.
-- Have fun with the characters and the world while respecting established canon.
-- Romance, if it develops, should be gradual, character-driven and based on accumulated interaction, not a mechanical switch. Do not make romance the focus of every scene.
-- Leave a natural opening for Shane's next action, but do not force one with a generic question.
+RELEVANT CHARACTER CANON:
+${JSON.stringify(ctx.characterProfiles,null,2)}
 
-PRESENTATION FORMAT:
-- Return ONLY the story prose. No JSON. No code fences. No analysis. No metadata. No bullet-point summaries.
-- Narration is ordinary prose.
-- When a named character speaks or their block is clearly the focus, you MAY begin that paragraph with the character's exact name followed by a colon, for example: Sylvara Aelthara: "I wondered when you would ask." The game will hide that speaker marker when displaying the story.
-- Keep dialogue and actions natural within the prose. Do not label every sentence.
-- Do not include a 'corrected_action' field or any other machine-readable structure.
+RECENT EVENTS:
+${ctx.eventMemory}
 
-WORLD-BUILDING AND SCENARIO CANON:
-- The CURRENT SCENARIO is the only world being played. Treat its imported blueprint, world profile, lore, rules, locations, factions, characters, timeline and starting situation as authoritative canon.
-- The application name does NOT define the setting. Do not assume dark fantasy, elves, dwarves, magic, monsters, medieval technology, kingdoms or supernatural events unless this scenario explicitly establishes them.
-- If this scenario is modern-day, contemporary, realistic or otherwise non-fantasy, keep it that way. Do not introduce fantasy races, magic, medieval settings or supernatural events merely because the RPG can support them.
-- Never import characters, lore, locations, creatures, factions, relationships or events from another scenario. Campaigns are isolated.
-- If a field is blank, missing or explicitly left open, develop it naturally only in a way that fits the established setting. An open field is not permission to contradict the setting.
-- Preserve established facts once introduced. New lore must connect to the current scenario and remain consistent.
-- Do not reveal character secrets merely because they exist in the blueprint. A secret is available to the character who knows it, not automatically to Shane or the narrator.
+RELEVANT SHARED FACTS:
+${ctx.sharedFacts}
 
-CURRENT SCENARIO: ${state.scenarioName} (${state.scenarioType})
-WORLD PROFILE FOR THIS CAMPAIGN:
-${worldSummary}
-IMPORTED SCENARIO BLUEPRINT / WORLD-BUILDING CANON:
-${scenarioSpec}
-IMPORTED CHARACTER PROFILES:
-${JSON.stringify(characterProfiles,null,2)}
-IN-GAME DATE: Day ${state.inGameDay||1}, ${state.timeOfDay||'morning'}
-CURRENT LOCATION: ${state.currentLocation||'Unknown location'}
-CURRENT PARTY: ${party}
-PLAYER'S SUPPLIED PERSONAL MEMORIES:
-${memories}
-SHARED ESTABLISHED FACTS:
-${sharedFacts}
-CHARACTER KNOWLEDGE BOUNDARIES:
-${knowledge}
-LONG-TERM WORLD MEMORY:
-${worldMemory}
-LONG-TERM EVENT HISTORY:
-${eventMemory}
-UNRESOLVED THREADS:
-${unresolved}
-PERSISTENT NPCS:
-${npcMemory}
 RECENT STORY:
-${recent}
+${ctx.recent}
 
-PLAYER'S NEW ACTION:
-${action}`;
-  const payload={
-    model,
-    messages:[
-      {role:'system',content:prompt},
-      {role:'user',content:action}
-    ],
-    stream:false,
-    options:{temperature:0.8}
-  };
+UNRESOLVED THREADS:
+${ctx.unresolved}
+
+LATEST PLAYER ACTION:
+${action}
+
+RULES:
+- React specifically to the latest action.
+- Use the established personality and speech style of the NPC who is responding.
+- NPCs may react to and speak with one another when appropriate.
+- Do not make every NPC speak.
+- Do not introduce lore from another campaign.
+- Do not invent fantasy elements unless this scenario establishes them.
+- Keep secrets limited to characters who know them.
+- The world may move naturally, but do not manufacture a major event every turn.
+- Write natural prose with dialogue and action. No JSON, headings, metadata or analysis.
+- Do not end with a generic 'What do you do?' question.
+- Vary response length naturally; do not pad.
+RETURN ONLY THE STORY.`;
+  const payload={model,messages:[{role:'system',content:prompt}],stream:false,options:{temperature:0.82}};
   const data=await localAIRequest(endpoint,payload);
-  const text=String(data?.message?.content || data?.choices?.[0]?.message?.content || data?.response || data?.output_text || data || '').trim();
+  const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
   if(!text)throw new Error('Local AI returned no story text');
   const entries=parseNarrativeEntries(text);
   if(!entries.length)throw new Error('Local AI returned no scene text');
-  return {
-    corrected_action:String(correctedSource||action).trim(),
-    entries,
-    narrativeText:text,
-    relationship_changes:[],
-    memory_updates:[],
-    npc_updates:[],
-    world_updates:{},
-    mana_cost:0
-  };
+  return {action:String(correctedSource||action).trim(),corrected_action:String(correctedSource||action).trim(),entries,narrativeText:text,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
 }
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
