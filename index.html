@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.6.1</div>
+<div class="version-badge">v4.6.2</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -617,6 +617,45 @@ function setStoryBusy(busy){
   if(hint) hint.textContent=busy?'The story is responding… take a moment to read.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+
+function relevantNPCs(){
+  const list=Array.isArray(state?.npcs)?state.npcs:[];
+  const here=String(state?.currentLocation||'').trim().toLowerCase();
+  const player=activePlayer();
+  const playerNameValue=String(player?.name||'').trim().toLowerCase();
+
+  return list.map(n=>{
+    const runtime=n.runtime&&typeof n.runtime==='object'?n.runtime:{};
+    const location=String(runtime.currentLocation||n.location||'').trim();
+    const name=String(n.name||'Unnamed NPC');
+    const rel=(n.relationships&&typeof n.relationships==='object')?n.relationships:{};
+    const relToPlayer=rel[player?.name]||rel[playerNameValue]||null;
+    let score=0;
+
+    if(location && here && location.toLowerCase()===here) score+=5;
+    if(!location || !here || /unknown|anywhere|roaming|mobile/i.test(location)) score+=1;
+    if(relToPlayer) score+=3;
+    if(runtime.currentGoal||runtime.currentConcern||runtime.currentTopic) score+=1;
+    if(runtime.currentMood) score+=1;
+    if(Array.isArray(runtime.memories)&&runtime.memories.length) score+=1;
+
+    return {
+      ...n,
+      runtime,
+      _relevanceScore:score,
+      _relationshipToPlayer:relToPlayer
+    };
+  })
+  .sort((a,b)=>b._relevanceScore-a._relevanceScore)
+  .slice(0,10)
+  .map(n=>{
+    const copy={...n};
+    delete copy._relevanceScore;
+    delete copy._relationshipToPlayer;
+    return copy;
+  });
+}
+
 function buildStoryContext(){
   const recent=state.story.slice(-8).map(e=>{
     const who=e.type==='player'?playerName():(e.speaker||'Narrator');
