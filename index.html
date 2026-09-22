@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.0.0</div>
+<div class="version-badge">v5.0.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -1349,6 +1349,117 @@ setTimeout(()=>maybeOpenPlayerPicker(),200);
 setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 
 document.addEventListener('DOMContentLoaded',()=>updateRedoButton());
+
+
+/* ================= v5.0.1 missing state appliers =================
+   These functions keep the RPG engine authoritative. AI output may propose
+   state changes, but the engine validates/applies them and stores them locally.
+=================================================================== */
+function applyAIMemory(result){
+  if(!state.longTermMemory || typeof state.longTermMemory!=='object'){
+    state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};
+  }
+  const mem=state.longTermMemory;
+  if(!Array.isArray(mem.worldFacts))mem.worldFacts=[];
+  if(!Array.isArray(mem.events))mem.events=[];
+  if(!mem.characterMemories||typeof mem.characterMemories!=='object')mem.characterMemories={};
+
+  const updates=Array.isArray(result?.memory_updates)?result.memory_updates:[];
+  for(const u of updates){
+    if(!u)continue;
+    const text=String(u.text||u.memory||u.fact||'').trim();
+    if(!text)continue;
+    const character=String(u.character||u.characterName||'').trim();
+    const record={
+      id:'mem-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),
+      text,
+      type:String(u.type||'event'),
+      importance:Number(u.importance)||50,
+      source:String(u.source||'player_action'),
+      at:Date.now()
+    };
+    if(character){
+      if(!Array.isArray(mem.characterMemories[character]))mem.characterMemories[character]=[];
+      mem.characterMemories[character].push(record);
+      mem.characterMemories[character]=mem.characterMemories[character].slice(-500);
+    }else{
+      mem.events.push(record);
+      mem.events=mem.events.slice(-1000);
+    }
+  }
+
+  /* Every player action is a lightweight chronological memory. This is deliberately
+     compact; the full prose remains in the story log and can be retrieved separately. */
+  const action=String(result?.action||'').trim();
+  if(action){
+    mem.events.push({
+      id:'evt-'+Date.now().toString(36),
+      type:'player_action',
+      text:action.slice(0,1200),
+      at:Date.now()
+    });
+    mem.events=mem.events.slice(-1000);
+  }
+}
+
+function applyAIWorldUpdates(result){
+  if(!state.worldState||typeof state.worldState!=='object')state.worldState={};
+  const updates=result?.world_updates;
+  if(!updates||typeof updates!=='object')return;
+  for(const [key,value] of Object.entries(updates)){
+    if(key==='location' || key==='timeOfDay' || key==='inGameDay'){
+      if(value!==undefined&&value!==null)state[key]=value;
+    }else if(key!=='__proto__'&&key!=='constructor'&&key!=='prototype'){
+      state.worldState[key]=structuredClone(value);
+    }
+  }
+}
+
+function applyAINPCs(result){
+  if(!Array.isArray(state.npcs))state.npcs=[];
+  const updates=Array.isArray(result?.npc_updates)?result.npc_updates:[];
+  for(const u of updates){
+    if(!u)continue;
+    const name=String(u.name||u.character||'').trim();
+    if(!name)continue;
+    let npc=state.npcs.find(n=>rpgKey(n.name)===rpgKey(name));
+    if(!npc){
+      npc={name};
+      state.npcs.push(npc);
+    }
+    const allowed=['location','activity','mood','currentGoal','currentConcern','currentTopic','intent'];
+    for(const key of allowed){
+      if(u[key]!==undefined)npc[key]=structuredClone(u[key]);
+    }
+    if(Array.isArray(u.goals))npc.goals=structuredClone(u.goals);
+  }
+}
+
+/* Keep the canonical relationship store synchronized with the legacy character
+   display fields. The scenario baseline remains authoritative at campaign start. */
+const _rpgApplyAIRelationshipsOriginal = applyAIRelationships;
+applyAIRelationships = function(result){
+  _rpgApplyAIRelationshipsOriginal(result);
+  if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
+  for(const ch of (result?.relationship_changes||[])){
+    const name=String(ch?.name||'').trim();
+    if(!name)continue;
+    const other=String(ch?.with||ch?.other||ch?.target||state.playerCharacterName||'').trim();
+    if(!other)continue;
+    const key=rpgRelationshipKey(name,other);
+    const existing=state.relationships[key]||rpgNormaliseRelationship({},name,other);
+    for(const k of ['bond','reputation','affection','trust','attraction','comfort','tension']){
+      const deltaKey=k+'_delta';
+      if(ch[deltaKey]!==undefined){
+        const delta=Number(ch[deltaKey])||0;
+        if(k==='reputation')existing[k]=Math.max(-100,Math.min(100,Number(existing[k]||0)+delta));
+        else existing[k]=rpgClamp(Number(existing[k]||0)+delta);
+      }
+    }
+    existing.updatedAt=Date.now();
+    state.relationships[key]=existing;
+  }
+};
 
 /* ========================= RPG CORE v5.0 =========================
    Persistent campaign files, segmented character state, relationship baselines,
