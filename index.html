@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.0.2</div>
+<div class="version-badge">v5.0.5</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -622,10 +622,10 @@ function setStoryBusy(busy){
   const area=document.getElementById('action'); if(area){area.placeholder=activePlayer()?`What does ${playerName()} do or say?`:'Choose your player character first';area.disabled=!!busy||!activePlayer();}
   const button=document.querySelector('.action-card .actions .btn');
   if(area){area.classList.toggle('story-busy',busy);}
-  if(button){button.disabled=busy||!activePlayer(); button.textContent=busy?'Writing…':'Send';}
+  if(button){button.disabled=busy||!activePlayer(); button.textContent=busy?'Thinking…':'Send';}
   updateRedoButton();
   const hint=document.querySelector('.action-card .small');
-  if(hint) hint.textContent=busy?'The story is responding… take a moment to read.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
+  if(hint) hint.textContent=busy?'Gemma is thinking… the response will appear as soon as it is ready.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
@@ -683,7 +683,7 @@ function buildStoryContext(action=''){
     player?{...compactCharacter(player,true),knowledge:(state.characterKnowledge?.[player.name]||[]).slice(-2).map(x=>compactText(x,160))}:null,
     ...npcs.map(n=>{
       const c=compactCharacter(n,false), r=characterRuntime(n);
-      const rel=(n.relationships&&player)?(n.relationships[player.name]||null):null;
+      const rel=(player&&state.relationships)?(state.relationships[rpgRelationshipKey(n.name,player.name)]||null):null;
       c.relationship=rel?{
         bond:Number(rel.bond??n.bond??0),trust:Number(rel.trust??n.trust??0),affection:Number(rel.affection??n.affection??0),attraction:Number(rel.attraction??n.attraction??0),comfort:Number(rel.comfort??n.comfort??0),tension:Number(rel.tension??n.tension??0)
       }:null;
@@ -711,33 +711,54 @@ function buildStoryContext(action=''){
   return {recent,activeCharacters,essentialCanon,relevantFacts,events,threads,playerAction:compactText(action,1800)};
 }
 function parseNarrativeEntries(text){
-  const known=[...state.party.map(p=>p.name),...(state.npcs||[]).map(n=>n.name)].filter(Boolean).sort((a,b)=>b.length-a.length);
-  const paragraphs=String(text||'').replace(/\r/g,'').trim().split(/\n\s*\n+/).map(x=>x.trim()).filter(Boolean);
+  const known=[...state.party.map(p=>p.name),...(state.npcs||[]).map(n=>n.name)]
+    .filter(Boolean).sort((a,b)=>b.length-a.length);
+  const normalised=String(text||'').replace(/\r/g,'').trim();
+  const blocks=normalised.split(/\n\s*\n+/).map(x=>x.trim()).filter(Boolean);
   const entries=[];
-  for(let para of paragraphs){
-    para=para.replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').trim();
-    if(!para)continue;
+  const findKnownName=(s)=>known.find(n=>new RegExp('\\b'+n.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i').test(s))||'';
+
+  for(let block of blocks){
+    block=block.replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').trim();
+    if(!block)continue;
     let speaker='';
-    for(const name of known){
-      const re=new RegExp('^\\s*(?:\\*\\*|__)?'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\*\\*|__)?\\s*:\\s*','i');
-      if(re.test(para)){
-        speaker=name;
-        para=para.replace(re,'').trim();
-        break;
+    let markerMatch=block.match(/^\[\s*(?:SPEAKER\s*:\s*)?([^\]]+)\]\s*/i);
+    if(markerMatch){
+      const candidate=markerMatch[1].trim();
+      if(!/^narrator$/i.test(candidate))speaker=known.find(n=>n.toLowerCase()===candidate.toLowerCase())||'';
+      block=block.slice(markerMatch[0].length).trim();
+    }else{
+      for(const name of known){
+        const re=new RegExp('^\\s*(?:\\*\\*|__)?'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\*\\*|__)?\\s*:\\s*','i');
+        if(re.test(block)){speaker=name;block=block.replace(re,'').trim();break;}
       }
     }
-    if(!para)continue;
-    entries.push(speaker?{type:'character',speaker,text:normaliseAIText(para,'character')}:{type:'gm',text:normaliseAIText(para,'gm')});
+
+    // Recovery for Gemma occasionally omitting markers: if a paragraph contains a
+    // clear NPC attribution immediately around dialogue, render it as that NPC.
+    if(!speaker){
+      for(const name of known){
+        const qBefore=new RegExp("[“\"](?:[^“”\"]{0,700})[”\"]\\s*[,—-]?\\s*"+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+"\\s+(?:said|asked|replied|answered|murmured|whispered|repeated|added|continued|called|remarked|noted|observed|told|says|asks)\\b",'i');
+                const qAfter=new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"[^“”\"]{0,180}[“\"]",'i');
+        if(qBefore.test(block)||qAfter.test(block)){speaker=name;break;}
+      }
+    }
+
+    if(!block)continue;
+    entries.push(speaker
+      ? {type:'character',speaker,text:normaliseAIText(block,'character')}
+      : {type:'gm',text:normaliseAIText(block,'gm')});
   }
-  if(!entries.length && String(text||'').trim()) entries.push({type:'gm',text:normaliseAIText(String(text).trim(),'gm')});
+  if(!entries.length && normalised)entries.push({type:'gm',text:normaliseAIText(normalised,'gm')});
   return entries.filter(e=>e.text);
 }
+
 async function callStoryAI(action,correctedSource){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
   const ctx=buildStoryContext(action);
-  const prompt=`You are the narrative engine for the CURRENT RPG SCENE. The game engine owns canon, memory, relationships and player control. Write only natural story prose.
+  const prompt=`You are the narrative engine for the CURRENT RPG SCENE. The game engine owns canon, memory, relationships and player control. Write only natural story prose. Use the speaker markers described below; the game removes them before showing the player.
 
 PLAYER CONTROL
 ${JSON.stringify(ctx.activeCharacters[0]||{})}
@@ -762,8 +783,10 @@ ${ctx.threads.join('\n')||'None'}
 RECENT STORY
 ${ctx.recent||'None'}
 
-LATEST PLAYER ACTION
+LATEST PLAYER ACTION — THIS IS PLAYER INPUT, NOT NPC DIALOGUE
 ${ctx.playerAction}
+
+IMPORTANT: Do not repeat, paraphrase, quote, or assign the player's words to an NPC. Respond to the player's action from the NPCs' perspectives.
 
 RULES
 - React specifically to the latest player action.
@@ -775,13 +798,20 @@ RULES
 - Do not make every NPC speak.
 - Do not control the player character.
 - Write natural prose with dialogue and action. No JSON, headings, metadata or analysis.
+- EVERY paragraph MUST begin with exactly one speaker marker: [Narrator] or [NPC NAME].
+- Use [Narrator] only for scene description, atmosphere, transitions or actions that belong to nobody.
+- Put spoken dialogue and that NPC's physical actions in the NPC's own [NPC NAME] paragraph.
+- Use the actual NPC name, exactly as supplied in the relevant characters list.
+- Do not put dialogue spoken by an NPC under [Narrator].
+- Do not make every NPC speak. Usually use 1-2 relevant NPCs; allow a second NPC only when natural.
+- Do not control the player character.
 - Do not end with a generic 'What do you do?' question.
-RETURN ONLY THE STORY.`;
+RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
 
   // Gemma 4 E2B accepts at most 4096 input tokens. Keep a hard character budget with
   // the player action protected at the end. The segmented context above is deliberately
   // small; this guard is a final safety net, not the normal retrieval mechanism.
-  const MAX_PROMPT_CHARS=9000;
+  const MAX_PROMPT_CHARS=8200;
   let finalPrompt=prompt;
   if(finalPrompt.length>MAX_PROMPT_CHARS){
     const actionMarker='LATEST PLAYER ACTION\n';
@@ -874,7 +904,7 @@ async function typewriteAIEntry(entry, initialPause=0){
     body.innerHTML=speakerHtml+renderRichText(shown)+'<span class="typing-cursor" aria-hidden="true"></span>';
     if(i%3===0)keepStoryAtLatest();
     const ch=finalText[i];
-    const speed=ch===' ' ? 5 : /[,.!?;:]/.test(ch) ? 55 : /[\n]/.test(ch) ? 90 : 12;
+    const speed=ch===' ' ? 2 : /[,.!?;:]/.test(ch) ? 18 : /[\n]/.test(ch) ? 30 : 4;
     await wait(speed);
   }
   storyEntry.text=finalText;
@@ -932,7 +962,7 @@ async function redoLastAI(){
       await save();
       const entries=aiEntries(result);
       if(!entries.length)throw new Error('Local AI returned no usable story entries');
-      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?350:650);
+      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?100:180);
       toast('New response generated');
     }catch(err){
       console.error(err);
@@ -995,7 +1025,7 @@ async function addAction(){
           toast('AI had no immediate response');
         }else{
           for(let i=0;i<entries.length;i++){
-            await typewriteAIEntry(entries[i],i===0?350:650);
+            await typewriteAIEntry(entries[i],i===0?100:180);
           }
           toast('Story continues');
         }
@@ -1130,7 +1160,7 @@ function downloadJson(filename,data){
 }
 function normaliseImportedCharacter(raw){
   const x=(raw&&typeof raw==='object')?raw:{};const name=String(x.name||'').trim();if(!name)throw new Error('Character file is missing a name.');
-  const p={name,level:Math.max(1,Number(x.level)||1),race:String(x.race||'Human'),age:String(x.age||''),role:String(x.role||''),magicSpecialisation:String(x.magicSpecialisation||x.magic_specialisation||'Undeclared'),image:x.image||x.imageDataUrl||null,bond:Math.max(0,Math.min(100,Number(x.bond??20))),reputation:Math.max(-100,Math.min(100,Number(x.reputation??0))),affection:Math.max(0,Math.min(100,Number(x.affection??20))),trust:Math.max(0,Math.min(100,Number(x.trust??20))),attraction:Math.max(0,Math.min(100,Number(x.attraction??0))),comfort:Math.max(0,Math.min(100,Number(x.comfort??20))),tension:Math.max(0,Math.min(100,Number(x.tension??0))),personality:String(x.personality||''),appearance:String(x.appearance||''),visualCanon:String(x.visualCanon||x.visual_canon||x.appearance||''),behaviourCanon:String(x.behaviourCanon||x.behaviour_canon||''),speechStyle:String(x.speechStyle||x.speech_style||''),likes:Array.isArray(x.likes)?x.likes:[],dislikes:Array.isArray(x.dislikes)?x.dislikes:[],fears:Array.isArray(x.fears)?x.fears:[],goals:Array.isArray(x.goals)?x.goals:[],secrets:Array.isArray(x.secrets)?x.secrets:[],morals:String(x.morals||''),relationshipGuidance:String(x.relationshipGuidance||x.relationship_guidance||''),magicEffects:String(x.magicEffects||x.magic_effects||''),knowledge:Array.isArray(x.knowledge)?x.knowledge:[]};
+  const p={name,level:Math.max(1,Number(x.level)||1),race:String(x.race||'Human'),age:String(x.age||''),role:String(x.role||''),magicSpecialisation:String(x.magicSpecialisation||x.magic_specialisation||'Undeclared'),image:x.image||x.imageDataUrl||null,bond:Math.max(0,Math.min(100,Number(x.bond??20))),reputation:Math.max(-100,Math.min(100,Number(x.reputation??0))),affection:Math.max(0,Math.min(100,Number(x.affection??20))),trust:Math.max(0,Math.min(100,Number(x.trust??20))),attraction:Math.max(0,Math.min(100,Number(x.attraction??0))),comfort:Math.max(0,Math.min(100,Number(x.comfort??20))),tension:Math.max(0,Math.min(100,Number(x.tension??0))),personality:String(x.personality||''),appearance:String(x.appearance||''),visualCanon:String(x.visualCanon||x.visual_canon||x.appearance||''),behaviourCanon:String(x.behaviourCanon||x.behaviour_canon||''),speechStyle:String(x.speechStyle||x.speech_style||''),likes:Array.isArray(x.likes)?x.likes:[],dislikes:Array.isArray(x.dislikes)?x.dislikes:[],fears:Array.isArray(x.fears)?x.fears:[],goals:Array.isArray(x.goals)?x.goals:[],secrets:Array.isArray(x.secrets)?x.secrets:[],morals:String(x.morals||''),relationshipGuidance:(x.relationshipGuidance&&typeof x.relationshipGuidance==='object')?structuredClone(x.relationshipGuidance):((x.relationship_guidance&&typeof x.relationship_guidance==='object')?structuredClone(x.relationship_guidance):String(x.relationshipGuidance||x.relationship_guidance||'')),magicEffects:String(x.magicEffects||x.magic_effects||''),knowledge:Array.isArray(x.knowledge)?x.knowledge:[]};
   p.control=(x.control==='player'||x.playerControlled===true||/\bplayer(?: character)?\b/i.test(String(p.role||'')))?'inactive-player':'npc';p.playerControlled=false;if(!p.behaviourCanon&&p.personality)p.behaviourCanon=p.personality;return p;
 }
 function normaliseImportedScenario(raw){
@@ -1163,11 +1193,22 @@ function buildImportedOpening(t, embedded){
 }
 function makeScenarioFromTemplate(t){
   const base=structuredClone(defaultState);base.scenarioId='imported-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';
-  const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];const byName=new Map(embedded.map(p=>[p.name.toLowerCase(),p]));base.party=[];
-  for(const name of(t.party||[])){const p=byName.get(String(name).toLowerCase());const entry=p?structuredClone(p):{name:String(name),level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',control:'npc',playerControlled:false};if(isPlayerCandidate(entry)){entry.control='inactive-player';entry.playerControlled=false;}base.party.push(entry);}
+  const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];const byName=new Map(embedded.map(p=>[rpgKey(p.name),p]));base.party=[];
+  for(const name of(t.party||[])){const p=byName.get(rpgKey(name));const entry=p?structuredClone(p):{name:String(name),level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:'',control:'npc',playerControlled:false};if(isPlayerCandidate(entry)){entry.control='inactive-player';entry.playerControlled=false;}base.party.push(entry);}
   base.playerCandidates=base.party.filter(isPlayerCandidate).map(p=>p.name);base.playerCharacterName='';base.openingComplete=true;
   base.story=buildImportedOpening(t,base.party);base.characterKnowledge={};for(const p of base.party)base.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];
-  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
+  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});
+  // Relationship baselines belong to the imported campaign, not the generic character defaults.
+  base.relationships=rpgExtractRelationships(base.scenarioSpec,base.party);
+  for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
+  // Mirror relationship baselines directly into the character records used by the UI/context.
+  for(const rel of Object.values(base.relationships||{})){
+    for(const p of base.party){
+      if(rel.characters.some(n=>rpgKey(n)===rpgKey(p.name))){
+        p.bond=rel.bond;p.affection=rel.affection;p.trust=rel.trust;p.attraction=rel.attraction;p.comfort=rel.comfort;p.tension=rel.tension;
+      }
+    }
+  }
   return base;
 }
 async function importScenario(file){if(!file)return;try{const raw=JSON.parse(await file.text());const t=normaliseImportedScenario(raw);state=makeScenarioFromTemplate(t);await persistScenario();render();showTab('story');keepStoryAtLatest();toast(`Imported scenario: ${state.scenarioName}`);setTimeout(()=>maybeOpenPlayerPicker(),120);}catch(e){console.error('Scenario import failed',e);alert('Scenario import failed: '+(e?.message||e));}finally{const el=document.getElementById('scenarioImportFile');if(el)el.value='';}}
@@ -1466,7 +1507,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.0.0';
+const RPG_CORE_VERSION='5.0.5';
 const RPG_STORE_PREFIX='rpg5:';
 
 async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
@@ -1519,16 +1560,29 @@ function rpgNormaliseRelationship(raw,a,b){
 function rpgExtractRelationships(spec, party){
   const out={};
   const src=spec?.relationships;
+  /* Accept the scenario-pack relationshipState format as an authoritative
+     baseline. This is deliberately checked before character guidance so the
+     scenario's explicit starting values cannot fall back to generic defaults. */
+  const stateSrc=spec?.relationshipState;
+  if(stateSrc&&typeof stateSrc==='object'){
+    for(const [characterA,raw] of Object.entries(stateSrc)){
+      if(!raw||typeof raw!=='object')continue;
+      const characterB=raw.with||raw.characterB||raw.to||raw.other;
+      if(!characterB)continue;
+      const rel={...raw,characters:[characterA,String(characterB)],context:raw.basis||raw.context||''};
+      out[rpgRelationshipKey(characterA,String(characterB))]=rpgNormaliseRelationship(rel,characterA,String(characterB));
+    }
+  }
   if(Array.isArray(src)){
     for(const r of src){
       const chars=Array.isArray(r?.characters)?r.characters:
         [r?.characterA||r?.from,r?.characterB||r?.to].filter(Boolean);
-      if(chars.length>=2)out[rpgRelationshipKey(chars[0],chars[1])]=rpgNormaliseRelationship(r,chars[0],chars[1]);
+      if(chars.length>=2){const key=rpgRelationshipKey(chars[0],chars[1]);if(!out[key])out[key]=rpgNormaliseRelationship(r,chars[0],chars[1]);}
     }
   }else if(src&&typeof src==='object'){
     for(const [key,r] of Object.entries(src)){
       const chars=Array.isArray(r?.characters)?r.characters:String(key).split(/\s*(?:↔|->|—|::|\|)\s*/);
-      if(chars.length>=2)out[rpgRelationshipKey(chars[0],chars[1])]=rpgNormaliseRelationship(r,chars[0],chars[1]);
+      if(chars.length>=2){const key=rpgRelationshipKey(chars[0],chars[1]);if(!out[key])out[key]=rpgNormaliseRelationship(r,chars[0],chars[1]);}
     }
   }
   /* Also accept a character's relationshipGuidance.relationships object. */
