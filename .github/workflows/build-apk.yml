@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 71
-                  versionName '5.0.1-state-appliers'
+                  versionCode 72
+                  versionName '5.0.2-model-download-fix'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -249,9 +249,9 @@ jobs:
               }
               private var downloadId: Long? = null
 
-              private fun modelSha256(): String {
+              private fun modelSha256(file: File = modelFile): String {
                   val digest = MessageDigest.getInstance("SHA-256")
-                  FileInputStream(modelFile).use { input ->
+                  FileInputStream(file).use { input ->
                       val buffer = ByteArray(1024 * 1024)
                       while (true) {
                           val read = input.read(buffer)
@@ -260,6 +260,25 @@ jobs:
                       }
                   }
                   return digest.digest().joinToString("") { "%02x".format(it) }
+              }
+
+              private fun modelIsComplete(file: File): Boolean =
+                  file.exists() && file.length() == MODEL_SIZE_BYTES
+
+              private fun verifyAndMarkModel(): Boolean {
+                  if (!modelIsComplete(modelFile)) return false
+                  val actual = modelSha256(modelFile)
+                  if (!actual.equals(MODEL_SHA256, ignoreCase = true)) return false
+                  if (!verifiedMarkerFile.exists()) verifiedMarkerFile.createNewFile()
+                  return true
+              }
+
+              private fun postDownloadFailure(message: String) {
+                  downloadId = null
+                  postJsStatus("✗ $message")
+                  mainHandler.post {
+                      Toast.makeText(this@MainActivity, "Local AI download failed", Toast.LENGTH_LONG).show()
+                  }
               }
 
               private val modelUrl =
@@ -360,10 +379,14 @@ jobs:
 
               inner class LocalAI {
                   @JavascriptInterface
-                  fun isModelInstalled(): Boolean =
-                      modelFile.exists() &&
-                          modelFile.length() == MODEL_SIZE_BYTES &&
-                          verifiedMarkerFile.exists()
+                  fun isModelInstalled(): Boolean {
+                      try {
+                          if (verifiedMarkerFile.exists() && modelIsComplete(modelFile)) return true
+                          // Recover a valid model if Android/app lifecycle lost only the marker.
+                          if (modelIsComplete(modelFile) && verifyAndMarkModel()) return true
+                      } catch (_: Exception) {}
+                      return false
+                  }
 
                   @JavascriptInterface
                   fun downloadModel() {
@@ -383,13 +406,23 @@ jobs:
                                   throw IllegalStateException("Cannot create model storage directory")
                               }
 
-                              if (modelFile.exists()) modelFile.delete()
-                              if (verifiedMarkerFile.exists()) verifiedMarkerFile.delete()
+                              val partFile = File(modelDir, "gemma-4-E2B-it.litertlm.part")
 
-                              // Remove the invalid E4B model left by earlier builds so it
-                              // cannot consume several GB or be mistaken for the E2B model.
-                              File(modelDir, "gemma-4-E4B-it.litertlm").delete()
-                              File(modelDir, "gemma-4-E4B-it.litertlm.verified").delete()
+                              // Never throw away a complete file just because its marker is missing.
+                              if (modelIsComplete(modelFile)) {
+                                  postJsStatus("✓ Model file found. Verifying existing download…")
+                                  if (verifyAndMarkModel()) {
+                                      postJsStatus("✓ Local AI model installed and verified (${modelFile.length() / 1_048_576L} MB).")
+                                      return@launch
+                                  }
+                                  modelFile.delete()
+                                  verifiedMarkerFile.delete()
+                              }
+
+                              // A partial .part file is safe to discard and restart; the final model
+                              // is never exposed until it has passed the exact size + SHA checks.
+                              if (partFile.exists()) partFile.delete()
+                              verifiedMarkerFile.delete()
 
                               val request = DownloadManager.Request(Uri.parse(modelUrl)).apply {
                                   setTitle("Dark Fantasy RPG — Local AI")
@@ -400,11 +433,7 @@ jobs:
                                   setAllowedOverMetered(true)
                                   setAllowedOverRoaming(false)
                                   setMimeType("application/octet-stream")
-                                  setDestinationInExternalFilesDir(
-                                      this@MainActivity,
-                                      Environment.DIRECTORY_DOWNLOADS,
-                                      "models/gemma-4-E2B-it.litertlm"
-                                  )
+                                  setDestinationUri(Uri.fromFile(partFile))
                                   addRequestHeader("User-Agent", "DarkFantasyRPG/LocalAI")
                               }
 
@@ -413,7 +442,6 @@ jobs:
 
                               val id = manager.enqueue(request)
                               downloadId = id
-
                               postJsStatus("⬇ Download queued — Android Download Manager is starting…")
 
                               while (true) {
@@ -465,27 +493,32 @@ jobs:
                                               )
                                           }
                                           DownloadManager.STATUS_SUCCESSFUL -> {
-                                              if (!modelFile.exists()) {
+                                              if (!partFile.exists()) {
                                                   throw IllegalStateException(
-                                                      "Download reported success but the model file was not found"
+                                                      "Download reported success but the temporary model file was not found"
                                                   )
                                               }
-                                              if (modelFile.length() != MODEL_SIZE_BYTES) {
+                                              if (partFile.length() != MODEL_SIZE_BYTES) {
                                                   throw IllegalStateException(
-                                                      "Downloaded model is ${modelFile.length()} bytes; expected $MODEL_SIZE_BYTES bytes"
+                                                      "Downloaded model is ${partFile.length()} bytes; expected $MODEL_SIZE_BYTES bytes"
                                                   )
                                               }
 
                                               postJsStatus("✓ Download complete. Verifying model integrity…")
-                                              val actualSha256 = modelSha256()
+                                              val actualSha256 = modelSha256(partFile)
                                               if (!actualSha256.equals(MODEL_SHA256, ignoreCase = true)) {
                                                   throw IllegalStateException(
                                                       "Model SHA-256 mismatch. Expected $MODEL_SHA256 but got $actualSha256"
                                                   )
                                               }
 
-                                              if (!verifiedMarkerFile.createNewFile() && !verifiedMarkerFile.exists()) {
-                                                  throw IllegalStateException("Model verified but the verification marker could not be created")
+                                              if (modelFile.exists()) modelFile.delete()
+                                              if (!partFile.renameTo(modelFile)) {
+                                                  throw IllegalStateException("Verified model could not be moved into place")
+                                              }
+
+                                              if (!verifyAndMarkModel()) {
+                                                  throw IllegalStateException("Verified model could not be marked as installed")
                                               }
 
                                               downloadId = null
@@ -508,15 +541,12 @@ jobs:
                               }
                           } catch (e: Exception) {
                               downloadId = null
-                              if (verifiedMarkerFile.exists()) verifiedMarkerFile.delete()
-                              val detail = e.message?.takeIf { it.isNotBlank() }
-                                  ?: e.javaClass.simpleName
-                              postJsError("Model download failed: $detail")
+                              postDownloadFailure(e?.message ?: e.toString())
                           }
                       }
                   }
 
-                  @JavascriptInterface
+              @JavascriptInterface
                   fun generate(requestId: String, prompt: String) {
                       if (!isModelInstalled()) {
                           postJsError(requestId, "The local AI model is not installed. Download it first.")
@@ -643,5 +673,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.0.1-state-appliers
+          name: Dark-Fantasy-RPG-v5.0.2-model-download-fix
           path: app/build/outputs/apk/debug/app-debug.apk
