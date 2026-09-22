@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.7.0</div>
+<div class="version-badge">v4.7.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -378,6 +378,15 @@ window.__localAIStatus=function(message){
   updateNativeAIControls();
 };
 function scrubInvalidLoreText(s){ return s; }
+function compactText(value, maxChars){
+  const limit = Math.max(20, Number(maxChars) || 200);
+  let text = String(value == null ? '' : value)
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= limit) return text;
+  return text.slice(0, Math.max(0, limit - 1)).trimEnd() + '…';
+}
+
 function activePlayer(){
   const name=String(state?.playerCharacterName||'').trim();
   return (state?.party||[]).find(p=>p.name===name) || null;
