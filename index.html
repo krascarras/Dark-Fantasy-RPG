@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v4.7.1</div>
+<div class="version-badge">v5.0.0</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -317,9 +317,11 @@ function updateNativeAIControls(){
     if(model){model.disabled=true;model.value='Gemma 4 E2B (on-device)';}
     const status=document.getElementById('aiStatus');
     if(installed){
-      aiLastError='';
-      localStorage.removeItem(KEY+'_ai_error');
-      setAIProgress(100,'✓ Local AI model is installed.');
+      if(aiLastError){
+        setAIProgress(100,aiLastError);
+      }else{
+        setAIProgress(100,'✓ Local AI model is installed.');
+      }
     }else if(aiLastError){
       setAIProgress(0,aiLastError);
     }else if(status && !aiSettings.enabled){
@@ -779,7 +781,7 @@ RETURN ONLY THE STORY.`;
   // Gemma 4 E2B accepts at most 4096 input tokens. Keep a hard character budget with
   // the player action protected at the end. The segmented context above is deliberately
   // small; this guard is a final safety net, not the normal retrieval mechanism.
-  const MAX_PROMPT_CHARS=11800;
+  const MAX_PROMPT_CHARS=9000;
   let finalPrompt=prompt;
   if(finalPrompt.length>MAX_PROMPT_CHARS){
     const actionMarker='LATEST PLAYER ACTION\n';
@@ -1347,6 +1349,398 @@ setTimeout(()=>maybeOpenPlayerPicker(),200);
 setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 
 document.addEventListener('DOMContentLoaded',()=>updateRedoButton());
+
+/* ========================= RPG CORE v5.0 =========================
+   Persistent campaign files, segmented character state, relationship baselines,
+   relevance retrieval, and a bounded working context for the local model.
+   The local model is the prose layer; this engine owns canon and state.
+=================================================================== */
+const RPG_CORE_VERSION='5.0.0';
+const RPG_STORE_PREFIX='rpg5:';
+
+async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
+async function rpgGet(key){
+  const raw=await idbGet(RPG_STORE_PREFIX+key);
+  if(raw==null)return null;
+  try{return JSON.parse(raw);}catch(_){return null;}
+}
+async function rpgDelete(key){ return idbDelete(RPG_STORE_PREFIX+key); }
+
+function rpgClone(v){return structuredClone(v);}
+function rpgName(v){return String(v?.name||'').trim();}
+function rpgKey(s){return String(s||'').trim().toLowerCase();}
+
+function rpgRelationshipKey(a,b){
+  return [rpgKey(a),rpgKey(b)].sort().join('::');
+}
+
+function rpgClamp(n,min=0,max=100){
+  return Math.max(min,Math.min(max,Number.isFinite(Number(n))?Number(n):min));
+}
+
+function rpgRelationshipDefaults(){
+  return {bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0};
+}
+
+/* Convert any reasonable relationship JSON shape into our canonical state. */
+function rpgNormaliseRelationship(raw,a,b){
+  const x=(raw&&typeof raw==='object')?raw:{};
+  const base={...rpgRelationshipDefaults()};
+  for(const k of Object.keys(base)){
+    if(x[k]!==undefined)base[k]=k==='reputation'
+      ?Math.max(-100,Math.min(100,Number(x[k])||0))
+      :rpgClamp(x[k],0,100);
+  }
+  return {
+    id:rpgRelationshipKey(a,b),
+    characters:[a,b],
+    ...base,
+    label:String(x.label||x.relationship||x.status||''),
+    history:String(x.history||x.context||''),
+    meaning:String(x.meaning||x.currentMeaning||''),
+    knownBy:Array.isArray(x.knownBy)?rpgClone(x.knownBy):[],
+    baseline:rpgClone(base),
+    updatedAt:Date.now()
+  };
+}
+
+/* Scenario JSON is the source of truth for initial relationships. */
+function rpgExtractRelationships(spec, party){
+  const out={};
+  const src=spec?.relationships;
+  if(Array.isArray(src)){
+    for(const r of src){
+      const chars=Array.isArray(r?.characters)?r.characters:
+        [r?.characterA||r?.from,r?.characterB||r?.to].filter(Boolean);
+      if(chars.length>=2)out[rpgRelationshipKey(chars[0],chars[1])]=rpgNormaliseRelationship(r,chars[0],chars[1]);
+    }
+  }else if(src&&typeof src==='object'){
+    for(const [key,r] of Object.entries(src)){
+      const chars=Array.isArray(r?.characters)?r.characters:String(key).split(/\s*(?:↔|->|—|::|\|)\s*/);
+      if(chars.length>=2)out[rpgRelationshipKey(chars[0],chars[1])]=rpgNormaliseRelationship(r,chars[0],chars[1]);
+    }
+  }
+  /* Also accept a character's relationshipGuidance.relationships object. */
+  for(const p of party||[]){
+    const rs=p?.relationshipGuidance?.relationships;
+    if(rs&&typeof rs==='object'){
+      for(const [other,r] of Object.entries(rs)){
+        const key=rpgRelationshipKey(p.name,other);
+        if(!out[key])out[key]=rpgNormaliseRelationship(r,p.name,other);
+      }
+    }
+  }
+  return out;
+}
+
+/* Persist the package as logical files. The phone can keep a large campaign;
+   only selected records are loaded into the model's working context. */
+async function rpgPersistPackage(){
+  if(!state?.scenarioId)return;
+  const sid=state.scenarioId;
+  await rpgPut(`campaign/${sid}/scenario`, {
+    id:sid,name:state.scenarioName,type:state.scenarioType,
+    world:rpgClone(state.worldProfile||{}),
+    canon:rpgClone(state.scenarioSpec||{}),
+    opening:rpgClone(state.story?.slice(0,80)||[])
+  });
+  const chars={};
+  for(const p of (state.party||[])){
+    chars[p.name]={
+      id:p.id||p.name,name:p.name,role:p.role,race:p.race,age:p.age,
+      control:p.control,playerControlled:!!p.playerControlled,
+      personality:p.personality,appearance:p.appearance,visualCanon:p.visualCanon,
+      behaviourCanon:p.behaviourCanon,speechStyle:p.speechStyle,
+      likes:rpgClone(p.likes||[]),dislikes:rpgClone(p.dislikes||[]),
+      fears:rpgClone(p.fears||[]),goals:rpgClone(p.goals||[]),
+      secrets:rpgClone(p.secrets||[]),morals:p.morals,
+      knowledge:rpgClone(p.knowledge||[])
+    };
+  }
+  await rpgPut(`campaign/${sid}/characters`,chars);
+  await rpgPut(`campaign/${sid}/relationships`,rpgClone(state.relationships||{}));
+  await rpgPut(`campaign/${sid}/memories`,rpgClone(state.longTermMemory||{}));
+  await rpgPut(`campaign/${sid}/timeline`,rpgClone(state.timeline||state.events||[]));
+  await rpgPut(`campaign/${sid}/runtime`,{
+    location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
+    npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
+    worldState:rpgClone(state.worldState||{})
+  });
+}
+
+/* Read the persistent package and retrieve only records relevant to this turn. */
+async function rpgLoadRelevantContext(action){
+  const sid=state.scenarioId;
+  const all=await Promise.all([
+    rpgGet(`campaign/${sid}/scenario`),
+    rpgGet(`campaign/${sid}/characters`),
+    rpgGet(`campaign/${sid}/relationships`),
+    rpgGet(`campaign/${sid}/memories`),
+    rpgGet(`campaign/${sid}/runtime`)
+  ]);
+  const [scenario,characters,relationships,memories,runtime]=all;
+  const player=String(state.playerCharacterName||'').trim();
+  const playerObj=characters?.[player]||state.party?.find(p=>p.name===player)||{};
+  const activeNames=new Set();
+  const sceneText=String(action||'')+' '+String(state.currentLocation||'');
+  const npcs=Array.isArray(state.npcs)?state.npcs:[];
+  for(const p of (state.party||[])){
+    if(p.name===player)continue;
+    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
+    let score=0;
+    if(rel)score+=100;
+    if(sceneText.toLowerCase().includes(rpgKey(p.name)))score+=80;
+    if(p.currentLocation&&rpgKey(p.currentLocation)===rpgKey(state.currentLocation))score+=40;
+    if(npcs.some(n=>rpgKey(n.name)===rpgKey(p.name)&&rpgKey(n.location||'')===rpgKey(state.currentLocation)))score+=30;
+    if(score>0)activeNames.add(p.name);
+  }
+  /* If the scene has just begun, prefer the scenario's opening cast. */
+  if(!activeNames.size){
+    for(const e of (state.story||[]).slice(-8)){
+      if(e?.speaker)activeNames.add(e.speaker);
+    }
+  }
+  const active=[];
+  for(const name of activeNames){
+    const p=characters?.[name]||state.party?.find(x=>x.name===name);
+    if(!p)continue;
+    active.push({
+      name:p.name,role:p.role,personality:p.personality,behaviourCanon:p.behaviourCanon,
+      speechStyle:p.speechStyle,goals:p.goals,likes:p.likes,dislikes:p.dislikes,
+      fears:p.fears,morals:p.morals,secrets:p.secrets
+    });
+  }
+  const rels=[];
+  for(const p of active){
+    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
+    if(rel)rels.push({
+      characters:rel.characters,affection:rel.affection,trust:rel.trust,
+      attraction:rel.attraction,comfort:rel.comfort,tension:rel.tension,bond:rel.bond,
+      label:rel.label,history:rel.history,meaning:rel.meaning
+    });
+  }
+  const playerMem=memories?.characterMemories?.[player]||[];
+  const relevantMem=[];
+  for(const p of active){
+    const arr=memories?.characterMemories?.[p.name]||[];
+    relevantMem.push(...arr.slice(-8));
+  }
+  relevantMem.push(...playerMem.slice(-8));
+  const uniqueMem=[...new Map(relevantMem.map(x=>[JSON.stringify(x),x])).values()].slice(-12);
+  return {
+    scenario:{name:scenario?.name||state.scenarioName,world:scenario?.world||state.worldProfile,canon:scenario?.canon||state.scenarioSpec},
+    player:playerObj,
+    activeCharacters:active,
+    relationships:rels,
+    memories:uniqueMem,
+    runtime:runtime||{},
+    recent:(state.story||[]).slice(-8),
+    action:String(action||'').trim()
+  };
+}
+
+function rpgCompactText(v,max){
+  let s=typeof v==='string'?v:JSON.stringify(v);
+  s=String(s||'').replace(/\s+/g,' ').trim();
+  return s.length>max?s.slice(0,Math.max(0,max-1))+'…':s;
+}
+
+/* Build a deliberately small working set. Storage can be large; model input cannot. */
+async function buildRPGWorkingPrompt(action){
+  const c=await rpgLoadRelevantContext(action);
+  const active=c.activeCharacters.slice(0,3).map(p=>({
+    name:p.name,personality:rpgCompactText(p.personality,700),
+    behaviour:rpgCompactText(p.behaviourCanon,500),
+    speech:rpgCompactText(p.speechStyle,350),
+    goals:(p.goals||[]).slice(0,4),fears:(p.fears||[]).slice(0,3)
+  }));
+  const rels=c.relationships.slice(0,3).map(r=>({
+    characters:r.characters,affection:r.affection,trust:r.trust,
+    attraction:r.attraction,comfort:r.comfort,tension:r.tension,
+    history:rpgCompactText(r.history,700),meaning:rpgCompactText(r.meaning,500)
+  }));
+  const memories=c.memories.slice(-10).map(m=>rpgCompactText(m,500));
+  const recent=c.recent.slice(-6).map(e=>({
+    speaker:e.speaker||'Narrator',text:rpgCompactText(e.text,900)
+  }));
+  return {scenario:{name:c.scenario.name,world:rpgCompactText(c.scenario.world,900)},
+    player:{name:c.player.name,role:c.player.role,personality:rpgCompactText(c.player.personality,500)},
+    activeCharacters:active,relationships:rels,memories,recent,
+    location:String(state.currentLocation||'Unknown'),action:String(action||'').trim()};
+}
+
+/* The model is a prose renderer. It never owns campaign state. */
+async function callStoryAI(action,correctedSource){
+  const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
+  const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  if(!endpoint)throw new Error('No local AI endpoint configured');
+  const ctx=await buildRPGWorkingPrompt(action);
+  const prompt=`You are the prose layer of a persistent RPG engine.
+
+The ENGINE owns canon, memories, relationships, world state and player control.
+You only write the next natural scene.
+
+PLAYER:
+${JSON.stringify(ctx.player)}
+
+ACTIVE NPCS ONLY:
+${JSON.stringify(ctx.activeCharacters)}
+
+RELATIONSHIPS:
+${JSON.stringify(ctx.relationships)}
+
+RELEVANT MEMORIES:
+${JSON.stringify(ctx.memories)}
+
+RECENT SCENE:
+${JSON.stringify(ctx.recent)}
+
+SCENARIO:
+${JSON.stringify(ctx.scenario)}
+
+LOCATION:
+${ctx.location}
+
+LATEST PLAYER ACTION:
+${ctx.action}
+
+Rules:
+- Never write the player's dialogue, thoughts, feelings, choices or actions.
+- React specifically to the latest player action.
+- Only active NPCs may speak or act.
+- Use each NPC's established personality and speech style.
+- Respect relationship history and current relationship values.
+- Do not invent knowledge that the characters do not have.
+- Do not import lore from another scenario.
+- Do not turn the response into a list, JSON, analysis or game instructions.
+- Write natural dark-fantasy/modern-fantasy prose appropriate to this scenario.
+- Let NPCs initiate, react, interrupt or change the scene when their state supports it.
+- Do not finish with "What do you do?".
+RETURN ONLY THE STORY.`;
+
+  /* Conservative input guard. It trims background sections before touching the player action. */
+  const MAX_PROMPT_CHARS=10000;
+  let finalPrompt=prompt;
+  if(finalPrompt.length>MAX_PROMPT_CHARS){
+    const marker='\nLATEST PLAYER ACTION:\n';
+    const at=finalPrompt.indexOf(marker);
+    const tail=at>=0?finalPrompt.slice(at):'\nLATEST PLAYER ACTION:\n'+String(action||'');
+    const head=Math.max(3500,MAX_PROMPT_CHARS-tail.length-10);
+    finalPrompt=finalPrompt.slice(0,head)+'\n…\n'+tail;
+  }
+  const payload={model,messages:[{role:'system',content:finalPrompt}],stream:false,options:{temperature:0.82}};
+  const data=await localAIRequest(endpoint,payload);
+  const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
+  if(!text)throw new Error('Local AI returned no story text');
+  const entries=parseNarrativeEntries(text);
+  if(!entries.length)throw new Error('Local AI returned no scene text');
+  return {action:String(correctedSource||action).trim(),entries,narrativeText:text,
+    relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
+}
+
+/* Scenario relationship baselines are applied before generic 20-point defaults. */
+function rpgApplyRelationshipBaselines(){
+  if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
+  for(const [key,rel] of Object.entries(state.relationships)){
+    const [a,b]=Array.isArray(rel.characters)?rel.characters:key.split('::');
+    const pa=state.party?.find(p=>rpgKey(p.name)===rpgKey(a));
+    const pb=state.party?.find(p=>rpgKey(p.name)===rpgKey(b));
+    if(!pa||!pb)continue;
+    /* Keep the relationship object authoritative; mirror it into character UI fields
+       only for the side that is relevant to the current display. */
+    for(const p of [pa,pb]){
+      p.bond=rel.bond;p.affection=rel.affection;p.trust=rel.trust;
+      p.attraction=rel.attraction;p.comfort=rel.comfort;p.tension=rel.tension;
+    }
+  }
+}
+
+/* New imported-scenario constructor: package every logical file immediately. */
+function makeScenarioFromTemplate(t){
+  const base=structuredClone(defaultState);
+  base.scenarioId='campaign-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+  base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';
+  const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];
+  const byName=new Map(embedded.map(p=>[rpgKey(p.name),p]));
+  base.party=[];
+  for(const name of (t.party||[])){
+    const p=byName.get(rpgKey(name))?structuredClone(byName.get(rpgKey(name))):{
+      name:String(name),level:1,race:'Human',magicSpecialisation:'Undeclared',
+      image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,
+      personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',
+      magicEffects:'',control:'npc',playerControlled:false
+    };
+    if(isPlayerCandidate(p)){p.control='inactive-player';p.playerControlled=false;}
+    base.party.push(p);
+  }
+  base.playerCandidates=base.party.filter(isPlayerCandidate).map(p=>p.name);
+  base.playerCharacterName='';
+  base.openingComplete=true;
+  base.story=buildImportedOpening(t,base.party);
+  base.characterKnowledge={};
+  for(const p of base.party)base.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];
+  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';
+  base.currentLocation=t.worldProfile?.start||'Unknown location';
+  base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};
+  base.npcs=structuredClone(t.npcs||[]);
+  base.worldProfile=structuredClone(t.worldProfile||{});
+  base.scenarioSpec=structuredClone(t.scenarioSpec||{});
+  base.relationships=rpgExtractRelationships(base.scenarioSpec,base.party);
+  for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
+  /* Backward-compatible relationship fields are seeded from the scenario package. */
+  for(const rel of Object.values(base.relationships)){
+    for(const p of base.party){
+      if(rel.characters.some(n=>rpgKey(n)===rpgKey(p.name))){
+        p.bond=rel.bond;p.affection=rel.affection;p.trust=rel.trust;
+        p.attraction=rel.attraction;p.comfort=rel.comfort;p.tension=rel.tension;
+      }
+    }
+  }
+  return base;
+}
+
+/* Import a character as an independent package record. */
+async function importCharacter(file){
+  if(!file)return;
+  try{
+    const p=normaliseImportedCharacter(JSON.parse(await file.text()));
+    const existing=state.party.findIndex(x=>rpgKey(x.name)===rpgKey(p.name));
+    if(existing>=0){
+      const wasActive=isActivePlayer(state.party[existing]);
+      state.party[existing]={...state.party[existing],...p};
+      if(wasActive){state.party[existing].control='player';state.party[existing].playerControlled=true;state.playerCharacterName=p.name;}
+    }else state.party.push(p);
+    if(p.control==='inactive-player'){
+      if(!Array.isArray(state.playerCandidates))state.playerCandidates=[];
+      if(!state.playerCandidates.includes(p.name))state.playerCandidates.push(p.name);
+    }
+    if(!state.characterKnowledge)state.characterKnowledge={};
+    state.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];
+    if(!state.longTermMemory)state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};
+    if(!state.longTermMemory.characterMemories)state.longTermMemory.characterMemories={};
+    if(!Array.isArray(state.longTermMemory.characterMemories[p.name]))state.longTermMemory.characterMemories[p.name]=[];
+    await save();await rpgPersistPackage();render();
+    toast(`${existing>=0?'Updated':'Imported'} character: ${p.name}`);
+    if(p.control==='inactive-player'&&!state.playerCharacterName)setTimeout(()=>openPlayerPicker(),120);
+  }catch(e){
+    console.error('Character import failed',e);alert('Character import failed: '+(e?.message||e));
+  }finally{
+    const el=document.getElementById('characterImportFile');if(el)el.value='';
+  }
+}
+
+/* Keep campaign package current after normal saves. */
+const _rpgOriginalSave=save;
+async function rpgSave(){
+  const ok=await _rpgOriginalSave();
+  if(ok)try{await rpgPersistPackage();}catch(e){console.warn('RPG package save failed',e);}
+  return ok;
+}
+save=rpgSave;
+
+/* Seed the package after startup/import as well. */
+setTimeout(()=>{try{rpgApplyRelationshipBaselines();rpgPersistPackage();}catch(e){console.warn(e);}},350);
+
 </script>
 </body>
 </html>
