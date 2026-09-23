@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.2.0</div>
+<div class="version-badge">v5.2.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -676,6 +676,22 @@ function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function characterRuntime(n){
   return n&&n.runtime&&typeof n.runtime==='object'?n.runtime:{};
 }
+function characterSceneRecord(name){
+  const key=String(name||'').trim();
+  const rec=state?.worldState?.characters?.[key] || Object.entries(state?.worldState?.characters||{}).find(([k])=>rpgKey(k)===rpgKey(key))?.[1] || null;
+  const obj=state?.party?.find(p=>rpgKey(p.name)===rpgKey(key)) || state?.npcs?.find(n=>rpgKey(n.name)===rpgKey(key)) || null;
+  const runtime=characterRuntime(obj);
+  const location=String(rec?.location||runtime.currentLocation||obj?.location||'').trim();
+  const here=String(state?.currentLocation||'').trim();
+  return {
+    name:key,
+    location,
+    present:rec?.present!==false,
+    sameLocation:!!location && !!here && rpgKey(location)===rpgKey(here),
+    scenePresent:rec?.present!==false && !!location && !!here && rpgKey(location)===rpgKey(here)
+  };
+}
+function isScenePresent(name){return characterSceneRecord(name).scenePresent;}
 function relevanceScore(n, player, here){
   const r=characterRuntime(n);
   const loc=String(r.currentLocation||n.location||'').trim().toLowerCase();
@@ -952,6 +968,12 @@ RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
   if(!text)throw new Error('Local AI returned no story text');
   const entries=parseNarrativeEntries(text);
   if(!entries.length)throw new Error('Local AI returned no scene text');
+  const continuityIssues=rpgSceneContinuityIssues(entries,ctx,action);
+  if(continuityIssues.length && !qualityRetry){
+    const correction=`\n\nGENERATION CORRECTION: The previous draft violated the authoritative scene roster: ${continuityIssues.join(', ')}. Generate the entire turn again. Only characters listed as PRESENT in the current scene may physically appear, speak, act, observe or react. Characters listed as ABSENT/OUT-OF-SCENE must remain off-screen unless the player's action or an explicit valid arrival event brings them into the scene. Do not claim an absent character was watching, listening or waiting nearby. Preserve the current location and do not create a transition that has not happened.`;
+    return await callStoryAI(String(action||'')+' '+correction,correctedSource||action,true);
+  }
+  if(continuityIssues.length)throw new Error('AI violated scene continuity: '+continuityIssues.join(', '));
   const quality=rpgTurnQuality(entries,action);
   if(!quality.ok && !qualityRetry){
     const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: ${quality.reason} Generate the turn again from scratch. The player is ${playerName()} and is NEVER an NPC. Never put the player's words, first-person voice or actions into an NPC paragraph. Respond directly to the latest player action. Do not repeat recent physical beats. Usually let only 1-2 relevant NPCs speak. RETURN ONLY THE NEW STORY WITH SPEAKER MARKERS.`;
@@ -1915,9 +1937,10 @@ async function buildRPGWorkingPrompt(action){
   const partyCandidates=(state.party||[])
     .filter(p=>{
       if(!p||!p.name||p.name===c.player?.name||isActivePlayer(p))return false;
-      const cs=state.worldState?.characters?.[p.name];
-      if(cs&&cs.present===false)return false;
-      return true;
+      // A relationship makes an NPC relevant, but it does NOT put them in the scene.
+      // Scene participation requires an explicit present=true state AND the character's
+      // authoritative location to match the player's current location.
+      return isScenePresent(p.name);
     })
     .map(p=>{
       const rel=c.relationships.find(r=>
@@ -1933,7 +1956,7 @@ async function buildRPGWorkingPrompt(action){
     .slice(0,4);
 
   const worldNPCs=(state.npcs||[])
-    .filter(n=>n&&n.name)
+    .filter(n=>n&&n.name&&isScenePresent(n.name))
     .map(n=>({...n,_score:relevanceScore(n,c.player,state.currentLocation)}))
     .sort((a,b)=>b._score-a._score)
     .slice(0,2);
@@ -1948,9 +1971,12 @@ async function buildRPGWorkingPrompt(action){
       Array.isArray(r.characters) && r.characters.some(n=>rpgKey(n)===key)
     );
     const r=characterRuntime(item);
+    const sceneRec=characterSceneRecord(item.name);
     active.push({
       name:item.name,
       role:item.role,
+      location:sceneRec.location,
+      scenePresence:'PRESENT',
       personality:rpgCompactText(item.personality,850),
       behaviour:rpgCompactText(item.behaviourCanon||item.behaviorCanon,650),
       speech:rpgCompactText(item.speechStyle,450),
@@ -2000,8 +2026,13 @@ async function buildRPGWorkingPrompt(action){
       ? 'The scripted opening has already happened. Continue from the current story; do not restart, replay or rewrite it.'
       : 'The opening is still in progress. Follow the scenario opening sequence and current scene phase; do not skip ahead to later reveals.'
   };
-  currentSceneState.presentCharacters=Object.entries(state.worldState?.characters||{}).filter(([,v])=>v&&v.present!==false).map(([n,v])=>({name:n,location:v.location,activity:v.activity}));
-  currentSceneState.absentCharacters=Object.entries(state.worldState?.characters||{}).filter(([,v])=>v&&v.present===false).map(([n])=>n);
+  const allSceneCharacters=Object.entries(state.worldState?.characters||{});
+  currentSceneState.presentCharacters=allSceneCharacters
+    .filter(([n,v])=>v&&v.present!==false&&rpgKey(v.location||'')===rpgKey(state.currentLocation||''))
+    .map(([n,v])=>({name:n,location:v.location,activity:v.activity||'present'}));
+  currentSceneState.absentCharacters=allSceneCharacters
+    .filter(([n,v])=>!v||v.present===false||rpgKey(v.location||'')!==rpgKey(state.currentLocation||''))
+    .map(([n,v])=>({name:n,location:v?.location||'',reason:v?.present===false?'not-present-in-scene':'different-location'}));
   currentSceneState.plannedEvents=Array.isArray(state.worldState?.plannedEvents)?state.worldState.plannedEvents.slice(-8):[];
   currentSceneState.completedEvents=Array.isArray(state.worldState?.events)?state.worldState.events.slice(-8):[];
 
@@ -2058,6 +2089,26 @@ function rpgRepeatedBeatWarning(){
   return warnings.join('\n');
 }
 
+function rpgSceneContinuityIssues(entries, ctx, action){
+  const activeNames=new Set((ctx.activeCharacters||[]).map(x=>rpgKey(x.name)));
+  const absent=(ctx.absentCharacters||[]).map(x=>typeof x==='string'?x:x?.name).filter(Boolean);
+  const issues=[];
+  for(const e of entries||[]){
+    if(e.type==='character' && !activeNames.has(rpgKey(e.speaker||'')))issues.push(`inactive-speaker:${e.speaker||'unknown'}`);
+    const text=String(e.text||'');
+    for(const name of absent){
+      const re=new RegExp('\\b'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+      if(!re.test(text))continue;
+      // Mentioning an absent person is fine (for example, answering a question about
+      // where Elizabeth is). What is invalid is silently giving that person physical
+      // presence, observation, dialogue or an action in the current scene.
+      const physical=new RegExp('(?:'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'|she|he)\\s+(?:had been |was |were |is |are |stood|sat|walked|entered|came|arrived|watched|observed|listened|looked|glanced|stared|leaned|smiled|frowned|spoke|said|asked|replied|answered|gestured|moved|stepped|followed|waited|approached|took|turned|shifted)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:watching|observing|listening|waiting|standing|sitting|looking|speaking|talking|following|entering)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:gaze|eyes|voice|expression|posture)\\b','i');
+      if(physical.test(text))issues.push(`absent-character:${name}`);
+    }
+  }
+  return [...new Set(issues)];
+}
+
 /* The model is a prose renderer. It never owns campaign state. */
 async function callStoryAI(action,correctedSource,qualityRetry=false){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
@@ -2098,6 +2149,9 @@ Rules:
 - React specifically to the latest player action. If the player spoke to someone, answer what they actually said rather than restarting the scene.
 - Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
 - Only active NPCs may speak or act.
+- ACTIVE NPCS ONLY means characters explicitly marked PRESENT in the CURRENT SCENE STATE. A relationship or importance does not make a character present.
+- A character in ABSENT/OUT-OF-SCENE is not allowed to speak, act, watch, listen, react, enter, or be described as physically present. Do not write that an absent character has been observing the player or has been waiting nearby.
+- A character may enter only when the player or a valid established event actually causes an arrival. Treat that arrival as a real scene transition, not something to assume from the character's importance.
 - Use each NPC's established personality, behaviour, knowledge and speech style.
 - Respect relationship history and current relationship values.
 - Treat the scenario canon and CURRENT SCENE STATE as authoritative.
