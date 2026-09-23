@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 75
-                  versionName '5.0.4-speaker-relationship-fix'
+                  versionCode 77
+                  versionName '5.0.7-living-world-memory'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
