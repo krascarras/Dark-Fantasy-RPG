@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.0.5</div>
+<div class="version-badge">v5.1.0</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -578,6 +578,7 @@ function render(){
     if(isNarrator) return `<div class="entry narrator-entry"><div class="entry-body"><div class="speaker narrator">Narrator</div>${text}</div></div>`;
     return `<div class="entry${actionClass}"><img class="entry-avatar" src="${avatar}" alt=""><div class="entry-body"><div class="speaker ${cls}">${esc(speaker)}</div>${text}</div></div>`;
   }).join('');
+  keepStoryAtLatest();
 }
 function openSceneImage(src){const w=window.open('', '_blank'); if(!w)return; w.document.write(`<title>Dark Fantasy RPG</title><style>html,body{margin:0;background:#080b12;height:100%;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img src="${src}">`); w.document.close();}
 function renderRichText(raw){
@@ -769,7 +770,9 @@ function buildStoryContext(action=''){
     playerAction:compactText(action,1800)};
 }
 function parseNarrativeEntries(text){
-  const known=[...state.party.map(p=>p.name),...(state.npcs||[]).map(n=>n.name)]
+  const player=activePlayer();
+  const playerKey=player?rpgKey(player.name):'';
+  const known=[...(state.npcs||[]).map(n=>n.name),...state.party.filter(p=>!playerKey||rpgKey(p.name)!==playerKey).map(p=>p.name)]
     .filter(Boolean).sort((a,b)=>b.length-a.length);
   const normalised=String(text||'').replace(/\r/g,'').trim();
   const blocks=normalised.split(/\n\s*\n+/).map(x=>x.trim()).filter(Boolean);
@@ -811,7 +814,28 @@ function parseNarrativeEntries(text){
   return entries.filter(e=>e.text);
 }
 
-async function callStoryAI(action,correctedSource){
+async function rpgNormCompare(s){return String(s||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();}
+function rpgPlayerEchoes(entries,action){
+ const player=activePlayer(), pn=player?.name||'', src=rpgNormCompare(action), words=src.split(' ').filter(w=>w.length>2);
+ const pnRe=pn?new RegExp('\\b'+pn.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i'):null;
+ const bad=[/\\bwell as your father says i(?: am|'m|m)\\b/i,/\\bi (?:said|told|thought|turned|walked|looked|held|felt|want|wanted|have|had|own|live|lived)\\b/i];
+ for(const e of entries){if(e.type!=='character')continue;const t=rpgNormCompare(e.text);if(pnRe&&pnRe.test(t)&&/\\b(?:i am|i'm|im)\\b/i.test(t))return true;if(bad.some(r=>r.test(t)))return true;if(words.length>=6){for(let i=0;i<=words.length-6;i++)if(t.includes(words.slice(i,i+6).join(' ')))return true;}}
+ return false;
+}
+function rpgRepeatedPhysicalBeat(entries){
+ const recent=state.story.slice(-10).map(e=>rpgNormCompare(e.text)).join(' '), current=entries.map(e=>rpgNormCompare(e.text)).join(' '); if(!recent||!current)return false;
+ const groups=[/(?:step|steps|stepped|move|moves|moved|close|closer|approach|approaches|approached)\\b[^.]{0,80}\\bclos(?:e|er|ing)\\b/,/(?:small|slow|tentative)\\s+(?:step|movement|move)\\b/,/(?:silence|quiet)\\s+(?:stretches|settles|hangs|falls)\\b/,/(?:eyes?|gaze)\\s+(?:search|searches|searched|flicker|flickers|flickered|scan|scans)\\b/];
+ return groups.some(r=>r.test(current)&&r.test(recent));
+}
+function rpgTurnQuality(entries,action){
+ if(!entries?.length)return {ok:false,reason:'No scene entries were produced.'};
+ if(rpgPlayerEchoes(entries,action))return {ok:false,reason:"The model assigned the player's voice or wording to an NPC."};
+ if(rpgRepeatedPhysicalBeat(entries))return {ok:false,reason:'The model repeated a physical or atmospheric beat already used in the recent scene.'};
+ if(entries.filter(e=>e.type==='character').length>3)return {ok:false,reason:'Too many NPCs spoke in one turn.'};
+ return {ok:true,reason:''};
+}
+
+async function callStoryAI(action,correctedSource,qualityRetry=false){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
@@ -849,7 +873,8 @@ ${ctx.playerAction}
 IMPORTANT: Do not repeat, paraphrase, quote, or assign the player's words to an NPC. Respond to the player's action from the NPCs' perspectives.
 
 RULES
-- React specifically to the latest player action.
+- React specifically to the latest player action. If the player spoke to someone, answer what they actually said rather than restarting the scene.
+- Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
 - Use the established personality and speech style of the relevant NPC.
 - NPCs may react to one another when appropriate, but irrelevant NPCs stay out of the scene.
 - Preserve established relationships and memories without dumping their full histories into the prose.
@@ -863,7 +888,7 @@ RULES
 - Put spoken dialogue and that NPC's physical actions in the NPC's own [NPC NAME] paragraph.
 - Use the actual NPC name, exactly as supplied in the relevant characters list.
 - Do not put dialogue spoken by an NPC under [Narrator].
-- Do not make every NPC speak. Usually use 1-2 relevant NPCs; allow a second NPC only when natural.
+- Do not make every NPC speak. Usually use 1-2 relevant NPCs; use up to 3 only when genuinely necessary. Silent characters remain present and can speak on later turns.
 - Do not control the player character.
 - Do not end with a generic 'What do you do?' question.
 RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
@@ -889,6 +914,12 @@ RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
   if(!text)throw new Error('Local AI returned no story text');
   const entries=parseNarrativeEntries(text);
   if(!entries.length)throw new Error('Local AI returned no scene text');
+  const quality=rpgTurnQuality(entries,action);
+  if(!quality.ok && !qualityRetry){
+    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: ${quality.reason} Generate the turn again from scratch. The player is ${playerName()} and is NEVER an NPC. Never put the player's words, first-person voice or actions into an NPC paragraph. Respond directly to the latest player action. Do not repeat recent physical beats. Usually let only 1-2 relevant NPCs speak. RETURN ONLY THE NEW STORY WITH SPEAKER MARKERS.`;
+    return await callStoryAI(retryAction,correctedSource,true);
+  }
+  if(!quality.ok)throw new Error('Local AI could not produce a clean response: '+quality.reason);
   return {action:String(correctedSource||action).trim(),corrected_action:String(correctedSource||action).trim(),entries,narrativeText:text,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
 }
 function applyAIRelationships(result){
@@ -1119,15 +1150,12 @@ async function addAction(){
   }
 }
 function keepStoryAtLatest(){
-  requestAnimationFrame(()=>{
-    const log=document.getElementById('storyLog');
-    if(log){
-      // Story should always open at the newest entry. Use an immediate jump rather than
-      // smooth scrolling, because this function is also called during typewriter updates.
-      log.scrollTop=log.scrollHeight;
-    }
-    window.scrollTo({top:document.documentElement.scrollHeight,left:0,behavior:'auto'});
-  });
+ requestAnimationFrame(()=>{
+  const log=document.getElementById('storyLog');
+  if(log)log.scrollTop=log.scrollHeight;
+  window.scrollTo({top:document.documentElement.scrollHeight,left:0,behavior:'auto'});
+  requestAnimationFrame(()=>{const latest=document.getElementById('storyLog');if(latest)latest.scrollTop=latest.scrollHeight;window.scrollTo({top:document.documentElement.scrollHeight,left:0,behavior:'auto'});});
+ });
 }
 function restoreStoryPosition(log,logScroll,pageScroll){
   requestAnimationFrame(()=>{
@@ -1587,7 +1615,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.0.7';
+const RPG_CORE_VERSION='5.0.8';
 const RPG_STORE_PREFIX='rpg7:';
 
 async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
@@ -1901,8 +1929,41 @@ async function buildRPGWorkingPrompt(action){
   };
 }
 
+/*
+ * Validate the model's turn before it reaches the story log.
+ * Gemma can occasionally echo the player's input or repeat a physical beat from
+ * the immediately preceding scene. Those are generation errors, not canon.
+ */
+function rpgTurnQuality(entries, action){
+  const playerText=String(action||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const words=playerText.split(/\s+/).filter(w=>w.length>4);
+  const suspicious=[];
+  for(const e of entries||[]){
+    if(e.type!=='character')continue;
+    const text=String(e.text||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(words.length>=8){
+      const hits=words.filter(w=>text.includes(w)).length;
+      if(hits/words.length>=0.72 && text.length>=Math.min(120,playerText.length*0.55))
+        suspicious.push('player-echo');
+    }
+    if(/\b(?:i|i'm|i am|i said|i told|i thought)\b/.test(text) && /\bshane\b/i.test(text))
+      suspicious.push('player-voice');
+  }
+  return {ok:suspicious.length===0,issues:[...new Set(suspicious)]};
+}
+
+function rpgRepeatedBeatWarning(){
+  const recent=(state.story||[]).slice(-8).map(e=>String(e?.text||'')).join(' ');
+  const warnings=[];
+  if(/take[s]? a small step closer|move[s]? closer|close[sd]? the (remaining )?distance/i.test(recent))
+    warnings.push('An NPC has already moved closer in the recent scene. Do not repeat another step closer unless the player explicitly changes the physical situation.');
+  if(/silence (?:stretch|settle|hang)|the silence/i.test(recent))
+    warnings.push('The scene has already used a silence beat. Advance the conversation instead of repeating another prolonged silence.');
+  return warnings.join('\n');
+}
+
 /* The model is a prose renderer. It never owns campaign state. */
-async function callStoryAI(action,correctedSource){
+async function callStoryAI(action,correctedSource,qualityRetry=false){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
@@ -1938,7 +1999,8 @@ ${ctx.action}
 
 Rules:
 - Never write the player's dialogue, thoughts, feelings, choices or actions.
-- React specifically to the latest player action.
+- React specifically to the latest player action. If the player spoke to someone, answer what they actually said rather than restarting the scene.
+- Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
 - Only active NPCs may speak or act.
 - Use each NPC's established personality, behaviour, knowledge and speech style.
 - Respect relationship history and current relationship values.
@@ -1953,6 +2015,12 @@ Rules:
 - Do not turn the response into a list, JSON, analysis or game instructions.
 - Write natural prose appropriate to this scenario.
 - Let NPCs initiate, react, interrupt or change the scene when their established state supports it.
+- If the player directly addresses an NPC, that NPC should normally answer or react to the substance of what was said.
+- Prefer 1-3 meaningful NPC contributions when the scene supports conversation; do not let the response become mostly narration.
+- Every turn should move the conversation or situation forward: new information, a new emotional beat, a question from an NPC, a decision, an interruption, or a concrete change in the scene.
+- Do not repeat a physical action already shown in RECENT SCENE. If someone already stepped closer, do not have them step closer again without a new reason.
+- Do not reuse distinctive dialogue phrases from RECENT SCENE.
+- Never copy the player's wording into an NPC's dialogue.
 - Do not finish with "What do you do?".
 - EVERY paragraph MUST begin with exactly one speaker marker: [Narrator] or [NPC NAME].
 - Use [Narrator] only for description that belongs to nobody.
@@ -1976,7 +2044,17 @@ RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
   if(!text)throw new Error('Local AI returned no story text');
   const entries=parseNarrativeEntries(text);
   if(!entries.length)throw new Error('Local AI returned no scene text');
-  return {action:String(correctedSource||action).trim(),entries,narrativeText:text,
+  const quality=rpgTurnQuality(entries,action);
+  if(!quality.ok && !qualityRetry){
+    const correction=`
+
+GENERATION CORRECTION: Your previous draft was invalid because it echoed the player's words or voice. Generate the turn again from scratch. Do not quote, paraphrase or speak as the player. The player is Shane and is never an NPC. Also avoid repeating any physical beat from the recent scene. Make the NPCs actually respond to what Shane just said and move the conversation forward.`;
+    const retryAction=String(action||'')+' '+correction;
+    return await callStoryAI(retryAction,correctedSource||action,true);
+  }
+  const safeEntries=quality.ok?entries:entries.filter(e=>e.type!=='character' || !/\b(?:i|i'm|i am|i said|i told|i thought)\b/i.test(String(e.text||'')));
+  if(!safeEntries.length)throw new Error('Local AI could not produce a valid NPC response without taking over the player.');
+  return {action:String(correctedSource||action).trim(),entries:safeEntries,narrativeText:text,
     relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
 }
 
