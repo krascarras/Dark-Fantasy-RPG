@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - Local AI
+name: Build Dark Fantasy RPG - Local AI (v5.1.0)
 
 on:
   workflow_dispatch:
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 77
-                  versionName '5.0.7-living-world-memory'
+                  versionCode 80
+                  versionName '5.1.0-rpg-playability'
               }
 
               // FIX: Java and Kotlin must compile to the same JVM target.
@@ -673,5 +673,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.0.5-relationship-baseline-speaker-fix
+          name: Dark-Fantasy-RPG-v5.0.9-core-stability
           path: app/build/outputs/apk/debug/app-debug.apk
