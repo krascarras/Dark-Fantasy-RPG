@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.2.7</div>
+<div class="version-badge">v5.2.9</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -927,7 +927,7 @@ function parseNarrativeEntries(text){
   return entries.filter(e=>e.text);
 }
 
-async function rpgNormCompare(s){return String(s||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();}
+function rpgNormCompare(s){return String(s||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();}
 function rpgPlayerEchoes(entries,action){
  const player=activePlayer(), pn=player?.name||'', src=rpgNormCompare(action), words=src.split(' ').filter(w=>w.length>2);
  const pnRe=pn?new RegExp('\\b'+pn.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i'):null;
@@ -1064,10 +1064,7 @@ async function redoLastAI(){
         throw new Error('Local AI is not enabled');
       }
       const result=await callStoryAI(redo.action,redo.action);
-      applyAIRelationships(result);
-      applyAIMemory(result);
-      applyAIWorldUpdates(result);
-      applyAINPCs(result);
+      /* Redo is prose-only too. The engine owns state; Gemma never commits RPG state. */
       await save();
       const entries=aiEntries(result);
       if(!entries.length)throw new Error('Local AI returned no usable story entries');
@@ -1325,7 +1322,7 @@ function normaliseImportedScenario(raw){
   const spec=structuredClone(x);spec.schemaVersion=Number(x.schemaVersion)||1;spec.kind='dark-fantasy-scenario';spec.name=name;
   const world=x.world&&typeof x.world==='object'?x.world:{};const starting=x.startingSituation&&typeof x.startingSituation==='object'?x.startingSituation:{};const location=String(starting.location||x.startingLocation||world.start||world.location||'Unknown location');const tone=String(x.tone||world.tone||'dark fantasy');const introText=String(starting.intro||starting.situation||x.intro||x.premise||x.description||`The story begins in ${location}.`);const intro=[{type:'gm',text:introText}];if(starting.openingBeat||starting.atmosphere)intro.push({type:'gm',text:String(starting.openingBeat||starting.atmosphere)});
   const chars=Array.isArray(x.characters)?x.characters:[];const party=[];const embedded=[];for(const c of chars){if(typeof c==='string'){party.push(c);continue;}try{embedded.push(normaliseImportedCharacter(c));party.push(String(c.name));}catch(e){}}
-  const worldProfile={setting:String(world.setting||x.setting||'Imported world'),region:String(world.region||world.location||location),start:location,situation:String(world.situation||starting.situation||x.premise||''),tone,threat:String(world.threat||'unknown'),weather:String(world.weather||''),generator:'scenario blueprint'};
+  const initialCharacters=(x.initialState&&typeof x.initialState.characters==='object')?x.initialState.characters:{};const initialLocations=Object.values(initialCharacters).map(c=>String(c?.location||'').trim()).filter(Boolean);const canonicalStart=String(starting.locationName||world.start||initialLocations.find(loc=>rpgKey(location).includes(rpgKey(loc))||rpgKey(loc).includes(rpgKey(location)))||location).trim();const worldProfile={setting:String(world.setting||x.setting||'Imported world'),region:String(world.region||world.location||canonicalStart),start:canonicalStart,situation:String(world.situation||starting.situation||x.premise||''),tone,threat:String(world.threat||'unknown'),weather:String(world.weather||''),generator:'scenario blueprint'};
   return {name,type:'imported-scenario',intro,party,embeddedCharacters:embedded,worldProfile,scenarioSpec:spec,npcs:Array.isArray(x.npcs)?x.npcs:[]};
 }
 function buildImportedOpening(t, embedded){
@@ -1645,7 +1642,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.2.8';
+const RPG_CORE_VERSION='5.2.9';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
