@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.2.6</div>
+<div class="version-badge">v5.2.7</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -692,6 +692,66 @@ function characterSceneRecord(name){
   };
 }
 function isScenePresent(name){return characterSceneRecord(name).scenePresent;}
+
+/*
+ * Reconcile legacy/stale campaign runtime data without rewriting a live scene.
+ * Older builds stored location/presence in slightly different places. On startup
+ * and immediately before a generation, repair only missing fields; never overwrite
+ * an explicit live runtime decision such as an NPC who has moved or left the scene.
+ */
+function rpgReconcileRuntimeScene(){
+  if(!state?.worldState || typeof state.worldState!=='object')return;
+  if(!state.worldState.characters || typeof state.worldState.characters!=='object')state.worldState.characters={};
+  const here=String(state.currentLocation||'').trim();
+  const initial=state.scenarioSpec?.initialState?.characters||{};
+  const people=[...(Array.isArray(state.party)?state.party:[]),...(Array.isArray(state.npcs)?state.npcs:[])];
+  const migrationNeeded=Number(state.worldState.runtimeSchemaVersion||0)<2;
+  for(const person of people){
+    const name=String(person?.name||'').trim(); if(!name)continue;
+    const key=Object.keys(state.worldState.characters).find(k=>rpgKey(k)===rpgKey(name));
+    const rec=key?state.worldState.characters[key]:null;
+    const seed=Object.entries(initial).find(([k])=>rpgKey(k)===rpgKey(name))?.[1]||null;
+    const runtime=characterRuntime(person);
+    if(!rec){
+      const loc=String((migrationNeeded&&seed?.location)||runtime.currentLocation||seed?.location||person.location||'').trim();
+      if(loc){
+        const present=(migrationNeeded&&seed?.present!==undefined)
+          ? !!seed.present
+          : (runtime.present!==undefined ? runtime.present : (seed?.present!==undefined ? seed.present : (!!here&&rpgKey(loc)===rpgKey(here))));
+        const activity=(migrationNeeded&&seed?.activity)?seed.activity:(runtime.activity||seed?.activity||'present');
+        setCharacterLocation(name,loc,activity,present);
+      }
+      continue;
+    }
+    if(!String(rec.location||'').trim()){
+      const loc=String(runtime.currentLocation||seed?.location||person.location||'').trim();
+      if(loc)rec.location=loc;
+    }
+    if(rec.present===undefined){
+      const loc=String(rec.location||'').trim();
+      rec.present=runtime.present!==undefined ? runtime.present : (seed?.present!==undefined ? seed.present : (!!here&&rpgKey(loc)===rpgKey(here)));
+    }
+    /* v5.2.0-v5.2.7 could persist an explicit false while leaving the activity as
+       "present". That false is a stale legacy representation, not a deliberate
+       scene decision. Repair it only once, during the runtime-schema migration,
+       and only when the stored location is the current scene location. Deliberate
+       absences use an explicit absent activity or a different location and survive. */
+    if(migrationNeeded && rec.present===false){
+      const loc=String(rec.location||'').trim();
+      const activity=String(rec.activity||runtime.activity||'').trim().toLowerCase();
+      const sameScene=!!loc&&!!here&&rpgKey(loc)===rpgKey(here);
+      const explicitlyAbsent=activity==='absent'||/^(?:elsewhere|inside|working elsewhere|out of scene|away|not present)/i.test(activity);
+      if(sameScene&&!explicitlyAbsent){
+        rec.present=true;
+        person.runtime={...(person.runtime||{}),currentLocation:loc,present:true};
+      }
+    }
+    if(!runtime.currentLocation && rec.location)
+      person.runtime={...(person.runtime||{}),currentLocation:rec.location,present:rec.present!==false};
+  }
+  if(migrationNeeded)state.worldState.runtimeSchemaVersion=2;
+}
+
 function relevanceScore(n, player, here){
   const r=characterRuntime(n);
   const loc=String(r.currentLocation||n.location||'').trim().toLowerCase();
@@ -1585,7 +1645,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.2.6';
+const RPG_CORE_VERSION='5.2.8';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
@@ -1791,6 +1851,7 @@ function rpgCompactText(v,max){
 
 /* Build a deliberately small working set. Storage can be large; model input cannot. */
 async function buildRPGWorkingPrompt(action){
+  rpgReconcileRuntimeScene();
   const c=await rpgLoadRelevantContext(action);
   const rawCanon=c.scenario?.canon&&typeof c.scenario.canon==='object'?c.scenario.canon:{};
 
@@ -1964,6 +2025,7 @@ function rpgRepeatedBeatWarning(){
 }
 
 function rpgSceneContinuityIssues(entries, ctx, action){
+  rpgReconcileRuntimeScene();
   const activeNames=new Set((ctx.activeCharacters||[]).map(x=>rpgKey(x.name)));
   const absent=(ctx.absentCharacters||[]).map(x=>typeof x==='string'?x:x?.name).filter(Boolean);
   const issues=[];
@@ -2021,6 +2083,12 @@ ${JSON.stringify(ctx.memories)}
 RECENT SCENE:
 ${JSON.stringify(ctx.recent)}
 
+CURRENT SCENE STATE:
+${JSON.stringify(ctx.sceneState)}
+
+ABSENT / OUT-OF-SCENE CHARACTERS:
+${JSON.stringify(ctx.absentCharacters)}
+
 SCENARIO:
 ${JSON.stringify(ctx.scenario)}
 
@@ -2036,7 +2104,9 @@ Rules:
 - Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
 - Only active NPCs may speak or act.
 - ACTIVE NPCS ONLY means characters explicitly marked PRESENT in the CURRENT SCENE STATE. A relationship or importance does not make a character present.
-- A character in ABSENT/OUT-OF-SCENE is not allowed to speak, act, watch, listen, react, enter, or be described as physically present. Do not write that an absent character has been observing the player or has been waiting nearby.
+- ABSENT / OUT-OF-SCENE CHARACTERS is authoritative. Do not give any listed character dialogue, physical actions, observation, listening, reaction, entrance, or physical presence.
+- If an absent character is mentioned in scenario lore, memories or relationships, treat that as background information only. It does not make them present.
+- If the latest player action does not cause a valid arrival event, keep absent characters out of the scene.
 - A character may enter only when the player or a valid established event actually causes an arrival. Treat that arrival as a real scene transition, not something to assume from the character's importance.
 - Use each NPC's established personality, behaviour, knowledge and speech style.
 - Respect relationship history and current relationship values.
@@ -2251,7 +2321,7 @@ async function rpgSave(){
 save=rpgSave;
 
 /* Seed the package after startup/import as well. */
-setTimeout(()=>{try{rpgApplyRelationshipBaselines();const integrityIssues=rpgRuntimeIntegrityAudit();if(integrityIssues.length)console.warn('RPG runtime integrity issues',integrityIssues);rpgPersistPackage();}catch(e){console.warn(e);}},350);
+setTimeout(()=>{try{rpgReconcileRuntimeScene();rpgApplyRelationshipBaselines();const integrityIssues=rpgRuntimeIntegrityAudit();if(integrityIssues.length)console.warn('RPG runtime integrity issues',integrityIssues);rpgPersistPackage();}catch(e){console.warn(e);}},350);
 
 </script>
 </body>
