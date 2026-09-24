@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.2.4</div>
+<div class="version-badge">v5.2.6</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -1585,7 +1585,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.2.4';
+const RPG_CORE_VERSION='5.2.6';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
@@ -1823,9 +1823,14 @@ async function buildRPGWorkingPrompt(action){
 
   const worldNPCs=(state.npcs||[])
     .filter(n=>n&&n.name&&isScenePresent(n.name))
-    .map(n=>({...n,_score:relevanceScore(n,c.player,state.currentLocation)}))
+    .map(n=>{
+      const recentSpeaker=(c.recent||[]).some(e=>rpgKey(e?.speaker)===rpgKey(n.name));
+      const addressed=new RegExp('\\b'+String(n.name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(recentText+' '+actionText);
+      const score=relevanceScore(n,c.player,state.currentLocation)+(recentSpeaker?90:0)+(addressed?80:0);
+      return {...n,_score:score};
+    })
     .sort((a,b)=>b._score-a._score)
-    .slice(0,2);
+    .slice(0,4);
 
   const active=[];
   const seen=new Set();
@@ -1963,7 +1968,19 @@ function rpgSceneContinuityIssues(entries, ctx, action){
   const absent=(ctx.absentCharacters||[]).map(x=>typeof x==='string'?x:x?.name).filter(Boolean);
   const issues=[];
   for(const e of entries||[]){
-    if(e.type==='character' && !activeNames.has(rpgKey(e.speaker||'')))issues.push(`inactive-speaker:${e.speaker||'unknown'}`);
+    if(e.type==='character'){
+      const speaker=String(e.speaker||'').trim();
+      // Presence has two authoritative views in the runtime: the canonical character
+      // record and the current-scene projection. They must agree. A character being
+      // omitted from the compact ACTIVE NPC list is NOT the same thing as being absent.
+      // Prefer the canonical scene record, then reconcile against currentPeople so a
+      // valid speaker cannot be rejected merely because a context projection was stale.
+      const sceneRecord= speaker && typeof characterSceneRecord==='function' ? characterSceneRecord(speaker) : null;
+      const currentPeople=(ctx?.worldContext?.currentPeople||[]).some(x=>rpgKey(x?.name||x)===rpgKey(speaker));
+      const authoritativePresent=!!(sceneRecord?.scenePresent || currentPeople);
+      if(!authoritativePresent)issues.push(`inactive-speaker:${speaker||'unknown'}`);
+      else if(!activeNames.has(rpgKey(speaker)) && !currentPeople)issues.push(`uncontextualized-speaker:${speaker}`);
+    }
     const text=String(e.text||'');
     for(const name of absent){
       const re=new RegExp('\\b'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
@@ -2070,7 +2087,7 @@ RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
   if(!entries.length)throw new Error('Local AI returned no scene text');
   const continuityIssues=rpgSceneContinuityIssues(entries,ctx,action);
   if(continuityIssues.length && !qualityRetry){
-    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: Scene continuity violation: ${continuityIssues.join(', ')}. Regenerate from scratch. Only PRESENT NPCs may physically appear, speak, act, observe or react. Never control the player. Do not teleport anyone or restart historical events.`;
+    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: Scene continuity violation: ${continuityIssues.join(', ')}. Regenerate from scratch. Only PRESENT NPCs may physically appear, speak, act, observe or react. Ensure every speaking NPC is included in ACTIVE NPCS ONLY. Never control the player. Do not teleport anyone or restart historical events.`;
     return await callStoryAI(retryAction,correctedSource||action,true);
   }
   if(continuityIssues.length)throw new Error('Local AI could not produce a scene-safe response: '+continuityIssues.join(', '));
