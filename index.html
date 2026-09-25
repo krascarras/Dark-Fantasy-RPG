@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.2.9</div>
+<div class="version-badge">v5.3.0</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -937,8 +937,22 @@ function rpgPlayerEchoes(entries,action){
 }
 function rpgRepeatedPhysicalBeat(entries){
  const recent=state.story.slice(-10).map(e=>rpgNormCompare(e.text)).join(' '), current=entries.map(e=>rpgNormCompare(e.text)).join(' '); if(!recent||!current)return false;
- const groups=[/(?:step|steps|stepped|move|moves|moved|close|closer|approach|approaches|approached)\\b[^.]{0,80}\\bclos(?:e|er|ing)\\b/,/(?:small|slow|tentative)\\s+(?:step|movement|move)\\b/,/(?:silence|quiet)\\s+(?:stretches|settles|hangs|falls)\\b/,/(?:eyes?|gaze)\\s+(?:search|searches|searched|flicker|flickers|flickered|scan|scans)\\b/];
+ const groups=[/(?:step|steps|stepped|move|moves|moved|close|closer|approach|approaches|approached)\b[^.]{0,80}\bclos(?:e|er|ing)\b/,/(?:small|slow|tentative)\s+(?:step|movement|move)\b/,/(?:silence|quiet)\s+(?:stretches|settles|hangs|falls)\b/,/(?:eyes?|gaze)\s+(?:search|searches|searched|flicker|flickers|flickered|scan|scans)\b/];
  return groups.some(r=>r.test(current)&&r.test(recent));
+}
+function rpgResponseTooSimilar(entries,previous){
+ const current=rpgNormCompare((entries||[]).map(e=>e?.text||'').join(' '));
+ const prior=rpgNormCompare((previous||[]).map(e=>e?.text||'').join(' '));
+ if(!current||!prior)return false;
+ if(current===prior)return true;
+ if(current.length>70&&(current.includes(prior)||prior.includes(current)))return true;
+ const aw=current.split(' ').filter(w=>w.length>2), bw=prior.split(' ').filter(w=>w.length>2);
+ const a=new Set(aw), bset=new Set(bw);
+ let common=0; for(const w of a)if(bset.has(w))common++;
+ const union=new Set([...a,...bset]).size;
+ if(union>=8&&common/union>=0.78)return true;
+ for(let i=0;i<=aw.length-7;i++)if(prior.includes(aw.slice(i,i+7).join(' ')))return true;
+ return false;
 }
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
@@ -1063,12 +1077,28 @@ async function redoLastAI(){
       if(!(aiSettings.enabled&&aiSettings.endpoint)){
         throw new Error('Local AI is not enabled');
       }
-      const result=await callStoryAI(redo.action,redo.action);
+      let result=null;
+      let entries=[];
+      const previous=Array.isArray(redo.rejectedEntries)?redo.rejectedEntries.map(e=>({...e})):[];
+      const priorText=previous.map(e=>String(e?.text||'')).join(' ');
+      const baseAttempt=Math.max(0,Number(redo.redoCount)||0);
+      for(let attempt=0;attempt<3;attempt++){
+        const attemptNo=baseAttempt+attempt+1;
+        const directive=previous.length
+          ? `This is a REDO requested because the previous response was rejected. You MUST produce a materially different continuation. Do not repeat the same sentence, distinctive phrase, action beat, or dialogue from the rejected response. Take a different conversational or narrative route while still responding to the latest player action. Redo attempt ${attemptNo}.\nREJECTED RESPONSE TO AVOID:\n${priorText.slice(0,3500)}`
+          : `This is a REDO requested by the player. Produce a fresh continuation rather than mechanically repeating the previous generation. Redo attempt ${attemptNo}.`;
+        result=await callStoryAI(redo.action,redo.action,false,directive);
+        entries=aiEntries(result);
+        if(!entries.length)throw new Error('Local AI returned no usable story entries');
+        if(!previous.length||!rpgResponseTooSimilar(entries,previous))break;
+        if(attempt<2)toast('The model repeated itself — generating a different response…');
+      }
+      if(previous.length&&rpgResponseTooSimilar(entries,previous))throw new Error('Local AI kept repeating the rejected response');
       /* Redo is prose-only too. The engine owns state; Gemma never commits RPG state. */
       await save();
-      const entries=aiEntries(result);
-      if(!entries.length)throw new Error('Local AI returned no usable story entries');
       for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
+      lastRedo={...redo,rejectedEntries:entries.map(e=>({...e})),redoCount:baseAttempt+1};
+      updateRedoButton();
       toast('New response generated');
     }catch(err){
       console.error(err);
@@ -1178,6 +1208,7 @@ async function addAction(){
           for(let i=0;i<entries.length;i++){
             await typewriteAIEntry(entries[i],i===0?100:180);
           }
+          if(lastRedo){lastRedo.rejectedEntries=entries.map(e=>({...e}));lastRedo.redoCount=0;updateRedoButton();}
           toast('Story continues');
         }
       }else{
@@ -1642,7 +1673,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.2.9';
+const RPG_CORE_VERSION='5.3.0';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
@@ -1995,6 +2026,8 @@ function rpgTurnQuality(entries, action){
   if(!entries?.length)issues.push('empty-response');
   if(rpgPlayerEchoes(entries,action))issues.push('player-voice-or-echo');
   if(rpgRepeatedPhysicalBeat(entries))issues.push('repeated-physical-beat');
+  const recentAI=(state.story||[]).slice(-6).filter(e=>e?.type==='character'||e?.type==='gm');
+  if(rpgResponseTooSimilar(entries,recentAI))issues.push('repeated-response');
   if((entries||[]).filter(e=>e.type==='character').length>3)issues.push('too-many-npc-speakers');
   const playerText=String(action||'').replace(/\s+/g,' ').trim().toLowerCase();
   const words=playerText.split(/\s+/).filter(w=>w.length>4);
@@ -2055,7 +2088,7 @@ function rpgSceneContinuityIssues(entries, ctx, action){
 }
 
 /* The model is a prose renderer. It never owns campaign state. */
-async function callStoryAI(action,correctedSource,qualityRetry=false){
+async function callStoryAI(action,correctedSource,qualityRetry=false,generationDirective=""){
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
@@ -2095,7 +2128,10 @@ ${ctx.location}
 LATEST PLAYER ACTION:
 ${ctx.action}
 
-Rules:
+${generationDirective?`GENERATION OVERRIDE:
+${generationDirective}
+
+`:''}Rules:
 - Never write the player's dialogue, thoughts, feelings, choices or actions.
 - React specifically to the latest player action. If the player spoke to someone, answer what they actually said rather than restarting the scene.
 - Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
@@ -2162,7 +2198,7 @@ RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
   if(!quality.ok && !qualityRetry){
     const correction=`
 
-GENERATION CORRECTION: Your previous draft violated the scene rules. Generate the turn again from scratch. Never write the player's dialogue, thoughts, feelings or actions. Never give an absent character physical presence, dialogue, observation or reaction. Never use an inactive speaker. Do not repeat a recent physical beat. Respond directly to the latest player action and move the scene forward.`;
+GENERATION CORRECTION: Your previous draft violated the scene rules. Generate the turn again from scratch. Never write the player's dialogue, thoughts, feelings or actions. Never give an absent character physical presence, dialogue, observation or reaction. Never use an inactive speaker. Do not repeat a recent physical beat or reuse a recent response. Respond directly to the latest player action and move the scene forward.`;
     const retryAction=String(action||'')+' '+correction;
     return await callStoryAI(retryAction,correctedSource||action,true);
   }
