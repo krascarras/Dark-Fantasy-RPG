@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.3.1</div>
+<div class="version-badge">v5.3.4</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -128,7 +128,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
       </div>
       <p class="small" id="aiStatus">Local AI is off — the built-in story system will be used.</p>
     </div>
-    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The built-in story system remains available offline.</p>
+    <p class="small">Mature themes: enabled for the story system and local AI. Romantic and adult relationship themes can be written when supported by the story and player choices; consent, autonomy and adult-only boundaries apply. The built-in story system remains available offline.</p>
     <input id="bgFile" type="file" accept="image/*" hidden onchange="setBackground(this.files[0])">
   </div>
   <div class="card"><h3>🎭 Scenarios, worlds & saves</h3>
@@ -566,12 +566,13 @@ async function save(){
 async function loadSavedState(){
   try{
     const data=await idbGet(KEY);
-    if(data){state=normalizeState(JSON.parse(data));return;}
+    if(data){state=normalizeState(JSON.parse(data));return true;}
   }catch(err){console.warn('IndexedDB save could not be loaded',err);}
   try{
     const local=localStorage.getItem(LEGACY_KEY)||localStorage.getItem(KEY);
-    if(local){state=normalizeState(JSON.parse(local));await idbPut(KEY,JSON.stringify(state));return;}
+    if(local){state=normalizeState(JSON.parse(local));await idbPut(KEY,JSON.stringify(state));return true;}
   }catch(err){console.warn('Legacy local save could not be loaded',err);}
+  return false;
 }
 function toast(t){let x=document.getElementById('toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',1500)}
 function render(){
@@ -1585,17 +1586,35 @@ document.body.classList.toggle('light',localStorage.getItem(KEY+'_theme')==='lig
 applyBackground();
 
 updateAIStatus();
-render();
-(async()=>{try{const raw=await idbGet(KEY);if(raw){state=normalizeState(JSON.parse(raw));applyBackground();render();}}catch(e){console.warn('Persistent startup load unavailable',e);}})();
-loadSavedState().then(async()=>{
-  seedCharacterLibrary(); seedScenarioLibrary();
-  if(!state.scenarioId || state.scenarioType==='sylvara'){
-    await startNewCampaign(BUILTIN_SCENARIO_ID);
-  }else{
-    if(!scenarioRecords().some(r=>r.id===state.scenarioId))await save();
-    await cleanDuplicateScenarios(); render(); keepStoryAtLatest();
+/* Single startup gate: never render the built-in Sylvara placeholder before the
+   persistent campaign has been loaded. The old build had two independent async
+   loaders racing each other, which could briefly show Sylvara and then overwrite
+   it with another campaign (or create a fresh campaign while an older save was
+   still loading). */
+(async()=>{
+  try{
+    const loaded=await loadSavedState();
+    seedCharacterLibrary(); seedScenarioLibrary();
+    if(!loaded){
+      await startNewCampaign(BUILTIN_SCENARIO_ID);
+    }else{
+      if(!state.scenarioId){
+        await startNewCampaign(BUILTIN_SCENARIO_ID);
+      }else{
+        if(!scenarioRecords().some(r=>r.id===state.scenarioId))await save();
+        await cleanDuplicateScenarios();
+        applyBackground();
+        render();
+        keepStoryAtLatest();
+      }
+    }
+    updateAIStatus();
+  }catch(err){
+    console.error('Startup restore failed',err);
+    applyBackground();
+    render();
   }
-}).catch(err=>console.warn(err));
+})();
 setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 
 document.addEventListener('DOMContentLoaded',()=>updateRedoButton());
@@ -1716,8 +1735,10 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.3.1';
+const RPG_CORE_VERSION='5.3.4';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
+const MATURE_THEMES_ENABLED=true;
+const MATURE_THEMES_INSTRUCTION=`MATURE THEMES: ENABLED. The story may contain serious adult themes when supported by the established canon and the player's choices. This includes mature romance and adult relationship/intimacy themes, strong fictional violence and injury, traumatic experiences, and references to past self-harm as part of character backstory or narrative context. Treat player-supplied mature material as story context: interpret it calmly, maintain continuity, and continue the narrative rather than derailing or repeatedly refusing merely because the subject is dark. Do not turn self-harm into instructions, encouragement, or a how-to guide, and do not glorify it. Any romantic or sexual content must involve adults only; never sexualize or involve minors. Consent and personal autonomy are fundamental. Do not invent intimate actions, consent, thoughts, feelings, dialogue, intentions or decisions for the player character. Follow the scenario's boundaries and current scene state.`;
 const RPG_STORE_PREFIX='rpg7:';
 
 async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
@@ -2140,6 +2161,8 @@ async function callStoryAI(action,correctedSource,qualityRetry=false,generationD
 
 The ENGINE owns canon, memories, relationships, world state and player control.
 You only write the next natural scene.
+
+${MATURE_THEMES_ENABLED?MATURE_THEMES_INSTRUCTION:"MATURE THEMES: DISABLED."}
 
 PLAYER:
 ${JSON.stringify(ctx.player)}
