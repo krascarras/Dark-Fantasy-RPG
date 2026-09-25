@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.3.0</div>
+<div class="version-badge">v5.3.1</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -896,11 +896,34 @@ function parseNarrativeEntries(text){
     block=block.replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').trim();
     if(!block)continue;
     let speaker='';
+    let markerAction='';
     let markerMatch=block.match(/^\[\s*(?:SPEAKER\s*:\s*)?([^\]]+)\]\s*/i);
     if(markerMatch){
       const candidate=markerMatch[1].trim();
-      if(!/^narrator$/i.test(candidate))speaker=known.find(n=>n.toLowerCase()===candidate.toLowerCase())||'';
+      if(!/^narrator$/i.test(candidate)){
+        // Accept both the intended [Gerald] marker and Gemma's common
+        // [Gerald gives a slow sip...] form. The latter used to become Narrator
+        // because the whole bracket contents did not exactly match the NPC name.
+        const exact=known.find(n=>n.toLowerCase()===candidate.toLowerCase());
+        if(exact){
+          speaker=exact;
+        }else{
+          const pref=known.find(n=>candidate.toLowerCase().startsWith(n.toLowerCase()+' '));
+          if(pref){
+            speaker=pref;
+            markerAction=candidate.slice(pref.length).trim();
+          }
+        }
+      }
       block=block.slice(markerMatch[0].length).trim();
+      // Gemma sometimes repeats the speaker name before dialogue.
+      if(speaker){
+        const speakerPrefix=new RegExp('^'+speaker.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\s*:\\s*','i');
+        block=block.replace(speakerPrefix,'').trim();
+      }
+      if(markerAction){
+        block='*'+markerAction+'* '+block;
+      }
     }else{
       for(const name of known){
         const re=new RegExp('^\\s*(?:\\*\\*|__)?'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\*\\*|__)?\\s*:\\s*','i');
@@ -981,17 +1004,33 @@ function applyAIRelationships(result){
 function normaliseAIText(text, type){
   let s=String(text||'').trim();
   if(!s)return '';
-  // The model is instructed to use these markers. This light post-processing fixes the
-  // most common presentation mistakes without rewriting the actual prose.
   s=s.replace(/\s+([,.!?])/g,'$1').replace(/([.!?])(?=[A-Za-z])/g,'$1 ');
   if(type==='character'){
-    // Character actions should always use the same asterisk convention as Shane.
-    // Do not touch already-marked actions or quoted dialogue.
-    s=s.replace(/(^|[.!?]\s+)([A-Z][^.!?]*?\b(?:nods|shakes? (?:his|her) head|smiles|frowns|laughs|sighs|steps|moves|turns|looks|glances|watches|studies|raises|lowers|crosses|folds|leans|shrugs|gestures|approaches|recoils|stands|sits|walks|reaches|touches|draws|breathes|blinks)\b[^.!?]*)(?=(?:[.!?]\s+|$))/g,(m,prefix,action)=>{
-      const a=action.trim();
-      if(!a.startsWith('*') && !a.includes('\"'))return prefix+'*'+a+'*';
-      return m;
-    });
+    // NPC physical actions ALWAYS use the same *action* convention as player actions.
+    // First repair square-bracket actions wherever they occur inside a character entry.
+    // Speaker markers have already been removed by parseNarrativeEntries, so these
+    // brackets can safely be treated as action formatting.
+    const actionVerbs='(?:nods|shakes? (?:his|her) head|smiles|frowns|laughs|sighs|steps|moves|turns|looks|glances|watches|studies|raises|lowers|crosses|folds|leans|shrugs|gestures|approaches|recoils|stands|sits|walks|reaches|touches|draws|breathes|blinks|gives|takes|places|sets|rests|holds|picks|opens|closes|points|stares|pauses)';
+    const bracketAction = new RegExp("\\[\\s*((?:(?:[A-Z][A-Za-z'’\\-]+(?:\\s+[A-Z][A-Za-z'’\\-]+){0,3})\\s+)?"+actionVerbs+"\\b[^\\]]*)\\s*\\]","g");
+    s=s.replace(bracketAction,'*$1*');
+    if(!s.includes('*')){
+      // Repair a bare action whether Gemma starts with the verb itself or with
+      // the NPC's name, e.g. "Gerald gives a sip. Gerald: \"...\"".
+      s=s.replace(new RegExp('^('+actionVerbs+'\\b[^.!?]*[.!?])\\s+(?=(?:[A-Z][A-Za-z]+\\s*:\\s*|[“"]))','i'),'*$1* ');
+      if(!s.includes('*')){
+        const namedLead=new RegExp('^((?:[A-Z][A-Za-z\'’\\-]+(?:\\s+[A-Z][A-Za-z\'’\\-]+){0,3})\\s+'+actionVerbs+'\\b[^.!?]*[.!?])\\s+(?=(?:(?:[A-Z][A-Za-z]*(?:\\s+[A-Z][A-Za-z]*){0,3})\\s*:\\s*|[“]))','i');
+        s=s.replace(namedLead,'*$1* ');
+      }
+      if(!s.includes('*') && new RegExp('^'+actionVerbs+'\\b','i').test(s) && !/[“\"]/.test(s)){
+        s='*'+s+'*';
+      }
+    }
+    // If a model starts with a bare action followed by dialogue without punctuation,
+    // capture only the physical-action lead-in.
+    if(!s.includes('*')){
+      const m=s.match(new RegExp('^('+actionVerbs+'\\b[^.!?]*?)(?=\\s+[“\"])','i'));
+      if(m)s='*'+m[1].trim()+'* '+s.slice(m[0].length).trim();
+    }
   }
   return s;
 }
@@ -1025,7 +1064,7 @@ async function typewriteAIEntry(entry, initialPause=0){
   for(let i=0;i<finalText.length;i++){
     shown+=finalText[i];
     body.innerHTML=speakerHtml+renderRichText(shown)+'<span class="typing-cursor" aria-hidden="true"></span>';
-    if(i%3===0)keepStoryAtLatest();
+    if(i%12===0)keepStoryAtLatest();
     const ch=finalText[i];
     const speed=ch===' ' ? 2 : /[,.!?;:]/.test(ch) ? 10 : /[\n]/.test(ch) ? 14 : 3;
     await wait(speed);
@@ -1189,7 +1228,7 @@ async function addAction(){
     try{
       if(aiSettings.enabled&&aiSettings.endpoint){
         result=await callStoryAI(v,v);
-        const corrected=String(result.corrected_action||'').trim();
+        const corrected=String(result.action||'').trim();
         if(corrected && corrected!==v){
           const last=state.story[state.story.length-1]; if(last&&last.type==='player')last.text=corrected;
         }
@@ -1235,13 +1274,17 @@ async function addAction(){
     area.value=raw; area.focus({preventScroll:true}); toast('Something went wrong — your message was kept.');
   }
 }
+let storyScrollFrame=0;
 function keepStoryAtLatest(){
- requestAnimationFrame(()=>{
-  const log=document.getElementById('storyLog');
-  if(log)log.scrollTop=log.scrollHeight;
-  window.scrollTo({top:document.documentElement.scrollHeight,left:0,behavior:'auto'});
-  requestAnimationFrame(()=>{const latest=document.getElementById('storyLog');if(latest)latest.scrollTop=latest.scrollHeight;window.scrollTo({top:document.documentElement.scrollHeight,left:0,behavior:'auto'});});
- });
+  // Only the story panel should move. The old version also scrolled the entire
+  // document twice per call, which made the UI fight the user's finger and caused
+  // the story view to appear to jump/loop while text was being revealed.
+  if(storyScrollFrame)return;
+  storyScrollFrame=requestAnimationFrame(()=>{
+    storyScrollFrame=0;
+    const log=document.getElementById('storyLog');
+    if(log)log.scrollTop=log.scrollHeight;
+  });
 }
 function restoreStoryPosition(log,logScroll,pageScroll){
   requestAnimationFrame(()=>{
@@ -1673,7 +1716,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.3.0';
+const RPG_CORE_VERSION='5.3.1';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
@@ -2128,6 +2171,8 @@ ${ctx.location}
 LATEST PLAYER ACTION:
 ${ctx.action}
 
+IMPORTANT: The text immediately above is the player's NEWEST action. Respond to that action only. Do not answer an earlier player action from RECENT SCENE, do not restart the previous exchange, and do not repeat the last NPC response.
+
 ${generationDirective?`GENERATION OVERRIDE:
 ${generationDirective}
 
@@ -2163,13 +2208,16 @@ ${generationDirective}
 - Prefer 1-3 meaningful NPC contributions when the scene supports conversation; do not let the response become mostly narration.
 - Every turn should move the conversation or situation forward: new information, a new emotional beat, a question from an NPC, a decision, an interruption, or a concrete change in the scene.
 - Do not repeat a physical action already shown in RECENT SCENE. If someone already stepped closer, do not have them step closer again without a new reason.
-- Do not reuse distinctive dialogue phrases from RECENT SCENE.
+- Do not reuse distinctive dialogue phrases from RECENT SCENE. If your draft resembles the last NPC response, discard it and write a genuinely new continuation.
 - Never copy the player's wording into an NPC's dialogue.
 - Do not finish with "What do you do?".
-- EVERY paragraph MUST begin with exactly one speaker marker: [Narrator] or [NPC NAME].
-- Use [Narrator] only for description that belongs to nobody.
-- Put an NPC's spoken dialogue and that NPC's own physical actions under that NPC's marker.
+- EVERY paragraph MUST begin with exactly one speaker marker: [Narrator] or [EXACT NPC NAME].
+- The marker is ONLY the speaker name. Never put an action, dialogue, sentence or description inside the brackets.
+- Example: [Gerald] *gives a slow, deliberate sip of his drink.* "Bitterness is a sharp tool, Shane."
+- Put every NPC physical action in single asterisks: *action here*.
+- Never use square brackets for actions. Square brackets are ONLY for the speaker marker.
 - Never put NPC dialogue under [Narrator].
+- Do not add "Gerald:" after the [Gerald] marker; the UI already displays the speaker name.
 RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
 
   /* Conservative input guard. It trims background sections before touching the player action. */
