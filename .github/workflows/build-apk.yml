@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - Local AI (v5.2.9)
+name: Build Dark Fantasy RPG - Local AI (v5.3.0)
 
 on:
   workflow_dispatch:
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 83
-                  versionName '5.2.9-rpg-runtime-integrity'
+                  versionCode 84
+                  versionName '5.3.0-rpg-runtime-integrity'
               }
 
               compileOptions {
@@ -418,13 +418,13 @@ jobs:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
-          grep -q 'v5.2.9' /tmp/packaged-index.html
-          grep -q "RPG_CORE_VERSION='5.2.9'" /tmp/packaged-index.html
-          echo "Packaged index.html verified as v5.2.9"
+          grep -q 'v5.3.0' /tmp/packaged-index.html
+          grep -q "RPG_CORE_VERSION='5.3.0'" /tmp/packaged-index.html
+          echo "Packaged index.html verified as v5.3.0"
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.2.9-runtime-integrity
+          name: Dark-Fantasy-RPG-v5.3.0-runtime-integrity
           path: app/build/outputs/apk/debug/app-debug.apk
