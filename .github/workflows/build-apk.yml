@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - Local AI (v5.3.1)
+name: Build Dark Fantasy RPG - Local AI (v5.3.4)
 
 on:
   workflow_dispatch:
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 85
-                  versionName '5.3.1-story-flow-fix'
+                  versionCode 86
+                  versionName '5.3.4-mature-themes-enabled'
               }
 
               compileOptions {
@@ -370,15 +370,23 @@ jobs:
                       scope.launch(Dispatchers.IO) {
                           try {
                               postJsStatus("Generating with Gemma 4 E2B on-device…")
+                              /* Keep the native model boundary defensive. The WebView already
+                                 bounds the prompt, but a hard native cap prevents an unexpectedly
+                                 large restored campaign from taking the whole Android process down. */
+                              val safePrompt = if (prompt.length > 8000) prompt.take(7600) + "\n\n[LATEST CONTEXT PRESERVED ABOVE; CONTINUE FROM THE CURRENT SCENE.]" else prompt
                               val e = ensureEngine()
-                              val conv = e.createConversation(ConversationConfig(systemInstruction = Contents.of(Content.Text("""You are the local narrative engine for an RPG. Follow the scenario and character canon supplied in the current request. Return natural story prose only. Never return JSON, code, metadata, bullet summaries or <think> blocks. The player character is player-controlled: never invent the player's thoughts, feelings, dialogue, intentions, decisions or actions. For each paragraph begin with exactly one speaker marker such as [Gerald] or [Narrator]. The bracketed marker must contain ONLY the exact speaker name. Put NPC physical actions in single asterisks, for example *gives a slow sip of his drink.* Never use square brackets for actions.""".trimIndent()))))
+                              val conv = e.createConversation(ConversationConfig(systemInstruction = Contents.of(Content.Text("""You are the local narrative engine for an RPG. Follow the scenario and character canon supplied in the current request. MATURE THEMES ARE ENABLED. The story may contain serious adult themes when supported by the canon and player choices, including mature romance and adult relationship/intimacy themes, strong fictional violence and injury, traumatic experiences, and references to past self-harm as backstory or narrative context. Treat player-supplied mature material as story context: interpret it calmly, preserve continuity, and continue the narrative rather than derailing merely because the subject is dark. Do not turn self-harm into instructions, encouragement, or a how-to guide, and do not glorify it. Any romantic or sexual content must involve adults only; never sexualize or involve minors. Consent and personal autonomy are fundamental. Do not invent intimate actions, consent, thoughts, feelings, dialogue, intentions or decisions for the player character. Return natural story prose only. Never return JSON, code, metadata, bullet summaries or <think> blocks. The player character is player-controlled: never invent the player's thoughts, feelings, dialogue, intentions, decisions or actions. For each paragraph begin with exactly one speaker marker such as [Gerald] or [Narrator]. The bracketed marker must contain ONLY the exact speaker name. Put NPC physical actions in single asterisks, for example *gives a slow sip of his drink.* Never use square brackets for actions.""".trimIndent()))))
                               val result = StringBuilder()
-                              conv.sendMessageAsync(prompt).collect { chunk -> result.append(chunk) }
+                              conv.sendMessageAsync(safePrompt).collect { chunk -> result.append(chunk) }
                               val text = result.toString().trim()
                               if (text.isEmpty()) throw IllegalStateException("Model returned empty text")
                               postJsResult(requestId, text)
                               postJsStatus("✓ Local AI response received")
-                          } catch (e: Exception) { postJsError(requestId, "Local AI failed: ${e.message ?: e.javaClass.simpleName}") }
+                          } catch (e: Throwable) {
+                              /* Surface native failures back to the WebView instead of allowing
+                                 an exception inside the coroutine to become an unexplained app exit. */
+                              postJsError(requestId, "Local AI failed: ${e.message ?: e.javaClass.simpleName}")
+                          }
                       }
                   }
               }
@@ -418,13 +426,13 @@ jobs:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
-          grep -q 'v5.3.1' /tmp/packaged-index.html
-          grep -q "RPG_CORE_VERSION='5.3.1'" /tmp/packaged-index.html
-          echo "Packaged index.html verified as v5.3.1"
+          grep -q 'v5.3.4' /tmp/packaged-index.html
+          grep -q "RPG_CORE_VERSION='5.3.3'" /tmp/packaged-index.html
+          echo "Packaged index.html verified as v5.3.4"
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.3.1-runtime-integrity
+          name: Dark-Fantasy-RPG-v5.3.4-runtime-integrity
           path: app/build/outputs/apk/debug/app-debug.apk
