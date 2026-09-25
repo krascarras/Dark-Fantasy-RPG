@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - Local AI (v5.3.0)
+name: Build Dark Fantasy RPG - Local AI (v5.3.1)
 
 on:
   workflow_dispatch:
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 84
-                  versionName '5.3.0-rpg-runtime-integrity'
+                  versionCode 85
+                  versionName '5.3.1-story-flow-fix'
               }
 
               compileOptions {
@@ -371,7 +371,7 @@ jobs:
                           try {
                               postJsStatus("Generating with Gemma 4 E2B on-device…")
                               val e = ensureEngine()
-                              val conv = e.createConversation(ConversationConfig(systemInstruction = Contents.of(Content.Text("""You are the local narrative engine for an RPG. Follow the scenario and character canon supplied in the current request. Return natural story prose only. Never return JSON, code, metadata, bullet summaries or <think> blocks. Shane is player-controlled: never invent Shane's thoughts, feelings, dialogue, intentions, decisions or actions.""".trimIndent()))))
+                              val conv = e.createConversation(ConversationConfig(systemInstruction = Contents.of(Content.Text("""You are the local narrative engine for an RPG. Follow the scenario and character canon supplied in the current request. Return natural story prose only. Never return JSON, code, metadata, bullet summaries or <think> blocks. The player character is player-controlled: never invent the player's thoughts, feelings, dialogue, intentions, decisions or actions. For each paragraph begin with exactly one speaker marker such as [Gerald] or [Narrator]. The bracketed marker must contain ONLY the exact speaker name. Put NPC physical actions in single asterisks, for example *gives a slow sip of his drink.* Never use square brackets for actions.""".trimIndent()))))
                               val result = StringBuilder()
                               conv.sendMessageAsync(prompt).collect { chunk -> result.append(chunk) }
                               val text = result.toString().trim()
@@ -418,13 +418,13 @@ jobs:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
-          grep -q 'v5.3.0' /tmp/packaged-index.html
-          grep -q "RPG_CORE_VERSION='5.3.0'" /tmp/packaged-index.html
-          echo "Packaged index.html verified as v5.3.0"
+          grep -q 'v5.3.1' /tmp/packaged-index.html
+          grep -q "RPG_CORE_VERSION='5.3.1'" /tmp/packaged-index.html
+          echo "Packaged index.html verified as v5.3.1"
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.3.0-runtime-integrity
+          name: Dark-Fantasy-RPG-v5.3.1-runtime-integrity
           path: app/build/outputs/apk/debug/app-debug.apk
