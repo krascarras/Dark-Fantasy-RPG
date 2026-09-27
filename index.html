@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.3.0-meshed</div>
+<div class="version-badge">v5.4.2-dfr-native-workshop</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -106,10 +106,10 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPlayerPicker()">🎭 Change player character</button><span id="activePlayerLabel" class="small"></span></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
-      <h3>🧠 Local Story AI</h3>
-      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local AI to write the story</label>
-      <p class="small">On Android, the game can download and run its local narrative AI directly on the phone. On desktop/web, an Ollama-compatible local server can be used instead. If local AI is unavailable, the built-in story system continues to work offline.</p>
-      <label for="aiEndpoint">Local AI endpoint</label>
+      <h3>🧠 DFR Native Story AI</h3>
+      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the DFR Native language engine</label>
+      <p class="small">The game now has its own built-in DFR Native narrative engine. It runs offline and is designed specifically around this RPG's characters, relationships and scene rules. The external local-model path remains available as a compatibility fallback during development.</p>
+      <p class="small" id="dfrNativeStatus">DFR Native v0.2.0 — built into the game; no model download required.</p><label for="aiEndpoint">Local AI endpoint</label>
       <input id="aiEndpoint" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434/api/chat">
       <p class="small">Default: Ollama. On Android, <b>127.0.0.1</b> means the phone itself. If Ollama is running on your PC, enter the PC's local network address instead.</p>
       <label for="aiModel">Local model</label>
@@ -226,7 +226,7 @@ function loadAISettings(){
       };
     }
   }catch(e){}
-  return {enabled:false,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  return {enabled:true,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
 }
 function saveAISettings(){
   const enabled=!!document.getElementById('aiEnabled')?.checked;
@@ -238,7 +238,7 @@ function saveAISettings(){
   toast(enabled?'Local AI settings saved':'Local AI settings saved — local AI is off');
 }
 function clearAISettings(){
-  aiSettings={enabled:false,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  aiSettings={enabled:true,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
   aiLastError='';
   localStorage.removeItem(KEY+'_ai_error');
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
@@ -669,7 +669,7 @@ function setStoryBusy(busy){
   if(button){button.disabled=busy||!activePlayer(); button.textContent=busy?'Thinking…':'Send';}
   updateRedoButton();
   const hint=document.querySelector('.action-card .small');
-  if(hint) hint.textContent=busy?'Gemma is thinking… the response will appear as soon as it is ready.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
+  if(hint) hint.textContent=busy?'DFR Native is thinking… the response will appear as soon as it is ready.':'Every action is saved automatically on this device. Use Send when you are ready. Shift+Enter adds a new line.';
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
@@ -1073,7 +1073,7 @@ async function redoLastAI(){
       await save();
       const entries=aiEntries(result);
       if(!entries.length)throw new Error('Local AI returned no usable story entries');
-      await commitAIStateTransaction(redo.action,entries);
+      await commitAIStateTransaction(redo.action,entries,result?.native===true);
       await save();
       for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
       toast('New response generated');
@@ -1180,7 +1180,7 @@ async function addAction(){
         }
         const entries=aiEntries(result);
         if(entries.length){
-          await commitAIStateTransaction(v,entries);
+          await commitAIStateTransaction(v,entries,result?.native===true);
           await save();
         }
         if(!entries.length){
@@ -1653,7 +1653,7 @@ applyAIRelationships = function(result){
    relevance retrieval, and a bounded working context for the local model.
    The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
-const RPG_CORE_VERSION='5.3.0-meshed';
+const RPG_CORE_VERSION='5.4.0-dfr-native';
 const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
@@ -2205,8 +2205,12 @@ function validateAndCommitAIStateTransaction(tx,action,entries){
   return out;
 }
 
-async function commitAIStateTransaction(action,entries){
+async function commitAIStateTransaction(action,entries,isNative=false){
   try{
+    /* DFR Native owns its own narrative output. Never wake Gemma/Ollama merely to
+       interpret a native turn; native state transactions will be added directly as
+       deterministic engine rules mature. */
+    if(isNative)return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
     const proposal=await extractAIStateTransaction(action,entries);
     const tx=validateAndCommitAIStateTransaction(proposal,action,entries);
     /* Engine appliers are now actually connected to the validated transaction. */
@@ -2221,7 +2225,238 @@ async function commitAIStateTransaction(action,entries){
   }
 }
 
+
+/* ================================================================
+   DFR NATIVE LANGUAGE ENGINE v0.1
+   Purpose-built local narrative engine. No external model required.
+   The RPG engine remains authoritative; this layer chooses intent, language,
+   character response and presentation from authoritative state.
+   ================================================================ */
+const DFR_NATIVE_LANGUAGE_VERSION='0.2.1-workshop';
+const DFR_NATIVE_LEXICON={
+  greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
+  question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
+  concern:['You don’t have to explain everything at once.','I’m listening. Take your time.','Something’s wrong, isn’t it?'],
+  neutral:['I see.','Alright.','Go on.','I’m listening.','Tell me more.','I understand.','Keep going.','I’m following you.','Alright. Continue.','I hear you.','Tell me what you mean.','Go on, then.'],
+  agreement:['Alright.','I understand.','That makes sense.','Okay. I can work with that.','Fair enough.','I can accept that.','Yes. I understand.','That seems reasonable.','Alright, we can work with that.','I think I understand your point.'],
+  disagreement:['I’m not sure I agree.','That isn’t quite how I see it.','I don’t think it’s that simple.','I see it differently.','I’m not convinced.','I think there is more to it than that.','I cannot agree with that.','That is not how I understand it.','I would challenge that.','I think you are missing something.'],
+  farewell:['I’ll see you later.','Take care.','We’ll talk again.','Alright. I’ll leave you to it.','Until next time.','I’ll let you get on.','We can continue this another time.','For now, goodbye.','I’ll see you around.','Take care of yourself.']
+};
+
+function dfrFingerprint(text){
+  return dfrText(String(text||'').toLowerCase().replace(/[“”"'’.,!?;:*()\[\]{}]/g,' '),240).replace(/\s+/g,' ').trim();
+}
+function dfrNativeHistory(){
+  if(!Array.isArray(state.dfrNativeHistory))state.dfrNativeHistory=[];
+  return state.dfrNativeHistory;
+}
+function dfrRememberNative(target,intent,dialogue,physical){
+  const h=dfrNativeHistory();
+  h.push({target:String(target||''),intent:String(intent||''),dialogue:dfrFingerprint(dialogue),physical:dfrFingerprint(physical),physicalCategory:dfrPhysicalCategory(physical),turn:Number(state.runtimeEngine?.turn||0)});
+  while(h.length>80)h.shift();
+}
+function dfrPhysicalCategory(text){
+  const x=String(text||'').toLowerCase();
+  if(/\b(?:takes?|take|moves?|move|steps?|step)\s+(?:a|another|one)?\s*(?:small|slow|careful)?\s*step\s+(?:closer|toward|towards)/.test(x)||/\b(?:moves?|move)\s+closer\b/.test(x)||/\bclos(?:es|ed|ing)\s+(?:the\s+)?(?:remaining\s+)?distance\b/.test(x))return 'approach';
+  if(/\b(?:steps?|step|moves?|move)\s+back(?:ward|wards)?\b|\b(?:backs?|backing)\s+away\b/.test(x))return 'retreat';
+  if(/\b(?:walks?|walk|heads?|head|goes?|go)\s+(?:toward|towards|over|across|away|outside|inside)\b/.test(x))return 'travel';
+  if(/\b(?:looks?|look|glances?|glance|gazes?|gaze|stares?|stare)\b/.test(x))return 'gaze';
+  if(/\b(?:smiles?|smile|grins?|grin|laughs?|laughs|chuckles?|chuckle)\b/.test(x))return 'warmth';
+  if(/\b(?:nods?|nod|inclines?)\b/.test(x))return 'nod';
+  if(/\b(?:folds?|fold)\s+(?:their|his|her)\s+arms\b/.test(x))return 'arms';
+  if(/\b(?:sits?|sit|stands?|stand|rises?|rise|gets?\s+up)\b/.test(x))return 'posture';
+  if(/\b(?:pauses?|pause|hesitates?|hesitate|takes?|take)\s+(?:a\s+)?(?:moment|breath)\b/.test(x))return 'pause';
+  if(/\b(?:turns?|turn|shifts?|shift|leans?|lean)\b/.test(x))return 'orientation';
+  return 'other';
+}
+function dfrChooseNovel(options,seed,opts={}){
+  const list=[...new Set((options||[]).map(x=>String(x||'').trim()).filter(Boolean))];
+  if(!list.length)return '';
+  const h=dfrNativeHistory();
+  const target=String(opts.target||'');
+  const intent=String(opts.intent||'');
+  const kind=String(opts.kind||'dialogue');
+  const recent=dfrRecentText();
+  const scored=list.map((text,i)=>{
+    const fp=dfrFingerprint(text);
+    let score=(dfrHash(seed+'|'+i)%100)/1000;
+    if(recent.includes(fp))score+=100;
+    if(kind==='physical'){
+      const cat=dfrPhysicalCategory(text);
+      const recentPhysical=h.filter(row=>row.target===target&&row.physical).slice(-6);
+      const recentCats=recentPhysical.map(row=>row.physicalCategory||'other');
+      if(cat==='approach'&&recentCats.slice(-5).includes('approach'))score+=1000;
+      if(cat==='retreat'&&recentCats.slice(-4).includes('retreat'))score+=1000;
+      if(cat==='travel'&&recentCats.slice(-4).includes('travel'))score+=700;
+      if(recentCats.slice(-2).includes(cat)&&['gaze','warmth','nod','pause'].includes(cat))score+=90;
+      for(const row of h){
+        if(row.target!==target)continue;
+        if(row.physical===fp)score+=80;
+        else if(fp&&row.physical&&(fp.includes(row.physical)||row.physical.includes(fp)))score+=25;
+        if(row.physicalCategory===cat&&cat!=='other')score+=12;
+      }
+    }else{
+      for(const row of h){
+        if(row.target!==target||row.intent!==intent)continue;
+        if(row.dialogue===fp)score+=80;
+        else if(fp&&row.dialogue&&(fp.includes(row.dialogue)||row.dialogue.includes(fp)))score+=25;
+      }
+    }
+    return {text,score};
+  }).sort((a,b)=>a.score-b.score);
+  return scored[0]?.text||list[0];
+}
+function dfrHash(s){let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+function dfrPick(arr,seed){return arr[(dfrHash(seed)%arr.length)]||arr[0]||'';}
+function dfrPerson(name){return [...(state.party||[]),...(state.npcs||[])].find(x=>rpgKey(x?.name)===rpgKey(name))||null;}
+function dfrFirstName(person){const n=String(person?.name||'NPC').trim();return n.split(/\s+/)[0]||n;}
+function dfrText(x,n=500){return String(x||'').replace(/\s+/g,' ').trim().slice(0,n);}
+function dfrActionText(action){return String(action||'').replace(/\s+/g,' ').trim();}
+function dfrQuoted(action){const m=dfrActionText(action).match(/[“"]([^”"]+)[”"]/);return m?m[1].trim():'';}
+function dfrAddressed(action,active){
+  const a=dfrActionText(action);
+  const lower=a.toLowerCase();
+  for(const n of (active||[])){
+    const full=String(n.name||'').trim().toLowerCase();
+    const first=dfrFirstName(n).toLowerCase();
+    if(full&&new RegExp('\\b'+full.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(lower))return n;
+    if(first&&new RegExp('\\b'+first.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(lower))return n;
+  }
+  return null;
+}
+function dfrIntent(action){
+  const a=dfrActionText(action).toLowerCase();
+  if(/\b(bye|goodbye|see you|leave|leaves|leaving|walks away|goes home|heads away|says farewell)\b/.test(a))return 'farewell';
+  if(/\b(hello|hi|hey|greet|greets|greeting|nods to)\b/.test(a))return 'greeting';
+  if(/\b(no|never|disagree|disagrees|disagreed|refuse|refuses|reject|rejects|angry|mad|accuse|accuses)\b/.test(a))return 'disagreement';
+  if(/\b(agree|agrees|agreed|accept|accepts|thank|thanks|thankful|understand|understands|okay|ok|yes)\b/.test(a))return 'agreement';
+  if(/\?|\b(ask|asks|asked|question|why|what|where|when|how|who|can you|could you|do you|did you|are you|is it|would you)\b/.test(a))return 'question';
+  if(/\b(sorry|apolog|apologise|apologize|hurt|afraid|scared|worried|worry|miss|love|care|upset|sad|fear)\b/.test(a))return 'concern';
+  return 'neutral';
+}
+function dfrQuestionTopic(q){
+  const x=String(q||'').toLowerCase();
+  if(/\bwhy are you here\b|\bwhat brings you here\b|\bwhy.*here\b/.test(x))return 'presence';
+  if(/\bwhat do you want\b|\bwhat are you after\b/.test(x))return 'desire';
+  if(/\bwhere\b/.test(x))return 'where';
+  if(/\bwho\b/.test(x))return 'who';
+  if(/\bhow\b/.test(x))return 'how';
+  return 'general';
+}
+function dfrStyle(person){
+  const text=(dfrText(person?.speechStyle,600)+' '+dfrText(person?.personality,1000)).toLowerCase();
+  if(/shrewd|strategic|calculating|measured|business-minded|articulate/.test(text))return 'measured';
+  if(/witty|charming|playful|humou?r|sarcastic|relaxed/.test(text))return 'playful';
+  if(/warm|kind|gentle|affectionate|empathetic|emotionally attentive/.test(text))return 'warm';
+  if(/guarded|cautious|reserved|sensitive/.test(text))return 'guarded';
+  if(/confident|bold|direct/.test(text))return 'direct';
+  return 'neutral';
+}
+function dfrEmotion(person,rel,intent){
+  const p=dfrText(person?.personality,900).toLowerCase();
+  const trust=Number(rel?.trust??person?.trust??20), aff=Number(rel?.affection??person?.affection??20), tension=Number(rel?.tension??person?.tension??0);
+  if(intent==='concern')return aff>=60?'soft concern':'concerned';
+  if(intent==='farewell')return tension>55?'guarded':'calm';
+  if(tension>70)return 'tense';
+  if(aff>=70)return 'warm';
+  if(trust>=65)return 'open';
+  if(/guard|cautious|reserved/.test(p))return 'guarded';
+  if(/warm|kind|gentle|affectionate/.test(p))return 'warm';
+  if(/confident|bold|direct/.test(p))return 'direct';
+  return 'neutral';
+}
+function dfrActionForEmotion(person,emotion,seed,intent="neutral"){
+  const name=dfrFirstName(person);
+  const options={
+    warm:[`*${name} smiles softly.*`,`*${name} watches you for a moment, expression softening.*`,`*${name} gives a small, genuine smile.*`],
+    open:[`*${name} relaxes slightly.*`,`*${name} meets your eyes and listens.*`,`*${name} gives you their full attention.*`],
+    guarded:[`*${name} studies you carefully.*`,`*${name} folds their arms, considering your words.*`,`*${name} hesitates before answering.*`],
+    tense:[`*${name} goes still for a moment.*`,`*${name} watches you carefully, tension visible in their posture.*`,`*${name} draws a slow breath before answering.*`],
+    concerned:[`*${name}'s expression softens with concern.*`,`*${name} watches you closely.*`,`*${name} looks genuinely concerned.*`],
+    'soft concern':[`*${name}'s expression softens.*`,`*${name} looks at you with quiet concern.*`,`*${name} pauses, clearly choosing their words carefully.*`],
+    direct:[`*${name} looks at you directly.*`,`*${name} answers without hesitation.*`,`*${name} holds your gaze.*`],
+    calm:[`*${name} gives a small nod.*`,`*${name} relaxes, accepting the moment.*`,`*${name} offers a quiet nod.*`],
+    neutral:[`*${name} considers that for a moment.*`,`*${name} listens without interrupting.*`,`*${name} looks thoughtful for a moment.`]
+  };
+  const intentOptions={
+    question:[`*${name} tilts their head slightly, considering the question.*`,`*${name} studies you for a moment before answering.*`,`*${name} raises an eyebrow, weighing the question.*`,`*${name} takes a moment to decide how to answer.*`,`*${name} gives you a measured look.*`],
+    greeting:[`*${name} offers a small nod of greeting.*`,`*${name} turns their attention fully towards you.*`,`*${name} acknowledges you with a faint smile.*`,`*${name} looks up and gives you a quiet greeting.*`,`*${name} inclines their head politely.*`],
+    concern:[`*${name} watches you closely, their expression softening.*`,`*${name} shifts their attention to you, clearly concerned.*`,`*${name} takes a careful breath before responding.*`,`*${name} gives you an encouraging look.*`,`*${name} pauses, giving you room to speak.*`],
+    disagreement:[`*${name} shakes their head slowly.*`,`*${name} draws a measured breath, unconvinced.*`,`*${name} gives you a doubtful look.*`,`*${name} straightens slightly, ready to challenge the point.*`,`*${name} considers that, then gives a small shake of the head.*`],
+    agreement:[`*${name} gives a small nod.*`,`*${name} relaxes a little.*`,`*${name} acknowledges the point with a quiet gesture.*`,`*${name} gives a thoughtful nod.*`,`*${name} lets out a quiet breath and nods.*`],
+    farewell:[`*${name} gives you a final nod.*`,`*${name} offers a small parting smile.*`,`*${name} glances towards the doorway.*`,`*${name} gives you one last look before turning away.*`,`*${name} eases back, accepting the end of the conversation.*`],
+    neutral:[`*${name} considers your words carefully.*`,`*${name} keeps their attention on you.*`,`*${name} takes a moment before responding.*`,`*${name} gives your words some thought.*`,`*${name} watches you quietly.*`]
+  };
+  const pool=[...(options[emotion]||options.neutral),...(intentOptions[intent]||intentOptions.neutral)];
+  return dfrChooseNovel(pool,seed,{target:person?.name,intent:'action',kind:'physical'});
+}
+function dfrResponse(person,rel,intent,action,seed){
+  const pick=(arr,s)=>dfrChooseNovel(arr,s,{target:person?.name,intent,kind:'dialogue'});
+  const q=dfrQuoted(action), style=dfrStyle(person), topic=dfrQuestionTopic(q), aff=Number(rel?.affection??person?.affection??20), trust=Number(rel?.trust??person?.trust??20), guarded=trust<35||style==='guarded';
+  const name=dfrFirstName(person);
+  if(intent==='question'){
+    if(topic==='presence'){
+      if(name==='Gerald')return pick(['This is my home, Shane. But I also asked you here because there are a few things we need to discuss.','I invited you here for a reason. We should talk.','Your being here matters, Shane. Come inside and we can talk properly.'],seed);
+      if(name==='Elizabeth')return pick(aff>=60?['I work here, Shane. You know that.','This is where I work. I wasn’t expecting to be having this conversation with you.','I’m here because this is my home at work, even if that sounds strange.']:['I work here. That is the simple answer.','I had work to do.'],seed);
+      const role=String(person?.role||'').toLowerCase();
+      if(/maid|staff|household/.test(role))return pick(style==='playful'?['I’m working. Someone has to keep this place running.','Work. Glamorous, isn’t it?']:['I’m working.','I have duties here.'],seed);
+      if(/daughter|sister|family|student/.test(role))return pick(style==='playful'?['I live here. Where else would I be?','It’s my family home.']:['I live here.','This is my home.'],seed);
+      return pick(style==='playful'?['That depends. Why are you asking?','Curious, are we?']:style==='measured'?['I have my reasons. We can discuss them.']:['I had something to take care of.','I have my reasons.'],seed);
+    }
+    if(topic==='desire')return pick(style==='measured'?['I want a clear understanding of what happens next.','I want us to deal with this properly.']:style==='playful'?['Now that is a dangerous question.','Do you really want the honest answer?']:style==='warm'?['Honestly? I want us to be able to talk.','I want things to be honest between us.','I want to know where we stand.','I want a chance to understand what this means.','I want us to stop pretending this is simple.','I want an honest conversation, nothing more complicated than that.','I want to know what happens from here.','I want us to be able to speak openly again.','I want to understand what you came here for.','I want to know whether we can still trust each other.','I want to know what you need from me.','I want to stop guessing what you are thinking.','I want to hear the truth, even if it is difficult.','I want to know what you expect from me.','I want to understand why this matters to you.']:['I want an honest answer.','I want to understand what is happening.','I want to know what you are really asking.','I want clarity before we go any further.','I want to understand where this is heading.','I want us to deal with this honestly.','I want to know what brought you here.','I want a straight answer.','I want to understand what you expect from me.','I want to know what happens next.'],seed);
+    if(topic==='where')return pick(['Here, for the moment.','I’m right here.','At the moment? Right where you found me.'],seed);
+    if(topic==='who')return pick(style==='measured'?['Someone you should probably hear from directly.','That depends on who you mean.']:['You’ll have to be more specific.','Who are you asking about?'],seed);
+    if(topic==='how')return pick(style==='warm'?['One step at a time. That is all I can promise.']:style==='playful'?['Carefully. Usually.']:['We will work it out.','One step at a time.'],seed);
+    return pick(guarded?DFR_NATIVE_LEXICON.neutral:(style==='playful'?['Go on. I’m listening.','That is an interesting question.','What makes you ask?']:style==='measured'?['Let us take that one point at a time.','Be specific and I will answer you.']:style==='warm'?['Ask me. I’ll answer honestly.','I’m listening.']:DFR_NATIVE_LEXICON.question),seed);
+  }
+  if(intent==='greeting')return pick(style==='warm'?['Hello. It’s good to see you.','Hey. I’m glad you came.','Hello. I wasn’t expecting you, but I’m glad you’re here.']:style==='playful'?['Well, hello there.','Hey. What took you so long?','Hello. Nice to see you.']:style==='measured'?['Shane. It is good to see you.','Hello, Shane. Come in.','Good to see you.']:DFR_NATIVE_LEXICON.greeting,seed);
+  if(intent==='concern')return pick(style==='warm'?['You don’t have to explain everything at once.','I’m listening. Take your time.','I understand. Just tell me what you need.']:style==='measured'?['Then let us deal with it calmly.','Tell me what concerns you.']:['I hear you.','Then tell me what is wrong.'],seed);
+  if(intent==='farewell')return pick(style==='warm'?['Take care. We’ll talk again.','I’ll see you later.']:style==='playful'?['Don’t disappear on me.','See you around.']:style==='measured'?['Very well. We can continue this later.']:DFR_NATIVE_LEXICON.farewell,seed);
+  if(intent==='agreement')return pick(style==='playful'?['Fair enough.','Alright, I can live with that.']:style==='measured'?['Agreed.','That is reasonable.']:style==='warm'?['Alright. I understand.','That makes sense.']:DFR_NATIVE_LEXICON.agreement,seed);
+  if(intent==='disagreement')return pick(style==='playful'?['I’m not convinced.','Oh, I disagree with you there.']:style==='measured'?['I cannot agree with that.','That is not how I see it.']:style==='warm'?['I understand why you feel that way, but I see it differently.']:DFR_NATIVE_LEXICON.disagreement,seed);
+  if(style==='playful')return pick(['Interesting.','Go on, I’m listening.','You have my attention.'],seed);
+  if(style==='measured')return pick(['I see.','Go on.','Tell me exactly what you mean.'],seed);
+  if(style==='warm')return pick(['I hear you.','Alright. Tell me what you’re thinking.','I understand. Keep going.'],seed);
+  return pick(guarded?DFR_NATIVE_LEXICON.neutral:['I hear you.','Alright.','Go on.'],seed);
+}
+function dfrRecentText(){return (state.story||[]).slice(-8).map(e=>dfrText(e.text,500)).join(' ').toLowerCase();}
+function dfrNativeGenerate(action){
+  rpgReconcileRuntimeScene();
+  const player=activePlayer();
+  if(!player)throw new Error('DFR Native Language Engine: no player');
+  const all=[...(state.party||[]),...(state.npcs||[])].filter(x=>x&&x.name&&rpgKey(x.name)!==rpgKey(player.name));
+  const active=all.filter(x=>isScenePresent(x.name));
+  if(!active.length)return {action,entries:[{type:'gm',text:'*The moment hangs quietly, waiting for someone to break the silence.*'}],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
+  const target=dfrAddressed(action,active)||active[0];
+  const rel=state.relationships?.[rpgRelationshipKey(target.name,player.name)]||state.relationships?.[rpgRelationshipKey(player.name,target.name)]||null;
+  const intent=dfrIntent(action), emotion=dfrEmotion(target,rel,intent);
+  const seed=`${state.runtimeEngine?.turn||0}|${target.name}|${intent}|${action}`;
+  let physical=dfrActionForEmotion(target,emotion,seed+'a',intent);
+  let dialogue=dfrResponse(target,rel,intent,action,seed+'b');
+  const recent=dfrRecentText();
+  const pairUsed=(p,d)=>dfrNativeHistory().slice(-80).some(row=>row.target===target.name&&row.intent===intent&&row.physical===dfrFingerprint(p)&&row.dialogue===dfrFingerprint(d));
+  for(let attempt=0;attempt<24&&pairUsed(physical,dialogue);attempt++){
+    physical=dfrActionForEmotion(target,emotion,seed+'p'+attempt,intent);
+    dialogue=dfrResponse(target,rel,intent,action,seed+'q'+attempt);
+  }
+  if(recent.includes(dfrFingerprint(dialogue))){
+    dialogue=dfrResponse(target,rel,intent,action,seed+'c');
+    if(recent.includes(dfrFingerprint(dialogue))) dialogue=dfrResponse(target,rel,intent,action,seed+'e');
+  }
+  if(recent.includes(dfrFingerprint(physical))){
+    physical=dfrActionForEmotion(target,emotion,seed+'d',intent);
+    if(recent.includes(dfrFingerprint(physical))) physical=dfrActionForEmotion(target,emotion,seed+'f',intent);
+  }
+  dfrRememberNative(target.name,intent,dialogue,physical);
+  const text=`${physical}\n\n“${dialogue}”`;
+  return {action:String(action||'').trim(),entries:[{type:'character',speaker:target.name,text:normaliseAIText(text,'character')}],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrQuestionTopic(dfrQuoted(action))}};
+}
+
 async function callStoryAI(action,correctedSource,qualityRetry=false){
+  /* DFR Native is the primary narrative engine. The external/local model path remains available as a compatibility fallback while v0.1 is tested. */
+  if(aiSettings.nativeEngine!==false){
+    return dfrNativeGenerate(action);
+  }
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
