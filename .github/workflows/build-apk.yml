@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 86
-                  versionName '5.3.7-opening-layout-stress-fix'
+                  versionCode 87
+                  versionName '5.4.14-dfr-native-new-scenario'
               }
 
               compileOptions {
@@ -426,13 +426,13 @@ jobs:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
-          grep -q 'v5.3.7' /tmp/packaged-index.html
-          grep -q "RPG_CORE_VERSION='5.3.7'" /tmp/packaged-index.html
-          echo "Packaged index.html verified as v5.3.7"
+          grep -q 'v5.4.14-dfr-native-new-scenario-workshop' /tmp/packaged-index.html
+          grep -q "RPG_CORE_VERSION='5.4.14-dfr-native'" /tmp/packaged-index.html
+          echo "Packaged index.html verified as v5.4.14"
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.3.7-runtime-integrity
+          name: Dark-Fantasy-RPG-v5.4.14-dfr-native
           path: app/build/outputs/apk/debug/app-debug.apk
