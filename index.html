@@ -108,17 +108,11 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <div class="card" style="margin-top:12px;background:var(--panel2)">
       <h3>🧠 DFR Native Story AI</h3>
       <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the DFR Native language engine</label>
-      <p class="small">The game now has its own built-in DFR Native narrative engine. It runs offline and is designed specifically around this RPG's characters, relationships and scene rules. The external local-model path remains available as a compatibility fallback during development.</p>
-      <p class="small" id="dfrNativeStatus">DFR Native v0.2.3 — built into the game; no model download required.</p><label for="aiEndpoint">Local AI endpoint</label>
-      <input id="aiEndpoint" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434/api/chat">
-      <p class="small">Default: Ollama. On Android, <b>127.0.0.1</b> means the phone itself. If Ollama is running on your PC, enter the PC's local network address instead.</p>
-      <label for="aiModel">Local model</label>
-      <input id="aiModel" type="text" autocomplete="off" placeholder="Gemma 4 E2B (on-device)">
+      <p class="small">DFR Native is the built-in narrative engine for this RPG. It runs offline and is designed specifically around the game's characters, relationships, memories and scene rules. No model download is required.</p>
+      <p class="small" id="dfrNativeStatus">DFR Native v0.2.3 — built into the game; no external AI required.</p>
       <div class="actions" style="margin-top:8px">
-        <button class="btn" id="downloadAIButton" onclick="downloadLocalAI()">⬇ Download local AI</button>
-        <button class="btn" onclick="saveAISettings()">Save AI settings</button>
-        <button class="btn" onclick="testAI()">Test local AI</button>
-        <button class="btn danger" onclick="clearAISettings()">Clear local AI settings</button>
+        <button class="btn" onclick="saveAISettings()">Save story settings</button>
+        <button class="btn danger" onclick="clearAISettings()">Reset story settings</button>
       </div>
       <div id="aiProgressWrap" style="display:none;margin-top:10px">
         <div style="height:12px;border-radius:999px;background:#24364d;overflow:hidden;border:1px solid #35516f">
@@ -213,7 +207,7 @@ const defaultState={
 let state=loadState();
 
 const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
-const LOCAL_AI_DEFAULT_MODEL='Gemma 4 E2B (on-device)';
+const LOCAL_AI_DEFAULT_MODEL='local-development-model';
 let aiSettings=loadAISettings();
 let aiLastError=localStorage.getItem(KEY+'_ai_error')||'';
 function loadAISettings(){
@@ -258,37 +252,7 @@ function updateAIStatus(){
   if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — the built-in story system will be used.';
 }
 function localAIRequest(endpoint,payload){
-  if(window.AndroidLocalAI&&typeof window.AndroidLocalAI.generate==='function'){
-    return new Promise((resolve,reject)=>{
-      const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
-      if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
-      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out after 180 seconds'));},180000);
-      window.__darkFantasyAIResolvers[id]=(ok,body)=>{
-        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
-        if(ok){
-          try{
-            const parsed=JSON.parse(body);
-            // Native LiteRT-LM returns the model's text, not an Ollama/OpenAI envelope.
-            // Accept either a native message envelope or raw model text.
-            if(parsed && (parsed.message||parsed.choices||parsed.response||parsed.output_text)) resolve(parsed);
-            else resolve({message:{content:String(body)}});
-          }catch(e){
-            // Raw model text is valid input to callStoryAI, which performs the JSON parse.
-            resolve({message:{content:String(body)}});
-          }
-        }else reject(new Error(String(body||'Local AI request failed')));
-      };
-      try{
-        const systemPrompt=payload?.messages?.find(m=>m.role==='system')?.content||'';
-        const userPrompt=payload?.messages?.find(m=>m.role==='user')?.content||'';
-        const prompt=[systemPrompt,userPrompt].filter(Boolean).join('\n\nPLAYER ACTION / REQUEST:\n');
-        window.AndroidLocalAI.generate(id,String(prompt));
-      }catch(e){
-        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);
-      }
-    });
-  }
-  if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
+if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
     return new Promise((resolve,reject)=>{
       const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
       if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
@@ -305,74 +269,11 @@ function localAIRequest(endpoint,payload){
   return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(async res=>{const text=await res.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!res.ok)throw new Error(data?.error?.message||data?.error||text||('Local AI HTTP '+res.status));return data;});
 }
-function nativeAIAvailable(){return !!(window.AndroidLocalAI&&typeof window.AndroidLocalAI.generate==='function');}
-function localAIInstalled(){
-  try{return nativeAIAvailable() && !!window.AndroidLocalAI.isModelInstalled();}
-  catch(e){return false;}
-}
-function setAIProgress(percent,message){
-  const wrap=document.getElementById('aiProgressWrap');
-  const bar=document.getElementById('aiProgressBar');
-  const text=document.getElementById('aiProgressText');
-  const p=Math.max(0,Math.min(100,Number(percent)||0));
-  const msg=String(message||'');
-  const mb=msg.match(/(\d+(?:\.\d+)?)\s*MB downloaded/i);
-  if(wrap)wrap.style.display=(p>0||/download|failed|error|connecting/i.test(msg))?'block':'none';
-  if(bar){
-    bar.style.width=(mb&&p===0)?'100%':p+'%';
-    bar.style.opacity=(mb&&p===0)?'0.55':'1';
-  }
-  if(text)text.textContent=mb?(mb[1]+' MB downloaded — size not yet reported by server'):p+'%';
-  const status=document.getElementById('aiStatus');
-  if(status&&message)status.textContent=msg;
-}
-function updateNativeAIControls(){
-  const btn=document.getElementById('downloadAIButton');
-  const endpoint=document.getElementById('aiEndpoint');
-  const model=document.getElementById('aiModel');
-  if(nativeAIAvailable()){
-    const installed=localAIInstalled();
-    if(btn){
-      btn.textContent=installed?'✓ Local AI downloaded':'⬇ Download local AI';
-      btn.disabled=installed;
-    }
-    if(endpoint)endpoint.disabled=true;
-    if(model){model.disabled=true;model.value='Gemma 4 E2B (on-device)';}
-    const status=document.getElementById('aiStatus');
-    if(installed){
-      if(aiLastError){
-        setAIProgress(100,aiLastError);
-      }else{
-        setAIProgress(100,'✓ Local AI model is installed.');
-      }
-    }else if(aiLastError){
-      setAIProgress(0,aiLastError);
-    }else if(status && !aiSettings.enabled){
-      status.textContent='Local AI model is not installed — tap Download local AI.';
-    }
-  }
-}
-function downloadLocalAI(){
-  if(!nativeAIAvailable()){
-    toast('Local AI download is available in the Android app.');
-    return;
-  }
-  if(localAIInstalled()){
-    updateNativeAIControls();
-    toast('✓ Local AI is already downloaded');
-    return;
-  }
-  aiLastError='';
-  localStorage.removeItem(KEY+'_ai_error');
-  setAIProgress(0,'Downloading local AI model… 0% — keep the game open.');
-  toast('Downloading local AI model…');
-  try{window.AndroidLocalAI.downloadModel();}catch(e){
-    const msg='✗ Local AI download failed: '+(e?.message||e);
-    aiLastError=msg;
-    localStorage.setItem(KEY+'_ai_error',msg);
-    setAIProgress(0,msg);
-  }
-}
+function nativeAIAvailable(){return false;}
+function localAIInstalled(){return false;}
+function setAIProgress(percent,message){const status=document.getElementById('aiStatus');if(status&&message)status.textContent=String(message);}
+function updateNativeAIControls(){}
+function downloadLocalAI(){toast('DFR Native is built in — no AI download is required.');}
 window.onLocalAIResult=function(id,text){
   const fn=window.__darkFantasyAIResolvers?.[id];
   if(fn)fn(true,String(text||''));
@@ -857,7 +758,7 @@ function buildStoryContext(action=''){
   }).join('\n');
 
   // Character data is segmented: canon, runtime state, memories and relationships stay
-  // in the campaign, while Gemma receives only the slices relevant to this scene.
+  // in the campaign, while the optional development prose layer receives only the slices relevant to this scene.
   const activeCharacters=[
     player?{...compactCharacter(player,true),knowledge:(state.characterKnowledge?.[player.name]||[]).slice(-2).map(x=>compactText(x,160))}:null,
     ...npcs.map(n=>{
@@ -919,7 +820,7 @@ function parseNarrativeEntries(text){
       }
     }
 
-    // Recovery for Gemma occasionally omitting markers: if a paragraph contains a
+    // Recovery for the optional prose layer occasionally omitting markers: if a paragraph contains a
     // clear NPC attribution immediately around dialogue, render it as that NPC.
     if(!speaker){
       for(const name of known){
@@ -1080,7 +981,7 @@ async function redoLastAI(){
         throw new Error('Local AI is not enabled');
       }
       const result=await callStoryAI(redo.action,redo.action);
-      /* Redo is prose-only too. The engine owns state; Gemma never commits RPG state. */
+      /* Redo is prose-only too. The engine owns state; The optional prose layer never commits RPG state. */
       await save();
       const entries=aiEntries(result);
       if(!entries.length)throw new Error('Local AI returned no usable story entries');
@@ -1181,7 +1082,7 @@ async function addAction(){
         if(corrected && corrected!==v){
           const last=state.story[state.story.length-1]; if(last&&last.type==='player')last.text=corrected;
         }
-        // Gemma is prose-only. Canonical relationship, memory, NPC and world changes
+        // The optional prose layer is prose-only. Canonical relationship, memory, NPC and world changes
         // are committed only by validated engine transactions, never by model output.
         addWorldEvent(`${playerName()} acted in ${state.currentLocation||'the current location'}.`,[playerName()],state.currentLocation||'',35);
         await save();
@@ -2013,7 +1914,7 @@ async function buildRPGWorkingPrompt(action){
 
 /*
  * Validate the model's turn before it reaches the story log.
- * Gemma can occasionally echo the player's input or repeat a physical beat from
+ * A prose generator can occasionally echo the player's input or repeat a physical beat from
  * the immediately preceding scene. Those are generation errors, not canon.
  */
 function rpgTurnQuality(entries, action){
@@ -2222,7 +2123,7 @@ function validateAndCommitAIStateTransaction(tx,action,entries){
 
 async function commitAIStateTransaction(action,entries,isNative=false){
   try{
-    /* DFR Native owns its own narrative output. Never wake Gemma/Ollama merely to
+    /* DFR Native owns its own narrative output. Never wake an external model merely to
        interpret a native turn; native state transactions will be added directly as
        deterministic engine rules mature. */
     if(isNative)return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
@@ -2592,7 +2493,7 @@ function dfrNativeGenerate(action){
 }
 
 async function callStoryAI(action,correctedSource,qualityRetry=false){
-  /* DFR Native is the primary narrative engine. The external/local model path remains available as a compatibility fallback while v0.1 is tested. */
+  /* DFR Native is the primary narrative engine. The optional external prose path remains a development fallback only. */
   if(aiSettings.nativeEngine!==false){
     return dfrNativeGenerate(action);
   }
