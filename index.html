@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.4.10-dfr-native-workshop</div>
+<div class="version-badge">v5.4.11-dfr-native-consistency</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -419,6 +419,20 @@ function normalizeState(s){
   if(!out.worldState.travel||typeof out.worldState.travel!=='object')out.worldState.travel={};
   if(!out.worldState.homeInventory||typeof out.worldState.homeInventory!=='object')out.worldState.homeInventory={};
   out.worldState.version=Number(out.worldState.version||1);
+  out.dfrConversation=(x.dfrConversation&&typeof x.dfrConversation==='object')?structuredClone(x.dfrConversation):{};
+  out.dfrConversation.version=Number(out.dfrConversation.version||1);
+  out.dfrConversation.scenarioId=String(out.dfrConversation.scenarioId||out.scenarioId||'');
+  out.dfrConversation.activeTarget=String(out.dfrConversation.activeTarget||'');
+  out.dfrConversation.topic=String(out.dfrConversation.topic||'');
+  out.dfrConversation.stage=String(out.dfrConversation.stage||'');
+  out.dfrConversation.lastPlayerInput=String(out.dfrConversation.lastPlayerInput||'');
+  out.dfrConversation.lastNpcReply=String(out.dfrConversation.lastNpcReply||'');
+  out.dfrConversation.unresolved=Array.isArray(out.dfrConversation.unresolved)?out.dfrConversation.unresolved:[];
+  out.dfrConversation.revealedFacts=Array.isArray(out.dfrConversation.revealedFacts)?out.dfrConversation.revealedFacts:[];
+  out.dfrConversation.turns=Array.isArray(out.dfrConversation.turns)?out.dfrConversation.turns:[];
+  out.dfrConversation.threads=(out.dfrConversation.threads&&typeof out.dfrConversation.threads==='object')?out.dfrConversation.threads:{};
+  out.dfrConversation.npcGoals=(out.dfrConversation.npcGoals&&typeof out.dfrConversation.npcGoals==='object')?out.dfrConversation.npcGoals:{};
+  out.dfrConversation.lastTopics=Array.isArray(out.dfrConversation.lastTopics)?out.dfrConversation.lastTopics:[];
     out.npcs=Array.isArray(x.npcs)?x.npcs:[]; out.npcs=out.npcs.map(n=>({id:'npc-'+Math.random().toString(36).slice(2),name:'Unnamed',race:'Human',age:'adult',role:'resident',personality:'To be discovered',description:'',location:out.currentLocation,persistence:'background',knowledge:[],goals:[],secrets:[],relationships:{},firstSeenDay:out.inGameDay,lastSeenDay:out.inGameDay,appearance:null,...n}));
   for(const n of out.npcs){if(!Array.isArray(n.knowledge))n.knowledge=[];if(!Array.isArray(n.goals))n.goals=[];if(!Array.isArray(n.secrets))n.secrets=[];if(!n.relationships||typeof n.relationships!=='object')n.relationships={};}
   for(const p of out.party){if(!Array.isArray(out.characterKnowledge[p.name]))out.characterKnowledge[p.name]=[]; if(!Array.isArray(out.longTermMemory.characterMemories[p.name]))out.longTermMemory.characterMemories[p.name]=[];}
@@ -930,7 +944,7 @@ async function typewriteAIEntry(entry, initialPause=0){
     body.innerHTML=speakerHtml+renderRichText(shown)+'<span class="typing-cursor" aria-hidden="true"></span>';
     if(i%3===0)keepStoryAtLatest();
     const ch=finalText[i];
-    const speed=ch===' ' ? 2 : /[,.!?;:]/.test(ch) ? 10 : /[\n]/.test(ch) ? 14 : 3;
+    const speed=ch===' ' ? 3 : /[,.!?;:]/.test(ch) ? 16 : /[\n]/.test(ch) ? 18 : 6;
     await wait(speed);
   }
   storyEntry.text=finalText;
@@ -1692,7 +1706,7 @@ async function rpgPersistPackage(){
   await rpgPut(`campaign/${sid}/runtime`,{
     location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
     npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
-    worldState:rpgClone(state.worldState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
+    worldState:rpgClone(state.worldState||{}),dfrConversation:rpgClone(state.dfrConversation||{}),dfrNativeHistory:rpgClone(state.dfrNativeHistory||[]),dfrPhysicalState:rpgClone(state.dfrPhysicalState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
   });
 }
 
@@ -2148,7 +2162,7 @@ async function commitAIStateTransaction(action,entries,isNative=false){
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='0.2.4-workshop';
+const DFR_NATIVE_LANGUAGE_VERSION='0.3.0-consistency';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2435,6 +2449,160 @@ function dfrResponse(person,rel,intent,action,seed){
   return pick(guarded?DFR_NATIVE_LEXICON.neutral:['I hear you.','Alright.','Go on.'],seed);
 }
 function dfrRecentText(){return (state.story||[]).slice(-8).map(e=>dfrText(e.text,500)).join(' ').toLowerCase();}
+/* ================================================================
+   DFR NATIVE CONSISTENCY LAYER v0.3
+   Continuity is authoritative. This layer keeps a persistent conversation
+   state, retrieves relevant memories, advances scenario threads and refuses
+   to invent knowledge merely to fill a response.
+   ================================================================ */
+function dfrConversationState(){
+  if(!state.dfrConversation||typeof state.dfrConversation!=='object')state.dfrConversation={};
+  const c=state.dfrConversation;
+  c.version=3;
+  c.scenarioId=String(c.scenarioId||state.scenarioId||'');
+  c.unresolved=Array.isArray(c.unresolved)?c.unresolved:[];
+  c.revealedFacts=Array.isArray(c.revealedFacts)?c.revealedFacts:[];
+  c.turns=Array.isArray(c.turns)?c.turns:[];
+  c.threads=(c.threads&&typeof c.threads==='object')?c.threads:{};
+  c.npcGoals=(c.npcGoals&&typeof c.npcGoals==='object')?c.npcGoals:{};
+  c.lastTopics=Array.isArray(c.lastTopics)?c.lastTopics:[];
+  return c;
+}
+function dfrRememberConversation(target,action,dialogue,topic,stage){
+  const c=dfrConversationState();
+  c.activeTarget=String(target||c.activeTarget||'');
+  c.topic=String(topic||c.topic||'');
+  c.stage=String(stage||c.stage||'');
+  c.lastPlayerInput=dfrText(action,700);
+  c.lastNpcReply=dfrText(dialogue,700);
+  c.lastTopics.push(c.topic); while(c.lastTopics.length>20)c.lastTopics.shift();
+  c.turns.push({turn:Number(state.runtimeEngine?.turn||0),target:c.activeTarget,topic:c.topic,stage:c.stage,player:dfrText(action,700),npc:dfrText(dialogue,700),at:Date.now()});
+  while(c.turns.length>250)c.turns.shift();
+}
+function dfrConversationSeen(topic,text){
+  const c=dfrConversationState(), fp=dfrFingerprint(text);
+  return c.turns.some(t=>String(t.topic)===String(topic)&&dfrFingerprint(t.npc)===fp);
+}
+function dfrRecordFact(text,source='conversation',character=''){
+  const clean=dfrText(text,320); if(!clean)return;
+  const c=dfrConversationState();
+  const fp=dfrFingerprint(clean);
+  if(!c.revealedFacts.some(x=>dfrFingerprint(x.text||x)===fp))c.revealedFacts.push({text:clean,source,character:String(character||''),at:Date.now()});
+  while(c.revealedFacts.length>500)c.revealedFacts.shift();
+  if(!state.longTermMemory||typeof state.longTermMemory!=='object')state.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};
+  if(!Array.isArray(state.longTermMemory.events))state.longTermMemory.events=[];
+  if(!state.longTermMemory.events.some(x=>dfrFingerprint(x?.text||'')===fp))state.longTermMemory.events.push({id:'native-'+Date.now().toString(36),text:clean,type:'conversation_fact',importance:75,source,character:String(character||''),at:Date.now()});
+  while(state.longTermMemory.events.length>1000)state.longTermMemory.events.shift();
+}
+function dfrScenarioPlan(){
+  const spec=state.scenarioSpec||{};
+  return Array.isArray(spec.timeline?.currentPlannedEvents)?spec.timeline.currentPlannedEvents:[];
+}
+function dfrScenarioEvent(id){return dfrScenarioPlan().find(e=>String(e?.id||'')===String(id))||null;}
+function dfrCurrentLocationText(){return String(state.currentLocation||state.worldState?.currentLocation||state.runtimeEngine?.currentScene?.location||'').trim();}
+function dfrSetRuntimeLocation(location){
+  const loc=String(location||'').trim(); if(!loc)return;
+  state.currentLocation=loc;
+  if(!state.worldState||typeof state.worldState!=='object')state.worldState={version:1,locations:[],facts:[],events:[],activities:[],characters:{},travel:{},homeInventory:{},plannedEvents:[]};
+  if(!Array.isArray(state.worldState.locations))state.worldState.locations=[];
+  if(!state.worldState.locations.some(x=>rpgKey(x?.name)===rpgKey(loc)))state.worldState.locations.push({id:'loc-'+rpgKey(loc).replace(/[^a-z0-9]+/g,'-'),name:loc,kind:'runtime',discovered:true});
+  const player=activePlayer();
+  if(player)setCharacterLocation(player.name,loc,'present',true);
+}
+function dfrAdvanceScenarioForAction(action,target){
+  const a=dfrActionText(action).toLowerCase();
+  const name=dfrFirstName(target);
+  const c=dfrConversationState();
+  if(name==='Gerald' && /\b(follow|followed|follow him|follow her|lead on|come in|go inside|inside|let's go)\b/.test(a)){
+    dfrSetRuntimeLocation('Morningstar Estate — Study');
+    setCharacterLocation('Gerald','Morningstar Estate — Study','speaking with Shane',true);
+    c.stage='gerald_private_conversation';
+    c.topic=c.topic||'invitation_reason';
+    state.currentScenePhase='gerald_private_conversation';
+    if(!state.worldState.events.some(e=>String(e?.id||'')==='gerald-moved-inside'))state.worldState.events.push({id:'gerald-moved-inside',status:'completed',at:Date.now(),description:'Gerald brought Shane inside to the study for their private conversation.'});
+    return 'gerald_private_conversation';
+  }
+  if(name==='Gerald' && /\b(why did you call|why.*invite|what is this about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
+    c.topic='invitation_reason'; c.stage='reason_for_invitation'; return c.stage;
+  }
+  if(name==='Gerald' && /\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a)){
+    c.topic='finch_request'; c.stage='finch_request'; return c.stage;
+  }
+  if(c.topic==='invitation_reason'&&/\b(finch|why|reason|about|what)\b/.test(a)){c.stage='reason_for_invitation';return c.stage;}
+  return c.stage||'free_conversation';
+}
+function dfrInferConsistencyTopic(action,target){
+  const a=dfrActionText(action).toLowerCase();
+  const c=dfrConversationState();
+  if(target&&rpgKey(target.name)==='gerald'){
+    if(/\b(why did you call|why.*invite|why.*ask.*come|what is this about|what do we need to discuss|reason.*call)\b/.test(a))return 'invitation_reason';
+    if(/\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a))return 'finch_request';
+  }
+  if(/\b(remember|recall|last time|before|earlier|you told me|you said)\b/.test(a))return 'memory_recall';
+  if(/\b(where|location|here|there|left|put)\b/.test(a))return 'world_state';
+  if(/\b(what do you want|what are you after|what do you need)\b/.test(a))return 'desire';
+  return c.topic||dfrQuestionTopic(dfrQuoted(action)||action);
+}
+function dfrRelevantContinuity(action,target){
+  const c=dfrConversationState();
+  const out=[];
+  for(const t of c.turns.slice(-80).reverse()){
+    if(target&&rpgKey(t.target)!==rpgKey(target.name))continue;
+    if(t.player&&dfrFingerprint(action).split(' ').filter(w=>w.length>3).some(w=>dfrFingerprint(t.player).includes(w)))out.push(t);
+    if(out.length>=6)break;
+  }
+  const memories=dfrPrivateKnowledge(target).slice(-40);
+  return {turns:out,memories};
+}
+function dfrConsistentGeraldResponse(action,topic,stage,seed){
+  const a=dfrActionText(action).toLowerCase();
+  const c=dfrConversationState();
+  if(/\b(follow|lead on|come in|go inside|inside|let's go)\b/.test(a)){
+    return dfrChooseNovel([
+      'Gerald gives a brief nod and leads the way inside. “Come with me. We can talk in the study.”',
+      'Gerald nods once and turns towards the house. “Very well. The study is quieter.”'
+    ],seed,{target:'Gerald',intent:'neutral',kind:'dialogue'});
+  }
+  if(topic==='invitation_reason'||stage==='reason_for_invitation'){
+    const answers=[
+      'Because Finch asked me to speak with you, Shane. There are things he wanted me to explain after he was gone.',
+      'Finch is the reason I asked you here. Before he died, he left me with something I was meant to discuss with you.',
+      'It is about Finch. He asked me to have this conversation with you, and I intend to honour that request.'
+    ];
+    const text=dfrChooseNovel(answers,seed,{target:'Gerald',intent:'question',kind:'dialogue'});
+    dfrRecordFact('Gerald told Shane that Finch asked Gerald to speak with Shane after Finch died.','Gerald', 'Gerald');
+    c.topic='finch_request'; c.stage='finch_request'; c.unresolved=[...new Set([...(c.unresolved||[]),'finch_request'])];
+    return text;
+  }
+  if(topic==='finch_request'||stage==='finch_request'){
+    const answers=[
+      'Finch asked me to look after you, but there was more to his request than that. He wanted you to have a future here, if you chose it.',
+      'It was Finch’s dying wish. He wanted me to make sure you were not left alone, and he wanted you to get to know my daughters properly.',
+      'Finch asked me to give you a chance to become part of this family, but only if that was something you genuinely wanted. Nobody is being forced into anything.'
+    ];
+    const text=dfrChooseNovel(answers,seed,{target:'Gerald',intent:'question',kind:'dialogue'});
+    dfrRecordFact('Gerald revealed that Finch wanted Shane to have a future with the Morningstar family and to get to know Gerald’s daughters, with no one being forced.','Gerald','Gerald');
+    c.stage='arrangement_explained'; c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_request'); c.unresolved=[...c.unresolved,'player_reaction_to_finch_request'];
+    return text;
+  }
+  return '';
+}
+function dfrConsistencyResponse(person,rel,intent,action,seed){
+  const topic=dfrInferConsistencyTopic(action,person);
+  const c=dfrConversationState();
+  const stage=dfrAdvanceScenarioForAction(action,person);
+  if(rpgKey(person?.name)==='gerald'){
+    const specific=dfrConsistentGeraldResponse(action,topic,stage,seed);
+    if(specific)return {dialogue:specific,topic:c.topic||topic,stage:c.stage||stage};
+  }
+  const relevant=dfrRelevantContinuity(action,person);
+  if(topic==='memory_recall'&&relevant.memories.length){
+    const m=dfrText(relevant.memories[relevant.memories.length-1],220);
+    return {dialogue:`I remember that. ${m}`,topic,stage:c.stage||'memory_recall'};
+  }
+  return {dialogue:'',topic,stage:c.stage||stage||topic};
+}
+
 function dfrNativeGenerate(action){
   rpgReconcileRuntimeScene();
   const player=activePlayer();
@@ -2449,6 +2617,15 @@ function dfrNativeGenerate(action){
   }
   const rel=state.relationships?.[rpgRelationshipKey(target.name,player.name)]||state.relationships?.[rpgRelationshipKey(player.name,target.name)]||null;
   const intent=dfrIntent(action), emotion=dfrEmotion(target,rel,intent);
+  const consistency=dfrConsistencyResponse(target,rel,intent,action,`${state.runtimeEngine?.turn||0}|${target.name}|consistency|${action}`);
+  if(consistency.dialogue){
+    const physical=dfrActionForEmotion(target,emotion,`${state.runtimeEngine?.turn||0}|${target.name}|consistency-action|${action}`,intent);
+    dfrRememberNative(target.name,intent,consistency.dialogue,physical);
+    dfrApplyPhysicalState(target.name,dfrPhysicalCategory(physical),physical);
+    dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
+    dfrRememberPrivateKnowledge(target,`${target.name}/conversation: ${consistency.dialogue}`);
+    return {action:String(action||'').trim(),entries:[{type:'character',speaker:target.name,text:normaliseAIText(`${physical}\n\n“${consistency.dialogue}”`,'character')}],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
+  }
   /* Explicit player statements are private knowledge for the NPC who actually heard them.
      Questions, narration and unrelated scene text do not automatically become shared memory. */
   const sharedStatement=dfrExplicitPlayerStatement(action);
@@ -2487,6 +2664,7 @@ function dfrNativeGenerate(action){
     physical=dfrChooseNovel(safePool[emotion]||safePool.neutral,seed+'safe',{target:target.name,intent:'action',kind:'physical'});
   }
   dfrRememberNative(target.name,intent,dialogue,physical);
+  dfrRememberConversation(target.name,action,dialogue,dfrInferConsistencyTopic(action,target),state.dfrConversation?.stage||'free_conversation');
   dfrApplyPhysicalState(target.name,dfrPhysicalCategory(physical),physical);
   const text=`${physical}\n\n“${dialogue}”`;
   return {action:String(action||'').trim(),entries:[{type:'character',speaker:target.name,text:normaliseAIText(text,'character')}],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrQuestionTopic(dfrQuoted(action))}};
@@ -2685,6 +2863,7 @@ function makeScenarioFromTemplate(t){
   // Canonical runtime state is created for every imported scenario. The prose layer
   // must never be able to operate without an authoritative world-state container.
   base.worldState={version:1,locations:[],facts:[],events:[],activities:[],characters:{},travel:{},homeInventory:{},plannedEvents:[]};
+  base.dfrConversation={version:1,scenarioId:base.scenarioId,activeTarget:'',topic:'',stage:'',lastPlayerInput:'',lastNpcReply:'',unresolved:[],revealedFacts:[],turns:[],threads:{},npcGoals:{},lastTopics:[]};
   if(base.currentLocation && base.currentLocation!=='Unknown location')
     base.worldState.locations.push({id:'loc-'+rpgKey(base.currentLocation).replace(/[^a-z0-9]+/g,'-'),name:base.currentLocation,kind:'scenario',discovered:true});
   for(const loc of (Array.isArray(base.scenarioSpec.locations)?base.scenarioSpec.locations:[])){
