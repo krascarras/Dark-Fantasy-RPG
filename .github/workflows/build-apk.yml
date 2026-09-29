@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 90
-                  versionName '5.4.11-dfr-native-consistency'
+                  versionCode 91
+                  versionName '5.4.13-dfr-native-multi'
               }
 
               compileOptions {
@@ -282,7 +282,7 @@ jobs:
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
 
           grep -q 'DFR Native' /tmp/packaged-index.html
-          grep -q '0.3.0-consistency' /tmp/packaged-index.html
+          grep -q '0.4.1-memory-continuity' /tmp/packaged-index.html
 
           if grep -qiE 'litertlm|gemma-4|gemma|AndroidLocalAI|LiteRT' /tmp/packaged-index.html; then
             echo "ERROR: legacy model references remain in packaged HTML"
@@ -295,5 +295,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.4.11-dfr-native-consistency
+          name: Dark-Fantasy-RPG-v5.4.13-dfr-native-multi
           path: app/build/outputs/apk/debug/app-debug.apk
