@@ -351,6 +351,7 @@ async function selectPlayerCharacter(index){
   let chosen=state.party.find(p=>rpgKey(p.name)===rpgKey(source.name));
   if(!chosen){chosen=normaliseImportedCharacter(source);chosen.control='inactive-player';chosen.playerControlled=false;state.party.push(chosen);}
   state.playerCharacterName=chosen.name;
+  rpgRepairRelationshipStore();
   if(!Array.isArray(state.playerCandidates))state.playerCandidates=[];
   if(!state.playerCandidates.includes(chosen.name))state.playerCandidates.push(chosen.name);
   for(const p of state.party){if(isPlayerCandidate(p)||p.name===chosen.name){p.control=(p.name===chosen.name?'player':'inactive-player');p.playerControlled=(p.name===chosen.name);}}
@@ -473,21 +474,28 @@ async function idbDelete(key){
 }
 async function save(){
   const data=JSON.stringify(state);
+  let idbOk=false;
   try{
-    await idbPut(KEY,data);
+    await idbPut(KEY,data); idbOk=true;
     if(state?.scenarioId)await idbPut(scenarioKey(state.scenarioId),data);
     if(state?.scenarioId){
       const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
       localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));
     }
-    {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Saved';}
-    return true;
   }catch(err){
-    console.error('IndexedDB save failed',err);
+    console.warn('IndexedDB save failed; using localStorage fallback',err);
+  }
+  try{
+    localStorage.setItem(KEY,data);
+    if(state?.scenarioId)localStorage.setItem(scenarioKey(state.scenarioId),data);
+  }catch(err){
+    console.error('Local save fallback failed',err);
     {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';}
     toast('Could not save the game on this device.');
     return false;
   }
+  {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';}
+  return true;
 }
 async function loadSavedState(){
   try{
@@ -503,7 +511,7 @@ function toast(t){let x=document.getElementById('toast');x.textContent=t;x.style
 function render(){
  const title=document.querySelector('#story h2'); if(title)title.textContent=state.scenarioName||'Story';
  renderScenarios();
- const ap=activePlayer(); const apName=ap?.name||'Player'; document.getElementById('level').textContent=state.level; const statsTitle=document.querySelector('#stats h2'); if(statsTitle)statsTitle.innerHTML=`${esc(apName)} — Level <span id="level">${state.level}</span>`;
+ const ap=activePlayer(); const apName=ap?.name||'Player'; const statsTitle=document.querySelector('#stats h2'); if(statsTitle)statsTitle.innerHTML=`${esc(apName)} — Level <span id="levelValue">${state.level}</span>`;
  document.getElementById('hp').textContent=state.hp+' / '+state.maxHp;
  document.getElementById('mana').textContent=state.mana+' / '+state.maxMana;
  document.getElementById('xp').textContent=state.xp;
@@ -515,7 +523,7 @@ function render(){
  const npcHtml=(state.npcs||[]).filter(n=>n.persistence==='persistent').map(n=>`<div class="card npc-card"><img class="npc-mini" src="${n.appearance||placeholder(n.name)}"><div><b>${esc(n.name)}</b><div class="small">Persistent NPC · ${esc(n.race||'Unknown race')} · ${esc(n.age||'adult')}</div><div class="small">${esc(n.role||'resident')} · ${esc(n.location||state.currentLocation||'Unknown location')}</div><div class="small">${esc(n.personality||'')}</div></div></div>`).join('');
  document.getElementById('partyList').innerHTML=partyHtml+(npcHtml?`<div class="character-section-label">Persistent people in this world</div>${npcHtml}`:'');
  document.getElementById('charUploads').innerHTML=state.party.map((p,n)=>`<div class="card"><div class="row"><div class="character-top" style="flex:1;min-width:0"><img class="portrait" src="${p.image||placeholder(p.name)}" alt="${esc(p.name)}"><div class="character-info"><b>${esc(p.displayName||p.name)}</b><div class="small">${isActivePlayer(p)?'Player Character':(p.control==='inactive-player'?'Playable Character':'AI Character')} · Level ${Number(p.level)||1}</div></div></div><div class="character-menu-wrap"><button class="btn character-menu-btn" type="button" onclick="togglePictureMenu(${n},event)" aria-label="Picture options">⋮</button><div class="picture-menu" id="pictureMenu${n}"><button type="button" onclick="pictureAction(event,'upload',${n})">🖼️ Upload / replace picture</button>${p.image?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removePic(${n})">🗑️ Remove picture</button>`:''}${!isPlayerCandidate(p)&&p.name!=='Sylvara Aelthara'?`<button class="danger" type="button" onclick="event.preventDefault();event.stopPropagation();removeCharacter(${n})">🗑️ Remove character</button>`:''}</div></div></div><input id="pic${n}" type="file" accept="image/*" hidden onchange="uploadPic(${n},this.files[0])"></div>`).join('');
- document.getElementById('relationships').innerHTML=state.party.filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').map(p=>{let i=state.party.indexOf(p);let bond=Math.max(0,Math.min(100,Number(p.bond)||20));let rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
+ document.getElementById('relationships').innerHTML=state.party.filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').map(p=>{let rel=rpgPlayerRelationship(p);let bond=rpgClamp(rel.bond),rep=Math.max(-100,Math.min(100,Number(rel.reputation)||0)),trust=rpgClamp(rel.trust),affection=rpgClamp(rel.affection),attraction=rpgClamp(rel.attraction),comfort=rpgClamp(rel.comfort),tension=rpgClamp(rel.tension);return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="grid" style="margin-top:10px"><div><b>Trust</b> ${trust}</div><div><b>Affection</b> ${affection}</div><div><b>Attraction</b> ${attraction}</div><div><b>Comfort</b> ${comfort}</div><div><b>Tension</b> ${tension}</div></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
  const re=document.getElementById('relationshipEvents'); if(re){const ev=Array.isArray(state.relationshipEvents)?state.relationshipEvents.slice(-5).reverse():[]; re.innerHTML=ev.length?'<b>Recent changes</b><br>'+ev.map(e=>`• ${esc(e.text)}`).join('<br>'):'No relationship changes yet. When a bond changes, the game will show you what improved or worsened.';}
   const apl=document.getElementById('activePlayerLabel'); if(apl)apl.textContent=activePlayer()?`Playing as ${activePlayer().name}`:'No player selected';
   const loreEl=document.getElementById('scenarioLoreContent'); if(loreEl) loreEl.innerHTML=scenarioLoreHtml(state.scenarioSpec||{});
@@ -868,28 +876,41 @@ function rpgRepeatedPhysicalBeat(entries){
 }
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
+  if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
+  const player=activePlayer();
   for(const ch of (result?.relationship_changes||[])){
-    const p=state.party.find(x=>x.name===ch.name);
-    if(!p)continue;
-    const bd=Number(ch.bond_delta)||0, rd=Number(ch.reputation_delta)||0;
-    const beforeBond=Number(p.bond)||20, beforeRep=Number(p.reputation)||0;
-    p.bond=Math.max(0,Math.min(100,beforeBond+bd));
-    p.reputation=Math.max(-100,Math.min(100,beforeRep+rd));
-    p.trust=Math.max(0,Math.min(100,Number(p.trust??20)+(Number(ch.trust_delta)||0)));
-    p.affection=Math.max(0,Math.min(100,Number(p.affection??20)+(Number(ch.affection_delta)||0)));
-    p.attraction=Math.max(0,Math.min(100,Number(p.attraction||0)+(Number(ch.attraction_delta)||0)));
-    p.comfort=Math.max(0,Math.min(100,Number(p.comfort??20)+(Number(ch.comfort_delta)||0)));
-    p.tension=Math.max(0,Math.min(100,Number(p.tension||0)+(Number(ch.tension_delta)||0)));
-    if(bd||rd){
-      const parts=[];
-      if(bd)parts.push(`Bond ${bd>0?'+':''}${bd}`);
-      if(rd)parts.push(`Reputation ${rd>0?'+':''}${rd}`);
-      state.relationshipEvents.push({text:`${p.name}: ${parts.join(' • ')}`,at:Date.now()});
-      if(state.relationshipEvents.length>30)state.relationshipEvents=state.relationshipEvents.slice(-30);
-      toast(`${p.name}: ${parts.join(' • ')}`);
+    const name=String(ch?.name||'').trim();
+    const other=String(ch?.with||ch?.other||ch?.target||player?.name||'').trim();
+    if(!name||!other||rpgKey(name)===rpgKey(other))continue;
+    const known=[...(state.party||[]),...(state.npcs||[])];
+    const a=known.find(x=>rpgKey(x.name)===rpgKey(name));
+    const b=known.find(x=>rpgKey(x.name)===rpgKey(other));
+    if(!a||!b)continue;
+    const key=rpgRelationshipKey(name,other);
+    const existing=state.relationships[key]||rpgNormaliseRelationship({},name,other);
+    const changed=[];
+    for(const k of ['bond','reputation','affection','trust','attraction','comfort','tension']){
+      const deltaKey=k+'_delta';
+      if(ch[deltaKey]===undefined)continue;
+      const delta=Number(ch[deltaKey]);
+      if(!Number.isFinite(delta)||delta===0)continue;
+      const safeDelta=Math.max(-5,Math.min(5,delta));
+      const before=Number(existing[k]);
+      existing[k]=k==='reputation'
+        ?Math.max(-100,Math.min(100,before+safeDelta))
+        :rpgClamp(before+safeDelta);
+      if(existing[k]!==before)changed.push(`${k} ${existing[k]>before?'+':''}${existing[k]-before}`);
     }
+    if(!changed.length)continue;
+    existing.updatedAt=Date.now();
+    if(existing.history){const prior=String(existing.history).split('\n').filter(Boolean);prior.push(`${Date.now()}: ${changed.join(' • ')}`);existing.history=prior.slice(-20).join('\n');}else existing.history=changed.join(' • ');
+    state.relationships[key]=existing;
+    state.relationshipEvents.push({text:`${name} ↔ ${other}: ${changed.join(' • ')}`,at:Date.now(),relationshipKey:key});
+    if(state.relationshipEvents.length>50)state.relationshipEvents=state.relationshipEvents.slice(-50);
+    toast(`${name}: relationship changed`);
   }
 }
+
 function normaliseAIText(text, type){
   let s=String(text||'').trim();
   if(!s)return '';
@@ -999,7 +1020,7 @@ async function redoLastAI(){
       await save();
       const entries=aiEntries(result);
       if(!entries.length)throw new Error('Local AI returned no usable story entries');
-      await commitAIStateTransaction(redo.action,entries,result?.native===true);
+      await commitAIStateTransaction(redo.action,entries,result?.native===true,result);
       await save();
       for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
       toast('New response generated');
@@ -1106,7 +1127,7 @@ async function addAction(){
         }
         const entries=aiEntries(result);
         if(entries.length){
-          await commitAIStateTransaction(v,entries,result?.native===true);
+          await commitAIStateTransaction(v,entries,result?.native===true,result);
           await save();
         }
         if(!entries.length){
@@ -1198,12 +1219,13 @@ function pictureAction(ev,action,i){
 }
 window.addEventListener('click',e=>{if(!e.target.closest('.picture-menu')&&!e.target.closest('.character-menu-btn'))document.querySelectorAll('.picture-menu').forEach(m=>m.classList.remove('open'));});
 function closeCharacterDetails(){document.getElementById('charModal')?.classList.remove('open');}
-function openCharacterDetails(i){const p=state.party[i];if(!p)return;document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const bond=Math.max(0,Math.min(100,Number(p.bond)||20));const rep=Math.max(-100,Math.min(100,Number(p.reputation)||0));const trust=Math.max(0,Math.min(100,Number(p.trust??20)));const affection=Math.max(0,Math.min(100,Number(p.affection??20)));const attraction=Math.max(0,Math.min(100,Number(p.attraction||0)));const comfort=Math.max(0,Math.min(100,Number(p.comfort??20)));const tension=Math.max(0,Math.min(100,Number(p.tension||0)));const card=document.getElementById('charModalCard');if(!card)return;card.innerHTML=`<div class="row"><h2 style="margin:0">${esc(p.displayName||p.name)}</h2><button class="btn" onclick="closeCharacterDetails()">Close</button></div><div class="char-detail-head" style="margin-top:12px"><img class="char-detail-portrait" src="${p.image||placeholder(p.name)}"><div><div><b>${esc(p.race||'Unknown race')}</b> · Level ${Number(p.level)||1}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div><div class="small">${esc(p.personality||'Personality still developing.')}</div></div></div>${!isActivePlayer(p)?`<h3 style="margin-bottom:6px">Relationship</h3><div class="stat-grid"><div class="mini-stat"><b>Bond</b>${bond}/100 · ${bondLabel(bond)}</div><div class="mini-stat"><b>Reputation</b>${rep>0?'+':''}${rep} · ${repLabel(rep)}</div><div class="mini-stat"><b>Trust</b>${trust}/100</div><div class="mini-stat"><b>Affection</b>${affection}/100</div><div class="mini-stat"><b>Attraction</b>${attraction}/100</div><div class="mini-stat"><b>Comfort</b>${comfort}/100</div><div class="mini-stat"><b>Tension</b>${tension}/100</div></div>`:''}<div class="canon-box"><b>Visual Canon</b><div class="small">${esc(p.visualCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Behavioural Canon</b><div class="small">${esc(p.behaviourCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Magic / Visual Effects</b><div class="small">${esc(p.magicEffects||'No special visual effects established.')}</div></div><div class="canon-box"><b>What they know</b><div class="small">${esc((state.characterKnowledge[p.name]||[]).slice(-12).join(' • ')||'No special private knowledge recorded.')}</div></div>`;document.getElementById('charModal')?.classList.add('open');}
+function openCharacterDetails(i){const p=state.party[i];if(!p)return;document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));const rel=!isActivePlayer(p)?rpgPlayerRelationship(p):rpgRelationshipDefaults();const bond=rpgClamp(rel.bond),rep=Math.max(-100,Math.min(100,Number(rel.reputation)||0)),trust=rpgClamp(rel.trust),affection=rpgClamp(rel.affection),attraction=rpgClamp(rel.attraction),comfort=rpgClamp(rel.comfort),tension=rpgClamp(rel.tension);const card=document.getElementById('charModalCard');if(!card)return;card.innerHTML=`<div class="row"><h2 style="margin:0">${esc(p.displayName||p.name)}</h2><button class="btn" onclick="closeCharacterDetails()">Close</button></div><div class="char-detail-head" style="margin-top:12px"><img class="char-detail-portrait" src="${p.image||placeholder(p.name)}"><div><div><b>${esc(p.race||'Unknown race')}</b> · Level ${Number(p.level)||1}</div><div class="small">Magic: ${esc(p.magicSpecialisation||'Undeclared')}</div><div class="small">${esc(p.personality||'Personality still developing.')}</div></div></div>${!isActivePlayer(p)?`<h3 style="margin-bottom:6px">Relationship</h3><div class="stat-grid"><div class="mini-stat"><b>Bond</b>${bond}/100 · ${bondLabel(bond)}</div><div class="mini-stat"><b>Reputation</b>${rep>0?'+':''}${rep} · ${repLabel(rep)}</div><div class="mini-stat"><b>Trust</b>${trust}/100</div><div class="mini-stat"><b>Affection</b>${affection}/100</div><div class="mini-stat"><b>Attraction</b>${attraction}/100</div><div class="mini-stat"><b>Comfort</b>${comfort}/100</div><div class="mini-stat"><b>Tension</b>${tension}/100</div></div>`:''}<div class="canon-box"><b>Visual Canon</b><div class="small">${esc(p.visualCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Behavioural Canon</b><div class="small">${esc(p.behaviourCanon||'Not established yet.')}</div></div><div class="canon-box"><b>Magic / Visual Effects</b><div class="small">${esc(p.magicEffects||'No special visual effects established.')}</div></div><div class="canon-box"><b>What they know</b><div class="small">${esc((state.characterKnowledge[p.name]||[]).slice(-12).join(' • ')||'No special private knowledge recorded.')}</div></div>`;document.getElementById('charModal')?.classList.add('open');}
 window.addEventListener('click',e=>{if(!e.target.closest('.character-menu-wrap'))document.querySelectorAll('.character-menu').forEach(m=>m.classList.remove('open'));});
 function bondLabel(v){if(v<20)return 'Stranger';if(v<40)return 'Acquaintance';if(v<60)return 'Trusting';if(v<80)return 'Close';return 'Devoted'}
 function repLabel(v){if(v<=-75)return 'Hostile';if(v<=-45)return 'Unfriendly';if(v<=-15)return 'Wary';if(v<15)return 'Neutral';if(v<45)return 'Friendly';if(v<75)return 'Respected';return 'Honoured'}
 function repColor(v){if(v<0){let t=Math.abs(v)/100;let r=Math.round(13+130*t),g=Math.round(39-25*t),b=Math.round(66-38*t);return `rgb(${r},${g},${b})`}let t=v/100;let r=Math.round(23-20*t),g=Math.round(77-45*t),b=Math.round(120-70*t);return `rgb(${r},${g},${b})`}
-function setBond(i,v){if(!state.party[i])return;state.party[i].bond=Math.max(0,Math.min(100,Number(v)||0));save();let r=document.getElementById('relationships');if(r){let vals=r.querySelectorAll('.bondvalue');let companionIndex=state.party.slice(0,i).filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').length;if(vals[companionIndex])vals[companionIndex].textContent=state.party[i].bond;let labels=r.querySelectorAll('.relationship .small');if(labels[companionIndex])labels[companionIndex].textContent=bondLabel(state.party[i].bond)}}
+function rpgPlayerRelationship(other){const player=activePlayer();if(!player||!other)return rpgNormaliseRelationship({},player?.name||'Player',other?.name||'NPC');const key=rpgRelationshipKey(player.name,other.name);if(!state.relationships||typeof state.relationships!=='object')state.relationships={};if(!state.relationships[key])state.relationships[key]=rpgNormaliseRelationship({},player.name,other.name);return state.relationships[key]}
+function setBond(i,v){const p=state.party[i];if(!p||isActivePlayer(p)||p.control==='inactive-player')return;const rel=rpgPlayerRelationship(p);rel.bond=rpgClamp(Number(v)||0);rel.updatedAt=Date.now();save();render();}
 
 function addCharacter(){let n=document.getElementById('newChar').value.trim();if(!n)return;if(state.party.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('That character already exists');return;}state.party.push({name:n,level:1,race:'Human',magicSpecialisation:'Undeclared',image:null,bond:20,reputation:0,affection:20,trust:20,attraction:0,comfort:20,tension:0,personality:'To be discovered through the story.',visualCanon:'',behaviourCanon:'',magicEffects:''});document.getElementById('newChar').value='';save();render();toast('Companion added');}
 function removeCharacter(i){
@@ -1247,6 +1269,58 @@ function setTheme(v){document.body.classList.toggle('light',v==='light');localSt
 
 function downloadJson(filename,data){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportSave(){
+  try{
+    const payload=normalizeState(structuredClone(state));
+    downloadJson((String(state.scenarioName||'dark-fantasy-rpg').replace(/[^a-z0-9_-]+/gi,'_')||'dark-fantasy-rpg')+'-save.json',payload);
+    toast('Save exported');
+  }catch(e){console.error('Save export failed',e);toast('Could not export the save.');}
+}
+function exportScenarioBlueprint(){
+  try{
+    const source=state?.scenarioSpec&&typeof state.scenarioSpec==='object' ? structuredClone(state.scenarioSpec) : structuredClone(BUILTIN_SCENARIO_BLUEPRINT);
+    source.schemaVersion=source.schemaVersion||1;
+    source.kind='dark-fantasy-scenario';
+    source.name=String(source.name||state.scenarioName||'Dark Fantasy Scenario');
+    downloadJson((source.name.replace(/[^a-z0-9_-]+/gi,'_')||'scenario')+'-blueprint.json',source);
+    toast('Scenario blueprint exported');
+  }catch(e){console.error('Scenario blueprint export failed',e);toast('Could not export the scenario blueprint.');}
+}
+async function importSave(file){
+  if(!file)return;
+  try{
+    const raw=JSON.parse(await file.text());
+    const imported=normalizeState(raw);
+    if(!imported||typeof imported!=='object')throw new Error('Invalid save data');
+    if(!Array.isArray(imported.party))throw new Error('Save has no character party');
+    state=imported;
+    if(!state.scenarioId)state.scenarioId='imported-'+Date.now().toString(36);
+    if(!state.scenarioName)state.scenarioName='Imported Campaign';
+    rpgReconcileRuntimeScene();
+    rpgRepairRelationshipStore();
+    const issues=rpgRuntimeIntegrityAudit();
+    if(issues.length)throw new Error('Imported save failed integrity checks: '+issues.join(', '));
+    await persistScenario();
+    render();keepStoryAtLatest();
+    toast('Save imported');
+  }catch(e){console.error('Save import failed',e);alert('Save import failed: '+(e?.message||e));}
+  finally{const el=document.getElementById('importFile');if(el)el.value='';}
+}
+function exportCharacter(index){
+  try{
+    const p=state.party?.[Number(index)];
+    if(!p)throw new Error('Character not found');
+    const payload=structuredClone(p);
+    delete payload.playerControlled;
+    payload.relationships={};
+    const name=p.name;
+    for(const [key,rel] of Object.entries(state.relationships||{})){
+      if(Array.isArray(rel.characters)&&rel.characters.some(n=>rpgKey(n)===rpgKey(name)))payload.relationships[key]=structuredClone(rel);
+    }
+    downloadJson((String(p.name||'character').replace(/[^a-z0-9_-]+/gi,'_')||'character')+'.json',payload);
+    toast('Character exported');
+  }catch(e){console.error('Character export failed',e);toast('Could not export the character.');}
 }
 function normaliseImportedCharacter(raw){
   const x=(raw&&typeof raw==='object')?raw:{};const name=String(x.name||'').trim();if(!name)throw new Error('Character file is missing a name.'); const characterId=String(x.characterId||x.character_id||('character-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'))).trim(); const displayName=String(x.displayName||x.display_name||name).trim()||name;
@@ -1551,32 +1625,6 @@ function applyAINPCs(result){
     if(Array.isArray(u.goals))npc.goals=structuredClone(u.goals);
   }
 }
-
-/* Keep the canonical relationship store synchronized with the legacy character
-   display fields. The scenario baseline remains authoritative at campaign start. */
-const _rpgApplyAIRelationshipsOriginal = applyAIRelationships;
-applyAIRelationships = function(result){
-  _rpgApplyAIRelationshipsOriginal(result);
-  if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
-  for(const ch of (result?.relationship_changes||[])){
-    const name=String(ch?.name||'').trim();
-    if(!name)continue;
-    const other=String(ch?.with||ch?.other||ch?.target||state.playerCharacterName||'').trim();
-    if(!other)continue;
-    const key=rpgRelationshipKey(name,other);
-    const existing=state.relationships[key]||rpgNormaliseRelationship({},name,other);
-    for(const k of ['bond','reputation','affection','trust','attraction','comfort','tension']){
-      const deltaKey=k+'_delta';
-      if(ch[deltaKey]!==undefined){
-        const delta=Number(ch[deltaKey])||0;
-        if(k==='reputation')existing[k]=Math.max(-100,Math.min(100,Number(existing[k]||0)+delta));
-        else existing[k]=rpgClamp(Number(existing[k]||0)+delta);
-      }
-    }
-    existing.updatedAt=Date.now();
-    state.relationships[key]=existing;
-  }
-};
 
 /* ========================= RPG CORE v5.0 =========================
    Persistent campaign files, segmented character state, relationship baselines,
@@ -2135,12 +2183,12 @@ function validateAndCommitAIStateTransaction(tx,action,entries){
   return out;
 }
 
-async function commitAIStateTransaction(action,entries,isNative=false){
+async function commitAIStateTransaction(action,entries,isNative=false,nativeResult=null){
   try{
     /* DFR Native owns its own narrative output. Never wake an external model merely to
        interpret a native turn; native state transactions will be added directly as
        deterministic engine rules mature. */
-    if(isNative)return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
+    if(isNative){ const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true}; applyAIRelationships(tx); return tx; }
     const proposal=await extractAIStateTransaction(action,entries);
     const tx=validateAndCommitAIStateTransaction(proposal,action,entries);
     /* Engine appliers are now actually connected to the validated transaction. */
@@ -2162,7 +2210,7 @@ async function commitAIStateTransaction(action,entries,isNative=false){
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='0.4.1-memory-continuity';
+const DFR_NATIVE_LANGUAGE_VERSION='0.5.0-relationship-continuity';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2255,7 +2303,11 @@ function dfrChooseNovel(options,seed,opts={}){
   const intent=String(opts.intent||'');
   const kind=String(opts.kind||'dialogue');
   const recent=dfrRecentText();
-  const scored=list.map((text,i)=>{
+  const recentExact=h.filter(row=>row.target===target && row.intent===intent && (kind==='physical' ? row.physical : row.dialogue)).slice(-Math.max(8,list.length));
+  const recentFingerprints=new Set(recentExact.map(row=>kind==='physical'?row.physical:row.dialogue).filter(Boolean));
+  const unused=list.filter(text=>!recentFingerprints.has(dfrFingerprint(text)));
+  const candidateList=unused.length?unused:list;
+  const scored=candidateList.map((text,i)=>{
     const fp=dfrFingerprint(text);
     let score=(dfrHash(seed+'|'+i)%100)/1000;
     if(recent.includes(fp))score+=100;
@@ -2306,6 +2358,45 @@ function dfrAddressed(action,active){
   }
   return null;
 }
+function dfrNativeRelationshipChanges(target,rel,intent,action,emotion){
+  const player=activePlayer(); if(!player||!target)return [];
+  const key=rpgRelationshipKey(player.name,target.name);
+  const turn=Number(state.runtimeEngine?.turn||0);
+  if(!state.dfrRelationshipCooldowns||typeof state.dfrRelationshipCooldowns!=='object')state.dfrRelationshipCooldowns={};
+  const cooldownKey=key+'::'+intent;
+  const last=Number(state.dfrRelationshipCooldowns[cooldownKey]??-9999);
+  const text=dfrActionText(action).toLowerCase();
+  const minGap={apology:3,concern:4,agreement:4,disagreement:5,farewell:8,greeting:12,question:8,flirt:4,neutral:999}[intent]??6;
+  if(turn-last<minGap)return [];
+  const positiveEmotion=['warm','open','concerned','soft concern','calm','direct'].includes(String(emotion||''));
+  const guardedEmotion=['guarded','tense'].includes(String(emotion||''));
+  const meaningfulFlirt=/\b(flirt|flirting|beautiful|gorgeous|handsome|attractive|pretty|date|dating|kiss|kissing|romantic|love you|feelings for you|interested in you)\b/.test(text);
+  const meaningfulQuestion=/\b(remember|miss|care|feel|feelings|trust|relationship|together|us|past|future)\b/.test(text);
+  const delta={name:target.name,with:player.name};
+  let meaningful=false;
+  const set=(k,v)=>{if(v)delta[k+'_delta']=v;meaningful=true;};
+  if(intent==='apology'){
+    set('trust',2);set('comfort',1);set('affection',positiveEmotion?2:1);set('tension',-2);set('bond',1);
+  }else if(intent==='concern'){
+    set('trust',positiveEmotion?2:1);set('comfort',2);set('affection',positiveEmotion?2:1);if(guardedEmotion)set('tension',1);
+  }else if(intent==='agreement'){
+    set('trust',1);set('bond',1);if(positiveEmotion)set('affection',1);
+  }else if(intent==='disagreement'){
+    set('tension',positiveEmotion?1:2);set('trust',positiveEmotion?0:-1);set('bond',positiveEmotion?0:-1);
+  }else if(intent==='farewell'){
+    set('bond',1);if(positiveEmotion)set('comfort',1);
+  }else if(intent==='greeting'){
+    if(turn-last>=6){set('bond',1);if(positiveEmotion)set('comfort',1);} 
+  }else if(intent==='question'&&meaningfulQuestion){
+    if(turn-last>=3){set('trust',positiveEmotion?1:0);if(positiveEmotion)set('comfort',1);}
+  }else if(meaningfulFlirt){
+    if(guardedEmotion){set('tension',1);}else{set('attraction',2);set('affection',1);if(positiveEmotion)set('comfort',1);}
+  }
+  if(!meaningful)return [];
+  state.dfrRelationshipCooldowns[cooldownKey]=turn;
+  return [delta];
+}
+
 function dfrIntent(action){
   const a=dfrActionText(action).toLowerCase();
   if(/\b(sorry|apolog|apologise|apologize)\b/.test(a))return 'apology';
@@ -2313,6 +2404,7 @@ function dfrIntent(action){
   if(/\b(hello|hi|hey|greet|greets|greeting|nods to)\b/.test(a))return 'greeting';
   if(/\b(no|never|disagree|disagrees|disagreed|refuse|refuses|reject|rejects|angry|mad|accuse|accuses)\b/.test(a))return 'disagreement';
   if(/\b(agree|agrees|agreed|accept|accepts|thank|thanks|thankful|understand|understands|okay|ok|yes)\b/.test(a))return 'agreement';
+  if(/\b(flirt|flirting|beautiful|gorgeous|handsome|attractive|pretty|date|dating|kiss|kissing|romantic|love you|feelings for you|interested in you)\b/.test(a))return 'flirt';
   if(/\?|\b(ask|asks|asked|question|why|what|where|when|how|who|can you|could you|do you|did you|are you|is it|would you)\b/.test(a))return 'question';
   if(/\b(hurt|afraid|scared|worried|worry|miss|love|care|upset|sad|fear|grief)\b/.test(a))return 'concern';
   return 'neutral';
@@ -2816,7 +2908,12 @@ function dfrNativeGenerate(action){
   if(!player)throw new Error('DFR Native Language Engine: no player');
   const special=dfrSpecialSceneResponse(action,`${state.runtimeEngine?.turn||0}|scene|${action}`);
   if(special){
-    return {action:String(action||'').trim(),entries:special.entries||[],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent:dfrIntent(action),emotion:'scene',target:special.target||'',style:'scene',topic:special.topic,stage:special.stage}};
+    const specialTarget=special.target?dfrPerson(special.target):null;
+    const specialIntent=dfrIntent(action);
+    const specialRel=specialTarget ? (state.relationships?.[rpgRelationshipKey(specialTarget.name,player.name)]||null) : null;
+    const specialEmotion=specialTarget ? dfrEmotion(specialTarget,specialRel,specialIntent) : 'scene';
+    const specialRelationshipChanges=specialTarget ? dfrNativeRelationshipChanges(specialTarget,specialRel,specialIntent,action,specialEmotion) : [];
+    return {action:String(action||'').trim(),entries:special.entries||[],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:specialRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent:specialIntent,emotion:specialEmotion,target:specialTarget?.name||special.target||'',style:'scene',topic:special.topic,stage:special.stage}};
   }
   const all=[...(state.party||[]),...(state.npcs||[])].filter(x=>x&&x.name&&rpgKey(x.name)!==rpgKey(player.name));
   const active=all.filter(x=>isScenePresent(x.name));
@@ -2828,6 +2925,7 @@ function dfrNativeGenerate(action){
   }
   const rel=state.relationships?.[rpgRelationshipKey(target.name,player.name)]||state.relationships?.[rpgRelationshipKey(player.name,target.name)]||null;
   const intent=dfrIntent(action), emotion=dfrEmotion(target,rel,intent);
+  const nativeRelationshipChanges=dfrNativeRelationshipChanges(target,rel,intent,action,emotion);
   const consistency=dfrConsistencyResponse(target,rel,intent,action,`${state.runtimeEngine?.turn||0}|${target.name}|consistency|${action}`);
   if(consistency.dialogue){
     if(Array.isArray(consistency.entries)&&consistency.entries.length){
@@ -2837,7 +2935,7 @@ function dfrNativeGenerate(action){
         }
       }
       dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
-      return {action:String(action||'').trim(),entries:consistency.entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
+      return {action:String(action||'').trim(),entries:consistency.entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
     }
     const beats=Array.isArray(consistency.beats)&&consistency.beats.length?consistency.beats:[{physical:dfrActionForEmotion(target,emotion,`${state.runtimeEngine?.turn||0}|${target.name}|consistency-action|${action}`,intent),dialogue:consistency.dialogue}];
     const entries=[];
@@ -2852,7 +2950,7 @@ function dfrNativeGenerate(action){
     }
     dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
     dfrRememberPrivateKnowledge(target,`${target.name}/conversation: ${consistency.dialogue}`);
-    return {action:String(action||'').trim(),entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
+    return {action:String(action||'').trim(),entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
   }
   /* Explicit player statements are private knowledge for the NPC who actually heard them.
      Questions, narration and unrelated scene text do not automatically become shared memory. */
@@ -2904,7 +3002,7 @@ function dfrNativeGenerate(action){
     if(follow && !dfrRecentText().includes(dfrFingerprint(follow)))genericEntries.push({type:'character',speaker:target.name,text:normaliseAIText(`*${dfrFirstName(target)} keeps their attention on you.*\n\n“${follow}”`,'character')});
   }
   const text=`${physical}\n\n“${dialogue}”`;
-  return {action:String(action||'').trim(),entries:genericEntries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrInferConsistencyTopic(action,target),stage:state.dfrConversation?.stage||'free_conversation'}};
+  return {action:String(action||'').trim(),entries:genericEntries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrInferConsistencyTopic(action,target),stage:state.dfrConversation?.stage||'free_conversation'}};
 }
 
 async function callStoryAI(action,correctedSource,qualityRetry=false){
@@ -3044,26 +3142,43 @@ function rpgRuntimeIntegrityAudit(){
   const completed=new Set((state?.scenarioSpec?.timeline?.historicalEvents||[]).map(e=>e?.id).filter(Boolean));
   for(const id of planned)if(completed.has(id))issues.push(`event-both-planned-and-completed:${id}`);
   if(rpgKey(state?.currentLocation||'')==='')issues.push('missing-current-location');
+  const rels=state?.relationships&&typeof state.relationships==='object'?state.relationships:{};
+  for(const [key,rel] of Object.entries(rels)){
+    const chars=Array.isArray(rel?.characters)?rel.characters:[];
+    if(chars.length!==2||!chars[0]||!chars[1]||rpgRelationshipKey(chars[0],chars[1])!==key)issues.push(`invalid-relationship-key:${key}`);
+    for(const k of ['bond','affection','trust','attraction','comfort','tension'])if(!Number.isFinite(Number(rel?.[k]))||Number(rel[k])<0||Number(rel[k])>100)issues.push(`invalid-relationship-value:${key}:${k}`);
+    if(!Number.isFinite(Number(rel?.reputation))||Number(rel.reputation)<-100||Number(rel.reputation)>100)issues.push(`invalid-relationship-value:${key}:reputation`);
+  }
   return [...new Set(issues)];
 }
 
-function rpgApplyRelationshipBaselines(){
+
+/* New imported-scenario constructor: package every logical file immediately. */
+function rpgEnsurePlayerRelationshipPairs(){
   if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
-  for(const [key,rel] of Object.entries(state.relationships)){
-    const [a,b]=Array.isArray(rel.characters)?rel.characters:key.split('::');
-    const pa=state.party?.find(p=>rpgKey(p.name)===rpgKey(a));
-    const pb=state.party?.find(p=>rpgKey(p.name)===rpgKey(b));
-    if(!pa||!pb)continue;
-    /* Keep the relationship object authoritative; mirror it into character UI fields
-       only for the side that is relevant to the current display. */
-    for(const p of [pa,pb]){
-      p.bond=rel.bond;p.affection=rel.affection;p.trust=rel.trust;
-      p.attraction=rel.attraction;p.comfort=rel.comfort;p.tension=rel.tension;
-    }
+  const player=activePlayer();
+  if(!player)return;
+  const everyone=[...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name&&rpgKey(x.name)!==rpgKey(player.name));
+  for(const other of everyone){
+    const key=rpgRelationshipKey(player.name,other.name);
+    if(!state.relationships[key])state.relationships[key]=rpgNormaliseRelationship({},player.name,other.name);
   }
 }
 
-/* New imported-scenario constructor: package every logical file immediately. */
+function rpgRepairRelationshipStore(){
+  if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
+  const cleaned={};
+  for(const [key,raw] of Object.entries(state.relationships)){
+    const chars=Array.isArray(raw?.characters)?raw.characters:String(key).split('::');
+    if(chars.length<2||!chars[0]||!chars[1]||rpgKey(chars[0])===rpgKey(chars[1]))continue;
+    const canonical=rpgRelationshipKey(chars[0],chars[1]);
+    cleaned[canonical]=rpgNormaliseRelationship({...raw,characters:[chars[0],chars[1]]},chars[0],chars[1]);
+    cleaned[canonical].updatedAt=Number(raw?.updatedAt)||Date.now();
+  }
+  state.relationships=cleaned;
+  rpgEnsurePlayerRelationshipPairs();
+}
+
 function makeScenarioFromTemplate(t){
   const base=structuredClone(defaultState);
   base.scenarioId='campaign-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
@@ -3123,15 +3238,7 @@ function makeScenarioFromTemplate(t){
     base.worldState.plannedEvents=structuredClone(base.scenarioSpec.initialState.plannedEvents);
   base.relationships=rpgExtractRelationships(base.scenarioSpec,base.party);
   for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
-  /* Backward-compatible relationship fields are seeded from the scenario package. */
-  for(const rel of Object.values(base.relationships)){
-    for(const p of base.party){
-      if(rel.characters.some(n=>rpgKey(n)===rpgKey(p.name))){
-        p.bond=rel.bond;p.affection=rel.affection;p.trust=rel.trust;
-        p.attraction=rel.attraction;p.comfort=rel.comfort;p.tension=rel.tension;
-      }
-    }
-  }
+  rpgRepairRelationshipStore();
   return base;
 }
 
@@ -3175,7 +3282,7 @@ async function rpgSave(){
 save=rpgSave;
 
 /* Seed the package after startup/import as well. */
-setTimeout(()=>{try{rpgReconcileRuntimeScene();rpgApplyRelationshipBaselines();const integrityIssues=rpgRuntimeIntegrityAudit();if(integrityIssues.length)console.warn('RPG runtime integrity issues',integrityIssues);rpgPersistPackage();}catch(e){console.warn(e);}},350);
+setTimeout(()=>{try{rpgReconcileRuntimeScene();rpgRepairRelationshipStore();const integrityIssues=rpgRuntimeIntegrityAudit();if(integrityIssues.length)console.warn('RPG runtime integrity issues',integrityIssues);rpgPersistPackage();}catch(e){console.warn(e);}},350);
 
 </script>
 </body>
