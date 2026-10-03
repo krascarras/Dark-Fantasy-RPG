@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - DFR Native (No Gemma)
+name: Build Dark Fantasy RPG - DFR Native
 
 on:
   workflow_dispatch:
@@ -91,8 +91,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 91
-                  versionName '5.4.13-dfr-native-multi'
+                  versionCode 92
+                  versionName '5.4.14-dfr-native-relationship'
               }
 
               compileOptions {
@@ -276,24 +276,35 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
 
           unzip -p "$APK" assets/index.html > /tmp/packaged-index.html
 
+          echo "Checking packaged DFR Native engine..."
           grep -q 'DFR Native' /tmp/packaged-index.html
-          grep -q '0.4.1-memory-continuity' /tmp/packaged-index.html
+          grep -q '0.5.0-relationship-continuity' /tmp/packaged-index.html
+
+          echo "Checking relationship-continuity systems..."
+          grep -q 'relationship' /tmp/packaged-index.html
 
           if grep -qiE 'litertlm|gemma-4|gemma|AndroidLocalAI|LiteRT' /tmp/packaged-index.html; then
             echo "ERROR: legacy model references remain in packaged HTML"
             exit 1
           fi
 
-          echo "DFR Native no-model package verified."
+          echo "Checking packaged file is not empty..."
+          test "$(wc -c < /tmp/packaged-index.html)" -gt 1000000
+
+          echo "DFR Native relationship-continuity package verified."
+          echo "Packaged HTML size:"
+          wc -c /tmp/packaged-index.html
+          echo "APK:"
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.4.13-dfr-native-multi
+          name: Dark-Fantasy-RPG-v5.4.14-dfr-native-relationship
           path: app/build/outputs/apk/debug/app-debug.apk
