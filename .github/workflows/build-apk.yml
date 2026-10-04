@@ -92,7 +92,7 @@ jobs:
                   minSdk 24
                   targetSdk 35
                   versionCode 92
-                  versionName '5.4.14-dfr-native-relationship'
+                  versionName '5.4.15-dfr-native-relationship'
               }
 
               compileOptions {
@@ -285,6 +285,11 @@ jobs:
           echo "Checking packaged DFR Native engine..."
           grep -q 'DFR Native' /tmp/packaged-index.html
           grep -q '0.5.0-relationship-continuity' /tmp/packaged-index.html
+          grep -q 'v5.4.15-dfr-native-relationship' /tmp/packaged-index.html
+          if grep -q 'v5.4.12-dfr-native-multi' /tmp/packaged-index.html; then
+            echo "ERROR: old v5.4.12 version marker remains in packaged HTML"
+            exit 1
+          fi
 
           echo "Checking relationship-continuity systems..."
           grep -q 'relationship' /tmp/packaged-index.html
@@ -306,5 +311,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v5.4.14-dfr-native-relationship
+          name: Dark-Fantasy-RPG-v5.4.15-dfr-native-relationship
           path: app/build/outputs/apk/debug/app-debug.apk
