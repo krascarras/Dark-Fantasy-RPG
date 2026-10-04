@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v5.4.12-dfr-native-multi</div>
+<div class="version-badge">v5.4.15-dfr-native-relationship</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -2772,7 +2772,7 @@ function dfrAdvanceScenarioForAction(action,target){
     if(!state.worldState.events.some(e=>String(e?.id||'')==='gerald-moved-inside'))state.worldState.events.push({id:'gerald-moved-inside',status:'completed',at:Date.now(),description:'Gerald brought Shane inside to the study for their private conversation.'});
     return 'gerald_private_conversation';
   }
-  if(name==='Gerald' && /\b(why did you call|why.*invite|what is this about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
+  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(why did you call|why.*invite|what is this about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
     c.topic='invitation_reason'; c.stage='reason_for_invitation'; return c.stage;
   }
   if((name==='Gerald'||name==='Gerald Morningstar') && /\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a)){
@@ -2784,7 +2784,7 @@ function dfrAdvanceScenarioForAction(action,target){
 function dfrInferConsistencyTopic(action,target){
   const a=dfrActionText(action).toLowerCase();
   const c=dfrConversationState();
-  if(target&&rpgKey(target.name)==='gerald'){
+  if(target&&dfrFirstName(target).toLowerCase()==='gerald'){
     if(/\b(why did you call|why.*invite|why.*ask.*come|what is this about|what do we need to discuss|reason.*call)\b/.test(a))return 'invitation_reason';
     if(/\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a))return 'finch_request';
   }
@@ -2819,6 +2819,20 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
       beat('*Gerald gives a brief nod.*','Very well. Come with me.'),
       beat('*Gerald turns towards the house and starts walking, leaving the entrance behind.*','The study is quieter. Once we are inside, I will explain why I asked you to come.')
     ], topic:c.topic, stage:c.stage};
+  }
+  if((topic==='invitation_reason'||stage==='reason_for_invitation') && /\b(?:you told me|you asked me|you said|something to discuss|something to talk about|best suit|come over|come here|called me here)\b/.test(a)){
+    const answers=[
+      'Because Finch asked me to speak with you, Shane. There are things he wanted me to explain after he was gone.',
+      'You are right. I asked you here because Finch left me with something I was meant to discuss with you before anything else happened.',
+      'It is about Finch. He asked me to have this conversation with you, and I intend to honour that request.'
+    ];
+    const text=dfrChooseNovel(answers,seed,{target:'Gerald Morningstar',intent:'question',kind:'dialogue'});
+    dfrRecordFact('Gerald told Shane that Finch asked Gerald to speak with Shane after Finch died.','Gerald','Gerald');
+    c.topic='finch_request'; c.stage='finch_request'; c.unresolved=[...new Set([...(c.unresolved||[]),'finch_request'])];
+    return {beats:[
+      beat('*Gerald answers more seriously, recognising that Shane is asking for the reason he was summoned.*',text),
+      beat('*Gerald holds Shane’s gaze for a moment.*','There is more to what Finch asked of me, and I think you deserve to hear it properly.')
+    ],topic:c.topic,stage:c.stage};
   }
   if(topic==='invitation_reason'||stage==='reason_for_invitation'){
     const answers=[
