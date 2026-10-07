@@ -32,8 +32,8 @@ jobs:
         run: |
           set -euo pipefail
           test -f index.html
-          test -f tests/dfr-native-single-file.test.mjs
-          node tests/dfr-native-single-file.test.mjs
+          test -f dfr-native-file.test.mjs
+          node dfr-native-file.test.mjs
 
       - name: Create Android project
         shell: bash
