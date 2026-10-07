@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - DFR Native Core
+name: Build Dark Fantasy RPG - DFR Native Single File
 
 on:
   workflow_dispatch:
@@ -11,126 +11,296 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Java 21
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.14.4'
+
       - name: Set up Node
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Verify Native engine source
+
+      - name: Verify DFR Native single-file source
         run: |
           set -euo pipefail
           test -f index.html
-          test -f dfr-native/index.js
-          test -f dfr-native/state.js
-          test -f dfr-native/engine.js
-          test -f dfr-native/narrative.js
-          test -f dfr-native/relationship.js
-          test -f dfr-native/storage.js
-          test -f tests/dfr-native.test.mjs
-          node tests/dfr-native.test.mjs
+          test -f tests/dfr-native-single-file.test.mjs
+          node tests/dfr-native-single-file.test.mjs
+
       - name: Create Android project
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p app/src/main/assets/dfr-native app/src/main/java/com/darkfantasyrpg/app app/src/main/res/values app/src/main/res/drawable app/src/main/res/mipmap-anydpi-v26 app/src/main/res/mipmap-mdpi
+
+          mkdir -p \
+            app/src/main/assets \
+            app/src/main/java/com/darkfantasyrpg/app \
+            app/src/main/res/values \
+            app/src/main/res/drawable \
+            app/src/main/res/mipmap-anydpi-v26 \
+            app/src/main/res/mipmap-mdpi
+
           cp index.html app/src/main/assets/index.html
-          cp dfr-native/*.js app/src/main/assets/dfr-native/
           cp manifest.webmanifest app/src/main/assets/manifest.webmanifest
           cp sw.js app/src/main/assets/sw.js
           cp icon-512.png app/src/main/res/drawable/icon_foreground.png
           cp icon-512.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+
           cat > gradle.properties <<'PROPS'
           org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
           android.useAndroidX=true
           android.nonTransitiveRClass=true
           PROPS
+
           cat > settings.gradle <<'SETTINGS'
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
           rootProject.name = 'DarkFantasyRPG'
           include(':app')
           SETTINGS
+
           cat > build.gradle <<'BUILD'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
               id 'org.jetbrains.kotlin.android' version '2.4.10' apply false
           }
           BUILD
+
           cat > app/build.gradle <<'APP'
-          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+
           android {
               namespace 'com.darkfantasyrpg.app'
               compileSdk 35
-              defaultConfig { applicationId 'com.darkfantasyrpg.app'; minSdk 24; targetSdk 35; versionCode 100; versionName '6.0.0-dfr-native-core' }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-              kotlinOptions { jvmTarget = '17' }
+
+              defaultConfig {
+                  applicationId 'com.darkfantasyrpg.app'
+                  minSdk 24
+                  targetSdk 35
+                  versionCode 100
+                  versionName '6.0.0-dfr-native-single-file'
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
           }
-          dependencies { implementation('androidx.webkit:webkit:1.13.0') }
+
+          dependencies {
+              implementation('androidx.webkit:webkit:1.13.0')
+          }
           APP
+
           cat > app/src/main/AndroidManifest.xml <<'MANIFEST'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <application android:allowBackup="true" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:label="Dark Fantasy RPG" android:usesCleartextTraffic="false" android:theme="@style/AppTheme">
-              <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
-                <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+            <application
+                android:allowBackup="true"
+                android:hardwareAccelerated="true"
+                android:icon="@mipmap/ic_launcher"
+                android:roundIcon="@mipmap/ic_launcher"
+                android:label="Dark Fantasy RPG"
+                android:usesCleartextTraffic="false"
+                android:theme="@style/AppTheme">
+
+              <activity
+                  android:name=".MainActivity"
+                  android:exported="true"
+                  android:screenOrientation="portrait">
+
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN" />
+                  <category android:name="android.intent.category.LAUNCHER" />
+                </intent-filter>
               </activity>
             </application>
           </manifest>
           MANIFEST
+
           cat > app/src/main/res/values/styles.xml <<'STYLE'
-          <resources><style name="AppTheme" parent="android:style/Theme.Material.NoActionBar"><item name="android:windowFullscreen">true</item><item name="android:colorAccent">#9b7cff</item><item name="android:navigationBarColor">#080b12</item><item name="android:statusBarColor">#080b12</item></style></resources>
+          <resources>
+            <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+              <item name="android:windowFullscreen">true</item>
+              <item name="android:colorAccent">#9b7cff</item>
+              <item name="android:navigationBarColor">#080b12</item>
+              <item name="android:statusBarColor">#080b12</item>
+            </style>
+          </resources>
           STYLE
+
           cat > app/src/main/res/values/icon_colors.xml <<'COLORS'
-          <resources><color name="icon_background">#080b12</color></resources>
+          <resources>
+            <color name="icon_background">#080b12</color>
+          </resources>
           COLORS
+
           cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'ICON'
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/icon_background"/><foreground android:drawable="@drawable/icon_foreground"/></adaptive-icon>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="@color/icon_background" />
+            <foreground android:drawable="@drawable/icon_foreground" />
+          </adaptive-icon>
           ICON
-          cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
+          cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
+             app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
           cat > app/src/main/java/com/darkfantasyrpg/app/MainActivity.kt <<'KOTLIN'
           package com.darkfantasyrpg.app
+
           import android.app.Activity
           import android.os.Bundle
           import android.view.View
+          import android.webkit.ValueCallback
           import android.webkit.WebChromeClient
           import android.webkit.WebView
           import android.webkit.WebViewClient
-          import android.webkit.ValueCallback
           import android.net.Uri
           import android.content.Intent
+
           class MainActivity : Activity() {
-            private lateinit var webView: WebView
-            private var filePathCallback: ValueCallback<Array<Uri>>? = null
-            override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); hideBars(); webView=WebView(this); webView.settings.apply { javaScriptEnabled=true; domStorageEnabled=true; databaseEnabled=true; allowFileAccess=true; allowContentAccess=true }; webView.webViewClient=WebViewClient(); webView.webChromeClient=object:WebChromeClient(){ override fun onShowFileChooser(view:WebView?, callback:ValueCallback<Array<Uri>>?, params:FileChooserParams?):Boolean { filePathCallback?.onReceiveValue(null); filePathCallback=callback; return try { startActivityForResult(Intent.createChooser(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{addCategory(Intent.CATEGORY_OPENABLE);type="application/json"},"Choose RPG file"),4201); true } catch(_:Exception){filePathCallback=null;false} } }; webView.loadUrl("file:///android_asset/index.html"); setContentView(webView) }
-            @Deprecated("Deprecated in Android API") override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){ super.onActivityResult(requestCode,resultCode,data); if(requestCode==4201){filePathCallback?.onReceiveValue(if(resultCode==RESULT_OK&&data?.data!=null) arrayOf(data.data!!) else null);filePathCallback=null} }
-            override fun onWindowFocusChanged(hasFocus:Boolean){super.onWindowFocusChanged(hasFocus);if(hasFocus)hideBars()}
-            private fun hideBars(){window.decorView.systemUiVisibility=View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN}
+              private lateinit var webView: WebView
+              private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  hideBars()
+
+                  webView = WebView(this)
+
+                  webView.settings.apply {
+                      javaScriptEnabled = true
+                      domStorageEnabled = true
+                      databaseEnabled = true
+                      allowFileAccess = true
+                      allowContentAccess = true
+                  }
+
+                  webView.webViewClient = WebViewClient()
+
+                  webView.webChromeClient = object : WebChromeClient() {
+                      override fun onShowFileChooser(
+                          view: WebView?,
+                          callback: ValueCallback<Array<Uri>>?,
+                          params: FileChooserParams?
+                      ): Boolean {
+                          filePathCallback?.onReceiveValue(null)
+                          filePathCallback = callback
+
+                          return try {
+                              val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                  addCategory(Intent.CATEGORY_OPENABLE)
+                                  type = "application/json"
+                              }
+                              startActivityForResult(
+                                  Intent.createChooser(intent, "Choose RPG file"),
+                                  4201
+                              )
+                              true
+                          } catch (_: Exception) {
+                              filePathCallback = null
+                              false
+                          }
+                      }
+                  }
+
+                  webView.loadUrl("file:///android_asset/index.html")
+                  setContentView(webView)
+              }
+
+              @Deprecated("Deprecated in Android API")
+              override fun onActivityResult(
+                  requestCode: Int,
+                  resultCode: Int,
+                  data: Intent?
+              ) {
+                  super.onActivityResult(requestCode, resultCode, data)
+
+                  if (requestCode == 4201) {
+                      filePathCallback?.onReceiveValue(
+                          if (resultCode == RESULT_OK && data?.data != null) {
+                              arrayOf(data.data!!)
+                          } else {
+                              null
+                          }
+                      )
+                      filePathCallback = null
+                  }
+              }
+
+              override fun onWindowFocusChanged(hasFocus: Boolean) {
+                  super.onWindowFocusChanged(hasFocus)
+                  if (hasFocus) hideBars()
+              }
+
+              private fun hideBars() {
+                  window.decorView.systemUiVisibility =
+                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                      View.SYSTEM_UI_FLAG_FULLSCREEN or
+                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                      View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                      View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                      View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              }
           }
           KOTLIN
+
       - name: Build APK
         run: gradle assembleDebug --stacktrace
-      - name: Verify packaged Native engine
+
+      - name: Verify packaged DFR Native engine
         shell: bash
         run: |
           set -euo pipefail
+
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -f "$APK"
-          unzip -l "$APK" | grep -q 'assets/dfr-native/engine.js'
-          unzip -l "$APK" | grep -q 'assets/dfr-native/state.js'
+
+          unzip -l "$APK" | grep -q 'assets/index.html'
+          ! unzip -l "$APK" | grep -q 'assets/dfr-native/'
           unzip -p "$APK" assets/index.html > /tmp/index.html
-          grep -q 'DFR Native Core 1.0.0' /tmp/index.html
-          grep -q 'dfr-native/engine.js' /tmp/index.html
-          echo 'Packaged DFR Native Core verified.'
+
+          grep -q 'v6.0.0-dfr-native-single-file' /tmp/index.html
+          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.5.0-relationship-continuity'" /tmp/index.html
+          grep -q 'function dfrNativeGenerate' /tmp/index.html
+          grep -q 'function callStoryAI' /tmp/index.html
+
+          if grep -Eiq 'litertlm|gemma-4|AndroidLocalAI|LiteRT' /tmp/index.html; then
+            echo 'Legacy external AI dependency marker found in packaged app.'
+            exit 1
+          fi
+
+          echo 'Packaged DFR Native single-file engine verified.'
           ls -lh "$APK"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v6.0.0-dfr-native-core
+          name: Dark-Fantasy-RPG-v6.0.0-dfr-native-single-file
           path: app/build/outputs/apk/debug/app-debug.apk
