@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v6.0.0-dfr-native-single-file</div>
+<div class="version-badge">v6.1.0-dfr-native-study-opening</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -2211,7 +2211,7 @@ async function commitAIStateTransaction(action,entries,isNative=false,nativeResu
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='0.5.0-relationship-continuity';
+const DFR_NATIVE_LANGUAGE_VERSION='0.6.0-study-opening';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2512,8 +2512,40 @@ function dfrResponse(person,rel,intent,action,seed){
   const pick=(arr,s)=>dfrChooseNovel(arr,s,{target:person?.name,intent,kind:'dialogue'});
   const q=dfrQuoted(action)||dfrActionText(action), style=dfrStyle(person), topic=dfrQuestionTopic(q), aff=Number(rel?.affection??person?.affection??20), trust=Number(rel?.trust??person?.trust??20), guarded=trust<35||style==='guarded';
   const name=dfrFirstName(person);
+  if(intent==='neutral'){
+    const lowerQ=String(q||'').toLowerCase();
+    if(name==='Gerald' && /\b(?:mansion|estate|house|home)\b/.test(lowerQ)){
+      return pick([
+        'Yes. It is my home, Shane. That much is obvious. The reason I asked you here is what matters.',
+        'Yes, this is my mansion. But that is not really the point of the conversation.',
+        'It is. Though I did not bring you here simply to point out that it belongs to me.'
+      ],seed);
+    }
+    if(/\b(?:i see|alright|okay|fine|understood|that makes sense)\b/.test(lowerQ)){
+      return pick([
+        'I understand.',
+        'Alright. I hear you.',
+        'Understood. Go on.'
+      ],seed);
+    }
+    if(/\b(?:you are|you’re|youre)\b/.test(lowerQ)){
+      return pick([
+        'I understand your point.',
+        'I see what you are getting at.',
+        'Fair enough. I understand.'
+      ],seed);
+    }
+    return pick([
+      'I understand.',
+      'Alright. I hear you.',
+      'I see.',
+      'Go on.',
+      'Understood.'
+    ],seed);
+  }
   if(intent==='question'){
-    const remembered=dfrMemoryMatch(person,q);
+    const explicitMemoryRequest=/\b(?:remember|recall|do you remember|what did i say|what happened before|earlier|last time)\b/i.test(q);
+    const remembered=explicitMemoryRequest?dfrMemoryMatch(person,q):null;
     if(remembered){
       const safeMemory=dfrText(remembered,220).replace(/[“”]/g,'').replace(/[.?!]+$/,'');
       return pick(style==='warm'?[`I remember. You told me ${safeMemory}.`,`Yes, I remember you telling me ${safeMemory}.`]:style==='playful'?[`I remember that. You told me ${safeMemory}.`]:style==='measured'?[`Yes. You told me ${safeMemory}.`]:[`I remember you mentioning ${safeMemory}.`,`Yes, I remember that.`],seed);
@@ -2617,7 +2649,7 @@ function dfrRequestedTravelLocation(action){
   const patterns=[
     /\b(?:we|everyone|all of us)\s+(?:leave|head|go|travel|drive|walk)\s+(?:to|for)\s+(.+?)(?:[.!?]|$)/i,
     /\b(?:go|head|travel|drive|walk)\s+to\s+(.+?)(?:[.!?]|$)/i,
-    /\b(?:at|outside)\s+(.+?)(?:[.!?]|$)/i
+    /\boutside\s+(?:the\s+)?(.+?)(?:[.!?]|$)/i
   ];
   for(const re of patterns){
     const m=a.match(re); if(!m)continue;
@@ -2673,9 +2705,13 @@ function dfrGroupAcknowledgement(person,seed,selected=false){
 }
 function dfrGroupEntryResponse(action,seed){
   if(!dfrActionMentionsAllGirls(action))return null;
+  const c0=dfrConversationState();
+  if(['family_introduction','elizabeth_entered','elizabeth_apology','elizabeth_conversation','arrangement_ready','arrangement_explained'].includes(String(c0.stage||'')))return null;
   const a=dfrActionText(action).toLowerCase();
   const location=/\b(?:study|drawing room|library|lounge|sitting room)\b/.test(a)?'Morningstar Estate — Study':'Morningstar Estate — Study';
-  dfrSetSceneOnly(DFR_MORNINGSTAR_GROUP,location);
+  const openingGroup=['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Freya Morningstar'];
+  dfrSetSceneOnly(openingGroup,location);
+  setCharacterLocation('Elizabeth Vale','Morningstar Estate — elsewhere in the house','working elsewhere',false);
   const c=dfrConversationState();
   c.stage='family_introduction'; c.topic='family_introduction'; state.currentScenePhase='family_introduction';
   if(!state.worldState.events.some(e=>String(e?.id||'')==='morningstar-family-gathered'))state.worldState.events.push({id:'morningstar-family-gathered',status:'completed',at:Date.now(),description:'Shane entered the study with Gerald and the Morningstar family gathered there.'});
@@ -2773,7 +2809,7 @@ function dfrAdvanceScenarioForAction(action,target){
     if(!state.worldState.events.some(e=>String(e?.id||'')==='gerald-moved-inside'))state.worldState.events.push({id:'gerald-moved-inside',status:'completed',at:Date.now(),description:'Gerald brought Shane inside to the study for their private conversation.'});
     return 'gerald_private_conversation';
   }
-  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(why did you call|why.*invite|what is this about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
+  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(why did you call|why.*invite|what is this (?:all )?about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
     c.topic='invitation_reason'; c.stage='reason_for_invitation'; return c.stage;
   }
   if((name==='Gerald'||name==='Gerald Morningstar') && /\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a)){
@@ -2786,7 +2822,7 @@ function dfrInferConsistencyTopic(action,target){
   const a=dfrActionText(action).toLowerCase();
   const c=dfrConversationState();
   if(target&&dfrFirstName(target).toLowerCase()==='gerald'){
-    if(/\b(why did you call|why.*invite|why.*ask.*come|what is this about|what do we need to discuss|reason.*call)\b/.test(a))return 'invitation_reason';
+    if(/\b(why did you call|why.*invite|why.*ask.*come|why am i here|why are you asking me here|what is this (?:all )?about|what do we need to discuss|what did you want to discuss|reason.*call|something (?:we|you) (?:need|needed|want|wanted) to (?:talk|discuss)|something to (?:talk|discuss)|something (?:important|specific) to discuss|tell me why you called me|tell me why he called me|why he called me|why you called me)\b/.test(a))return 'invitation_reason';
     if(/\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a))return 'finch_request';
   }
   if(/\b(remember|recall|last time|before|earlier|you told me|you said)\b/.test(a))return 'memory_recall';
@@ -2808,8 +2844,9 @@ function dfrRelevantContinuity(action,target){
 function dfrConsistentGeraldResponse(action,topic,stage,seed){
   const a=dfrActionText(action).toLowerCase();
   const c=dfrConversationState();
+  const asking=/\?|\b(?:why|what|where|when|how|who|can you|could you|did you|do you|are you|is it|would you)\b/.test(a);
   const beat=(physical,dialogue)=>({physical,dialogue});
-  if(/\b(follow|followed|follow him|lead on|come in|go inside|inside|let's go)\b/.test(a)){
+  if(/\b(follow|followed|follow him|lead on|come in|go inside|inside|walk inside|walked inside|walk into the house|walked into the house|let's go)\b/.test(a)){
     dfrSetRuntimeLocation('Morningstar Estate — Study');
     setCharacterLocation('Gerald Morningstar','Morningstar Estate — Study','speaking with Shane',true);
     c.stage='gerald_private_conversation';
@@ -2820,6 +2857,13 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
       beat('*Gerald gives a brief nod.*','Very well. Come with me.'),
       beat('*Gerald turns towards the house and starts walking, leaving the entrance behind.*','The study is quieter. Once we are inside, I will explain why I asked you to come.')
     ], topic:c.topic, stage:c.stage};
+  }
+  const familyOpeningActive=!!state.worldState?.events?.some(e=>String(e?.id||'')==='morningstar-family-introduction') && !isScenePresent('Elizabeth Vale');
+  if((familyOpeningActive || ['family_introduction','refreshments_pending'].includes(String(c.stage||stage||''))) && /\b(?:finch|arrangement|dying wish|what did he want|what did he ask)\b/.test(a)){
+    return {beats:[
+      beat('*Gerald gives a measured look towards the family before returning his attention to you.*','There is something important I asked you here to discuss, Shane, and we will get to it. But first, I wanted you to meet my daughters properly.'),
+      beat('*Gerald settles back in his chair, clearly choosing not to rush the conversation.*','You have only just walked through the door. Let us not skip straight to the difficult part.')
+    ],topic:'family_introduction',stage:c.stage||'family_introduction'};
   }
   if((topic==='invitation_reason'||stage==='reason_for_invitation') && /\b(?:you told me|you asked me|you said|something to discuss|something to talk about|best suit|come over|come here|called me here)\b/.test(a)){
     const answers=[
@@ -2849,7 +2893,42 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
       beat('*Gerald holds your gaze, his expression becoming more serious.*','There is more to what Finch asked of me, and I think you deserve to hear it properly.')
     ],topic:c.topic,stage:c.stage};
   }
-  if(topic==='finch_request'||stage==='finch_request'){
+  if((topic==='arrangement_ready'||stage==='arrangement_ready') && /\b(?:finch|dying wish|promise|what did he want|what did finch ask|what did he say|what did he want me to know)\b/.test(a)){
+    const answers=[
+      'Finch asked me to make sure you were not left alone after his death. He wanted you to have the chance to know this family properly, and to decide for yourself whether you wanted a place in our lives.',
+      'He wanted me to honour the promise we made while he was alive. He wanted you brought here, introduced to my daughters, and given a genuine choice about what comes next.',
+      'Finch wanted you to have a future that was yours to choose. He asked me to open the door to this family, not to push you through it.'
+    ];
+    const text=dfrChooseNovel(answers,seed,{target:'Gerald Morningstar',intent:'question',kind:'dialogue'});
+    dfrRecordFact('Gerald explained that Finch wanted Shane to be welcomed into the Morningstar family and given a genuine choice about what came next.','Gerald','Gerald');
+    c.stage='arrangement_explained'; c.topic='arrangement_explained';
+    c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_arrangement');
+    c.unresolved=[...c.unresolved,'player_reaction_to_finch_arrangement'];
+    return {beats:[
+      beat('*Gerald pauses, his expression becoming more solemn as he finally explains the promise he made to Finch.*',text),
+      beat('*He gives Shane a measured look, leaving the decision deliberately open.*','That was Finch’s wish. What you do with it is entirely your choice.')
+    ],topic:c.topic,stage:c.stage};
+  }
+  if((topic==='arrangement_explained'||stage==='arrangement_explained') && /\b(?:what happens now|what next|what happens after this|where do we go from here|what do i do now)\b/.test(a)){
+    c.stage='family_open_freeplay';
+    c.topic='family_open_freeplay';
+    c.unresolved=(c.unresolved||[]).filter(x=>x!=='player_reaction_to_finch_arrangement' && x!=='player_reaction_to_finch_request');
+    return {beats:[
+      beat('*Gerald glances around the room at his daughters, then back to Shane.*','Now? Now you have met the people Finch wanted you to meet. The rest is not something I can decide for you.'),
+      beat('*Gerald gives a small, deliberate nod.*','Spend some time here. Talk to them. See what you think of each other. If something grows from that, it should happen because you all chose it—not because Finch or I demanded it.')
+    ],topic:c.topic,stage:c.stage};
+  }
+  if((topic==='finch_request'||stage==='finch_request') && asking && !/\b(?:finch|dying wish|promise|what did he|what was his|asked you to)\b/.test(a)){
+    c.stage='arrangement_explained';
+    c.topic='arrangement_explained';
+    c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_request');
+    c.unresolved=[...c.unresolved,'player_reaction_to_finch_request'];
+    return {beats:[
+      beat('*Gerald lets the question settle for a moment before answering.*','Now? Now I want you to meet my daughters properly. After that, what happens is your choice.'),
+      beat('*Gerald gives a measured nod towards the house.*','Nobody is going to force a place on you. I only want you to have the opportunity Finch wanted you to have.')
+    ],topic:c.topic,stage:c.stage};
+  }
+  if((topic==='finch_request'||stage==='finch_request') && asking){
     const answers=[
       'Finch asked me to look after you, but there was more to his request than that. He wanted you to have a future here, if you chose it.',
       'It was Finch’s dying wish. He wanted me to make sure you were not left alone, and he wanted you to get to know my daughters properly.',
@@ -2858,9 +2937,12 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
     const text=dfrChooseNovel(answers,seed,{target:'Gerald Morningstar',intent:'question',kind:'dialogue'});
     dfrRecordFact('Gerald revealed that Finch wanted Shane to have a future with the Morningstar family and to get to know Gerald’s daughters, with no one being forced.','Gerald','Gerald');
     c.stage='arrangement_explained'; c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_request'); c.unresolved=[...c.unresolved,'player_reaction_to_finch_request'];
+    const closingOptions=['He entrusted that decision to you, Shane. I will respect whatever you choose.','Finch left the decision with you, Shane. I will not make it for you.','He wanted you to have the choice, Shane. That choice remains yours.'];
+    if(!c.threads||typeof c.threads!=='object')c.threads={}; const closingCount=Number(c.threads.finchClosingCount||0); c.threads.finchClosingCount=closingCount+1;
+    const closing=closingOptions[closingCount%closingOptions.length];
     return {beats:[
       beat('*Gerald pauses, giving the words time to settle.*',text),
-      beat('*His expression remains composed, but there is a trace of sadness when he mentions Finch.*','That was his request. What you decide to do with it is entirely your choice.')
+      beat('*His expression remains composed, but there is a trace of sadness when he mentions Finch.*',closing)
     ],topic:c.topic,stage:c.stage};
   }
   return null;
@@ -2903,14 +2985,163 @@ function dfrConsistencyResponse(person,rel,intent,action,seed){
     return {dialogue,beats,topic:c2.topic,stage:c2.stage};
   }
   const relevant=dfrRelevantContinuity(action,person);
-  if(topic==='memory_recall'&&relevant.memories.length){
+  const explicitMemoryRequest=/\b(?:remember|recall|do you remember|what did i say|what happened before|earlier|last time)\b/i.test(String(action||''));
+  if(topic==='memory_recall'&&explicitMemoryRequest&&relevant.memories.length){
     const m=dfrText(relevant.memories[relevant.memories.length-1],220);
     return {dialogue:`I remember that. ${m}`,topic,stage:c.stage||'memory_recall'};
   }
   return {dialogue:'',topic,stage:c.stage||stage||topic};
 }
 
+
+function dfrMorningstarArrivalResponse(action,seed){
+  const a=dfrActionText(action).toLowerCase();
+  const c=dfrConversationState();
+  const follow=/\b(?:follow|followed|follow him|fall into step|fell into step|come with him|go inside|go in|come inside|inside with him|walk in with him|walk inside|walked inside|walk into the house|walked into the house)\b/.test(a);
+  if(!follow)return null;
+
+  const currentStage=String(c.stage||'');
+  if(['family_introduction','refreshments_pending','elizabeth_entered','elizabeth_apology','elizabeth_conversation','arrangement_ready','arrangement_explained'].includes(currentStage))return null;
+
+  const daughters=[
+    'Luci Morningstar','Mana Morningstar','Bell Morningstar',
+    'Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'
+  ];
+  const present=['Gerald Morningstar',...daughters];
+  dfrSetSceneOnly(present,'Gerald\'s Study');
+  setCharacterLocation('Elizabeth Vale','Morningstar Estate — elsewhere in the house','working elsewhere',false);
+
+  const entries=[];
+  entries.push({
+    type:'character',speaker:'Gerald Morningstar',
+    text:normaliseAIText(
+      '*Gerald opens the study door and steps inside, gesturing for you to follow. The room is already occupied. His seven daughters are waiting for him.*\n\n“Come in, Shane. I would like you to meet my daughters properly.”',
+      'character'
+    )
+  });
+
+  const introductions={
+    'Luci Morningstar':'Luci, my eldest.',
+    'Mana Morningstar':'Mana.',
+    'Bell Morningstar':'Bell.',
+    'Rosaline Morningstar':'Rosaline.',
+    'Evie Morningstar':'Evie.',
+    'Ira Morningstar':'Ira.',
+    'Freya Morningstar':'Freya, my youngest.'
+  };
+  for(const name of daughters){
+    const p=dfrPerson(name); if(!p)continue;
+    const b=dfrGroupAcknowledgement(p,seed+'|daughter|'+p.name,true);
+    entries.push({type:'character',speaker:p.name,text:normaliseAIText(`*Gerald gestures towards ${dfrFirstName(p)}.* “${introductions[p.name]||dfrFirstName(p)+'.'}”\n\n${b.physical}\n\n“${b.dialogue}”`,'character')});
+    dfrRememberNative(p.name,'family_introduction',b.dialogue,b.physical);
+    dfrApplyPhysicalState(p.name,dfrPhysicalCategory(b.physical),b.physical);
+  }
+
+  entries.push({
+    type:'character',speaker:'Gerald Morningstar',
+    text:normaliseAIText('*Gerald moves behind his desk and settles into his chair.*\n\n“Before we get into why I asked you here, Shane, would you prefer tea or coffee?”','character')
+  });
+
+  c.stage='family_introduction';
+  c.topic='family_introduction';
+  c.unresolved=[...new Set([...(c.unresolved||[]),'meet_morningstar_daughters','elizabeth_reaction'])];
+  state.currentScenePhase='family_introduction';
+  if(!state.worldState.events.some(e=>String(e?.id||'')==='morningstar-family-introduction')){
+    state.worldState.events.push({id:'morningstar-family-introduction',status:'completed',at:Date.now(),description:'Shane followed Gerald into Gerald\'s study and met all seven Morningstar daughters for the first time. Elizabeth was elsewhere in the house.'});
+  }
+  dfrRememberConversation('Morningstar family',action,entries.map(e=>e.text).join(' '),'family_introduction','family_introduction');
+  dfrRecordFact('Shane entered Gerald\'s study and met all seven Morningstar daughters. Elizabeth remains elsewhere in the house and has not been mentioned to Shane.','scene','Morningstar family');
+  return {entries,topic:c.topic,stage:c.stage};
+}
+
+function dfrRefreshmentResponse(action,seed){
+  const a=dfrActionText(action).toLowerCase();
+  const c=dfrConversationState();
+  if(!['family_introduction','refreshments_pending'].includes(String(c.stage||'')))return null;
+  const preference=/\b(?:tea|coffee|both|either|neither|no thanks|water)\b/.test(a);
+  const wait=/\b(?:wait|sit down|take a seat|settle|look around|remain quiet|say nothing|stay quiet)\b/.test(a);
+  if(!preference && !wait)return null;
+  if(preference && c.stage==='family_introduction'){
+    let drink='tea';
+    if(/\bcoffee\b/.test(a))drink='coffee';
+    else if(/\bwater\b/.test(a))drink='water';
+    else if(/\bno thanks|neither\b/.test(a))drink='nothing';
+    dfrSetSceneOnly(['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'],'Gerald\'s Study');
+    c.stage='refreshments_pending'; c.topic='refreshments'; state.currentScenePhase='refreshments_pending';
+    if(!state.worldState.events.some(e=>String(e?.id||'')==='morningstar-refreshments-requested'))state.worldState.events.push({id:'morningstar-refreshments-requested',status:'completed',at:Date.now(),description:`Gerald requested ${drink} for the study.`});
+    const drinkText=drink==='nothing'?'nothing for you':'some '+drink;
+    return {entries:[
+      {type:'character',speaker:'Gerald Morningstar',text:normaliseAIText(`*Gerald nods and reaches for the small intercom built into the desk.*\n\n“${drink==='nothing'?'No drink for Shane, thank you.':'Could we have '+drink+' brought up to the study, please?'}”`,'character')},
+      {type:'gm',text:normaliseAIText(`*A brief crackle comes through the intercom, followed by an acknowledgement from somewhere elsewhere in the house. ${drink==='nothing'?'Gerald releases the button.':'The request is accepted and the intercom clicks off.'}*`,'gm')},
+      {type:'character',speaker:'Gerald Morningstar',text:normaliseAIText(`*Gerald folds his hands on the desk.*\n\n“Very good. We can talk while we wait.”`,'character')}
+    ],topic:c.topic,stage:c.stage};
+  }
+  if(c.stage==='refreshments_pending' && wait){
+    const daughters=['Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
+    const present=['Gerald Morningstar',...daughters];
+    dfrSetSceneOnly(present,'Gerald\'s Study');
+    setCharacterLocation('Elizabeth Vale','Morningstar Estate — Gerald\'s Study','arriving with refreshments',true);
+    c.stage='elizabeth_entered'; c.topic='elizabeth_reveal'; state.currentScenePhase='elizabeth_entered';
+    const physical='*The door opens and Elizabeth steps inside carrying the tray. She takes one step into the room, looks up—and stops dead in her tracks when she sees you.*';
+    const dialogue='...Shane?';
+    const entries=[
+      {type:'gm',text:'*For a moment, the ordinary conversation is interrupted by a knock at the door.*'},
+      {type:'character',speaker:'Elizabeth Vale',text:normaliseAIText(`${physical}\n\n“${dialogue}”`,'character')}
+    ];
+    dfrRememberNative('Elizabeth Vale','elizabeth_reveal',dialogue,physical);
+    dfrApplyPhysicalState('Elizabeth Vale','tense',physical);
+    dfrRecordFact('Elizabeth entered Gerald\'s study carrying refreshments and unexpectedly saw Shane; neither had expected to encounter the other here.','scene','Elizabeth Vale');
+    dfrRememberConversation('Elizabeth Vale',action,dialogue,'elizabeth_reveal','elizabeth_entered');
+    return {entries,topic:c.topic,stage:c.stage};
+  }
+  return null;
+}
+
+function dfrReturnFromElizabethResponse(action,seed){
+  const a=dfrActionText(action).toLowerCase();
+  const c=dfrConversationState();
+  const returning=/\b(?:return|returns|returned|rejoin|rejoins|rejoined|go back|goes back|went back|back to the (?:room|family|group)|join (?:the|everyone|them) again)\b/.test(a);
+  const elStage=/^elizabeth_(?:entered|apology|conversation|private)$/.test(String(c.stage||''));
+  if(!returning || !elStage)return null;
+
+  const present=[
+    'Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar',
+    'Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar','Elizabeth Vale'
+  ];
+  dfrSetSceneOnly(present,'Morningstar Estate — Family Room');
+  const el=dfrPerson('Elizabeth Vale');
+  const entries=[];
+  entries.push({
+    type:'character',
+    speaker:'Gerald Morningstar',
+    text:normaliseAIText(
+      '*Gerald looks up as you rejoin the family. His expression becomes more serious, as though he has been waiting for this moment.*\n\n“Welcome back, Shane. There is something Finch asked me to discuss with you.”',
+      'character'
+    )
+  });
+  if(el){
+    entries.push({
+      type:'character',
+      speaker:'Elizabeth Vale',
+      text:normaliseAIText(
+        '*Elizabeth remains nearby, quieter now after your conversation, giving you space while staying close enough to hear.*',
+        'character'
+      )
+    });
+  }
+
+  c.stage='arrangement_ready';
+  c.topic='arrangement_ready';
+  c.unresolved=[...new Set([...(c.unresolved||[]),'finch_arrangement'])];
+  state.currentScenePhase='arrangement_ready';
+  dfrRememberConversation('Gerald Morningstar',action,entries.map(e=>e.text).join(' '),'arrangement_ready','arrangement_ready');
+  return {entries,topic:c.topic,stage:c.stage};
+}
+
 function dfrSpecialSceneResponse(action,seed){
+  const returning=dfrReturnFromElizabethResponse(action,seed); if(returning)return returning;
+  const refreshments=dfrRefreshmentResponse(action,seed); if(refreshments)return refreshments;
+  const arrival=dfrMorningstarArrivalResponse(action,seed); if(arrival)return arrival;
   const group=dfrGroupEntryResponse(action,seed); if(group)return group;
   const privateRoom=dfrPrivateRoomResponse(action,seed); if(privateRoom)return privateRoom;
   const home=dfrHomeArrivalResponse(action,seed); if(home)return home;
@@ -2975,10 +3206,23 @@ function dfrNativeGenerate(action){
   let physical=dfrActionForEmotion(target,emotion,seed+'a',intent);
   let dialogue=dfrResponse(target,rel,intent,action,seed+'b');
   const recent=dfrRecentText();
-  const pairUsed=(p,d)=>dfrNativeHistory().slice(-80).some(row=>row.target===target.name&&row.intent===intent&&row.physical===dfrFingerprint(p)&&row.dialogue===dfrFingerprint(d));
-  for(let attempt=0;attempt<24&&pairUsed(physical,dialogue);attempt++){
+  const nativeHistory=dfrNativeHistory();
+  const pairUsed=(p,d)=>nativeHistory.slice(-80).some(row=>row.target===target.name&&row.intent===intent&&row.physical===dfrFingerprint(p)&&row.dialogue===dfrFingerprint(d));
+  const dialogueUsedTooOften=d=>nativeHistory.filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(d)).length>=2;
+  for(let attempt=0;attempt<36&&(pairUsed(physical,dialogue)||dialogueUsedTooOften(dialogue));attempt++){
     physical=dfrActionForEmotion(target,emotion,seed+'p'+attempt,intent);
     dialogue=dfrResponse(target,rel,intent,action,seed+'q'+attempt);
+  }
+  if(dialogueUsedTooOften(dialogue)){
+    const fallbackByIntent={
+      question:['I want to answer that properly.','That deserves a proper answer.','Let me think about that for a moment.','I can answer that, but I want to be precise.'],
+      concern:['I hear you.','I understand why you are asking.','That is worth taking seriously.'],
+      statement:['I see what you mean.','That gives me something to think about.','Fair enough.'],
+      greeting:['It is good to have you here.','Welcome.','Good to see you.'],
+      farewell:['Take care.','I understand. We can leave it there for now.','Very well.']
+    };
+    const pool=(fallbackByIntent[intent]||fallbackByIntent.statement).filter(x=>nativeHistory.filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(x)).length<2);
+    if(pool.length)dialogue=dfrChooseNovel(pool,seed+'|fresh-fallback',{target:target.name,intent,kind:'dialogue'});
   }
   if(recent.includes(dfrFingerprint(dialogue))){
     dialogue=dfrResponse(target,rel,intent,action,seed+'c');
@@ -3013,8 +3257,12 @@ function dfrNativeGenerate(action){
       question:['If there is something specific you want to know, ask me.','There is more to it, but I would rather answer you properly than make assumptions.'],
       concern:['You can tell me what is actually troubling you.','Take your time. I am listening.']
     };
-    const follow=dfrChooseNovel(followPool[intent],seed+'|follow',{target:target.name,intent:'followup',kind:'dialogue'});
-    if(follow && !dfrRecentText().includes(dfrFingerprint(follow)))genericEntries.push({type:'character',speaker:target.name,text:normaliseAIText(`*${dfrFirstName(target)} keeps their attention on you.*\n\n“${follow}”`,'character')});
+    const followCandidates=followPool[intent].filter(x=>dfrNativeHistory().filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(x)).length<2 && (state.story||[]).filter(row=>row.speaker===target.name&&dfrFingerprint(String(row.text||'')).includes(dfrFingerprint(x))).length<2);
+    const follow=followCandidates.length?dfrChooseNovel(followCandidates,seed+'|follow',{target:target.name,intent:'followup',kind:'dialogue'}):'';
+    if(follow && !dfrRecentText().includes(dfrFingerprint(follow))){
+      dfrRememberNative(target.name,'followup',follow,'');
+      genericEntries.push({type:'character',speaker:target.name,text:normaliseAIText(`*${dfrFirstName(target)} keeps their attention on you.*\n\n“${follow}”`,'character')});
+    }
   }
   const text=`${physical}\n\n“${dialogue}”`;
   return {action:String(action||'').trim(),entries:genericEntries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrInferConsistencyTopic(action,target),stage:state.dfrConversation?.stage||'free_conversation'}};
