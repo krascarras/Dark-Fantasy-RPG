@@ -1,4 +1,4 @@
-name: Build Dark Fantasy RPG - DFR Native Single File
+name: Build Dark Fantasy RPG - DFR World Brain
 
 on:
   workflow_dispatch:
@@ -28,106 +28,71 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Verify DFR Native single-file source
+      - name: Verify DFR World Brain single-file source
         shell: bash
         run: |
           set -euo pipefail
           test -f index.html
 
-          cat > /tmp/dfr-native-single-file.test.mjs <<'TEST'
+          cat > /tmp/dfr-world-brain.test.mjs <<'TEST'
           import fs from "node:fs";
           import os from "node:os";
           import path from "node:path";
           import { spawnSync } from "node:child_process";
 
           const indexPath = path.join(process.cwd(), "index.html");
-
-          function fail(message) {
-            console.error(`FAIL: ${message}`);
-            process.exit(1);
-          }
-
+          const fail = message => { console.error(`FAIL: ${message}`); process.exit(1); };
           if (!fs.existsSync(indexPath)) fail("index.html is missing.");
-
           const html = fs.readFileSync(indexPath, "utf8");
 
           const required = [
-            "DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence'",
-            "function dfrNativeGenerate",
+            "DFR World Brain",
+            "DFR World Brain, the narrative intelligence running inside a persistent RPG world",
             "function callStoryAI",
-            "function dfrConversationState",
-            "function dfrRememberConversation",
-            "function dfrRelevantContinuity",
-            "function dfrRecordFact",
-            "dfrNativeHistory",
-            "*",
-            "v6.2.0-dfr-native-study-opening-persistence",
-            "prefer tea or coffee",
+            "function buildRPGWorkingPrompt",
+            "function commitAIStateTransaction",
+            "function applyEngineSceneTransitions",
+            "function rpgReconcileRuntimeScene",
+            "function isScenePresent",
+            "DFR_REFRESH_VARIANT",
+            "Gerald's Study",
+            "Elizabeth Vale",
             "small intercom built into the desk",
-            "Elizabeth entered Gerald",
-            "if(!idbOk)",
+            "prefer tea or coffee",
+            "v7.0.0-dfr-world-brain",
+            "aiEndpoint",
+            "aiModel",
+            "DarkFantasyLocalAI",
+            "INTERNET",
+            "usesCleartextTraffic",
+            "*"
           ];
+          for (const marker of required) if (!html.includes(marker)) fail(`required World Brain marker missing: ${marker}`);
 
-          for (const marker of required) {
-            if (!html.includes(marker)) fail(`required Native marker missing: ${marker}`);
-          }
+          const forbiddenPrimaryPath = ["nativeEngine!==false"];
+          for (const marker of forbiddenPrimaryPath) if (html.includes(marker)) fail(`legacy Native primary-path marker still present: ${marker}`);
 
-          const forbidden = [
-            "litertlm",
-            "gemma-4",
-            "AndroidLocalAI",
-            "LiteRT",
-          ];
+          const forbiddenDependencies = ["litertlm", "gemma-4", "AndroidLocalAI", "LiteRT"];
+          for (const marker of forbiddenDependencies) if (html.toLowerCase().includes(marker.toLowerCase())) fail(`legacy external AI dependency marker found: ${marker}`);
 
-          for (const marker of forbidden) {
-            if (html.toLowerCase().includes(marker.toLowerCase())) {
-              fail(`legacy external AI dependency marker found: ${marker}`);
-            }
-          }
-
-          if (!html.includes("nativeEngine!==false")) {
-            fail("Native engine is not the primary call path.");
-          }
-
-          if (!html.includes("dfrNativeGenerate(action)")) {
-            fail("callStoryAI does not route to DFR Native.");
-          }
-
-          if (!/\*[^*\n]{1,200}\*/.test(html)) {
-            fail("no asterisk-delimited action text was found.");
-          }
-
+          if (!/\*[^*\n]{1,200}\*/.test(html)) fail("no asterisk-delimited action text was found.");
           const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
-          if (scripts.length === 0) fail("no JavaScript block found in index.html.");
-
+          if (!scripts.length) fail("no JavaScript block found in index.html.");
           const combined = scripts.map(m => m[1]).join("\n;\n");
-          const tempFile = path.join(os.tmpdir(), `dfr-native-${process.pid}.mjs`);
+          const tempFile = path.join(os.tmpdir(), `dfr-world-brain-${process.pid}.mjs`);
           fs.writeFileSync(tempFile, combined, "utf8");
-
-          const syntax = spawnSync(process.execPath, ["--check", tempFile], {
-            encoding: "utf8"
-          });
-
-          try {
-            if (syntax.status !== 0) {
-              console.error(syntax.stdout);
-              console.error(syntax.stderr);
-              fail("inline JavaScript syntax check failed.");
-            }
-          } finally {
-            try { fs.unlinkSync(tempFile); } catch {}
-          }
-
-          console.log("PASS: DFR Native v6.2.0 study-opening/persistence source checks");
-          console.log("PASS: Native engine markers present");
-          console.log("PASS: study/daughters/refreshments/Elizabeth opening markers present");
-          console.log("PASS: legacy external AI markers absent");
-          console.log("PASS: Native is the primary narrative path");
-          console.log("PASS: asterisk action formatting detected");
+          const syntax = spawnSync(process.execPath, ["--check", tempFile], {encoding:"utf8"});
+          try { if (syntax.status !== 0) { console.error(syntax.stdout); console.error(syntax.stderr); fail("inline JavaScript syntax check failed."); } } finally { try { fs.unlinkSync(tempFile); } catch {} }
+          console.log("PASS: DFR World Brain source checks");
+          console.log("PASS: World Brain is the primary narrative architecture");
+          console.log("PASS: opening scene transitions are engine-owned");
+          console.log("PASS: endpoint/model controls present");
+          console.log("PASS: Android local-AI bridge markers present");
+          console.log("PASS: legacy external AI dependency markers absent");
           console.log("PASS: inline JavaScript syntax valid");
           TEST
 
-          node /tmp/dfr-native-single-file.test.mjs
+          node /tmp/dfr-world-brain.test.mjs
 
       - name: Create Android project
         shell: bash
@@ -194,8 +159,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 102
-                  versionName '6.2.0-dfr-native-study-opening-persistence'
+                  versionCode 105
+                  versionName '7.1.0-dfr-world-brain'
               }
 
               compileOptions {
@@ -215,13 +180,14 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'MANIFEST'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET" />
             <application
                 android:allowBackup="true"
                 android:hardwareAccelerated="true"
                 android:icon="@mipmap/ic_launcher"
                 android:roundIcon="@mipmap/ic_launcher"
                 android:label="Dark Fantasy RPG"
-                android:usesCleartextTraffic="false"
+                android:usesCleartextTraffic="true"
                 android:theme="@style/AppTheme">
 
               <activity
@@ -275,12 +241,71 @@ jobs:
           import android.webkit.WebChromeClient
           import android.webkit.WebView
           import android.webkit.WebViewClient
+          import android.webkit.JavascriptInterface
           import android.net.Uri
           import android.content.Intent
+          import android.os.Handler
+          import android.os.Looper
+          import java.io.BufferedReader
+          import java.io.InputStreamReader
+          import java.io.OutputStreamWriter
+          import java.net.HttpURLConnection
+          import java.net.URL
+          import java.util.concurrent.Executors
+          import org.json.JSONObject
 
           class MainActivity : Activity() {
               private lateinit var webView: WebView
               private var filePathCallback: ValueCallback<Array<Uri>>? = null
+              private val aiExecutor = Executors.newCachedThreadPool()
+              private val mainHandler = Handler(Looper.getMainLooper())
+
+              inner class LocalAIBridge {
+                  @JavascriptInterface
+                  fun post(endpoint: String, payload: String, requestId: String) {
+                      aiExecutor.execute {
+                          var connection: HttpURLConnection? = null
+                          try {
+                              val url = URL(endpoint)
+                              connection = (url.openConnection() as HttpURLConnection).apply {
+                                  requestMethod = "POST"
+                                  connectTimeout = 10000
+                                  readTimeout = 120000
+                                  doOutput = true
+                                  setRequestProperty("Content-Type", "application/json")
+                                  setRequestProperty("Accept", "application/json")
+                              }
+
+                              OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use {
+                                  it.write(payload)
+                              }
+
+                              val code = connection.responseCode
+                              val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                              val body = BufferedReader(InputStreamReader(stream, Charsets.UTF_8)).use { it.readText() }
+
+                              if (code !in 200..299) {
+                                  postResult(requestId, false, "Local AI HTTP $code: $body")
+                              } else {
+                                  postResult(requestId, true, body)
+                              }
+                          } catch (e: Exception) {
+                              postResult(requestId, false, e.message ?: "Local AI request failed")
+                          } finally {
+                              connection?.disconnect()
+                          }
+                      }
+                  }
+
+                  private fun postResult(requestId: String, ok: Boolean, body: String) {
+                      val idJson = JSONObject.quote(requestId)
+                      val bodyJson = JSONObject.quote(body)
+                      val script = "window.onLocalAIResult($idJson, $bodyJson, ${if (ok) "true" else "false"});"
+                      mainHandler.post {
+                          if (::webView.isInitialized) webView.evaluateJavascript(script, null)
+                      }
+                  }
+              }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -297,6 +322,8 @@ jobs:
                   }
 
                   webView.webViewClient = WebViewClient()
+                  webView.settings.allowUniversalAccessFromFileURLs = true
+                  webView.addJavascriptInterface(LocalAIBridge(), "DarkFantasyLocalAI")
 
                   webView.webChromeClient = object : WebChromeClient() {
                       override fun onShowFileChooser(
@@ -379,7 +406,7 @@ jobs:
       - name: Build APK
         run: gradle assembleDebug --stacktrace
 
-      - name: Verify packaged DFR Native engine
+      - name: Verify packaged DFR World Brain engine
         shell: bash
         run: |
           set -euo pipefail
@@ -391,10 +418,15 @@ jobs:
           ! unzip -l "$APK" | grep -q 'assets/dfr-native/'
           unzip -p "$APK" assets/index.html > /tmp/index.html
 
-          grep -q 'v6.2.0-dfr-native-study-opening-persistence' /tmp/index.html
-          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence'" /tmp/index.html
-          grep -q 'function dfrNativeGenerate' /tmp/index.html
+          grep -q 'v7.1.0-dfr-world-brain' /tmp/index.html
+          grep -q 'function applyEngineSceneTransitions' /tmp/index.html
+          ! grep -q 'nativeEngine!==false' /tmp/index.html
+          ! grep -q 'dfrNativeGenerate(action)' /tmp/index.html
+          grep -q 'aiEndpoint' /tmp/index.html
+          grep -q 'aiModel' /tmp/index.html
           grep -q 'function callStoryAI' /tmp/index.html
+          grep -q 'DFR World Brain, the narrative intelligence running inside a persistent RPG world' /tmp/index.html
+          grep -q 'DFR_REFRESH_VARIANT' /tmp/index.html
           grep -q 'if(!idbOk)' /tmp/index.html
           grep -q 'IndexedDB save failed; using localStorage fallback' /tmp/index.html
           grep -q 'prefer tea or coffee' /tmp/index.html
@@ -412,5 +444,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v6.2.0-dfr-native-study-opening-persistence
+          name: Dark-Fantasy-RPG-v7.1.0-dfr-world-brain
           path: app/build/outputs/apk/debug/app-debug.apk
