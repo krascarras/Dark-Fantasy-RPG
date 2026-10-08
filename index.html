@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v6.2.0-dfr-native-study-opening-persistence</div>
+<div class="version-badge">v7.1.0-dfr-world-brain</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -106,10 +106,11 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPlayerPicker()">🎭 Change player character</button><span id="activePlayerLabel" class="small"></span></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
-      <h3>🧠 DFR Native Story AI</h3>
-      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the DFR Native language engine</label>
-      <p class="small">DFR Native is the built-in narrative engine for this RPG. It runs offline and is designed specifically around the game's characters, relationships, memories and scene rules. No model download is required.</p>
-      <p class="small" id="dfrNativeStatus">DFR Native v0.2.3 — built into the game; no external AI required.</p>
+      <h3>🧠 DFR World Brain</h3>
+      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local DFR World Brain model</label>
+      <p class="small">The World Brain is the narrative intelligence for this campaign. DFR owns canon, memory, relationships, world state and player control; the local language model generates the moment-to-moment story and NPC behaviour.</p>
+      <div class="row" style="margin-top:8px"><label style="flex:1">Local AI endpoint<input id="aiEndpoint" value="http://127.0.0.1:11434/api/chat" autocomplete="off"></label><label style="flex:1">Model<input id="aiModel" value="local-development-model" autocomplete="off"></label></div>
+      <p class="small" id="dfrNativeStatus">World Brain architecture v1 — local model required for generated narrative.</p>
       <div class="actions" style="margin-top:8px">
         <button class="btn" onclick="saveAISettings()">Save story settings</button>
         <button class="btn danger" onclick="clearAISettings()">Reset story settings</button>
@@ -120,9 +121,9 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
         </div>
         <div class="small" id="aiProgressText" style="margin-top:5px">0%</div>
       </div>
-      <p class="small" id="aiStatus">Local AI is off — the built-in story system will be used.</p>
+      <p class="small" id="aiStatus">Local AI is off — no generated narrative will be requested.</p>
     </div>
-    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The built-in story system remains available offline.</p>
+    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The engine still preserves and validates campaign state offline.</p>
     <input id="bgFile" type="file" accept="image/*" hidden onchange="setBackground(this.files[0])">
   </div>
   <div class="card"><h3>🎭 Scenarios, worlds & saves</h3>
@@ -217,25 +218,26 @@ function loadAISettings(){
     if(raw){
       const x=JSON.parse(raw);
       return {
-        enabled:!!x.enabled,
+        enabled:x.enabled!==false,
+        engine:'world-brain',
         endpoint:String(x.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT,
         model:String(x.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL
       };
     }
   }catch(e){}
-  return {enabled:true,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  return {enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
 }
 function saveAISettings(){
   const enabled=!!document.getElementById('aiEnabled')?.checked;
   const endpoint=String(document.getElementById('aiEndpoint')?.value||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT;
   const model=String(document.getElementById('aiModel')?.value||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  aiSettings={enabled,endpoint,model};
+  aiSettings={...aiSettings,enabled,engine:'world-brain',endpoint,model};
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   updateAIStatus();
   toast(enabled?'Local AI settings saved':'Local AI settings saved — local AI is off');
 }
 function clearAISettings(){
-  aiSettings={enabled:true,endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  aiSettings={enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
   aiLastError='';
   localStorage.removeItem(KEY+'_ai_error');
   localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
@@ -250,7 +252,7 @@ function updateAIStatus(){
   if(endpoint)endpoint.value=aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT;
   if(model)model.value=aiSettings.model||LOCAL_AI_DEFAULT_MODEL;
   const status=document.getElementById('aiStatus');
-  if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — the built-in story system will be used.';
+  if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — no generated narrative will be requested.';
 }
 function localAIRequest(endpoint,payload){
 if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
@@ -1026,7 +1028,7 @@ async function redoLastAI(){
       if(!(aiSettings.enabled&&aiSettings.endpoint)){
         throw new Error('Local AI is not enabled');
       }
-      const result=await callStoryAI(redo.action,redo.action);
+      const result=await callStoryAI(String(redo.action||'')+'\n\n[DFR_REFRESH_VARIANT: Generate a materially different valid response to the same player input. Preserve all established facts and world state. Do not repeat the previous response.]',redo.action);
       /* Redo is prose-only too. The engine owns state; The optional prose layer never commits RPG state. */
       await save();
       const entries=aiEntries(result);
@@ -1096,6 +1098,51 @@ async function editPlayerTurn(index){
     toast('Turn restored — press Send to continue from the edited message');
   }catch(err){console.error(err);toast('Could not edit that turn.');}
 }
+function applyEngineSceneTransitions(action){
+  const text=String(action||'').trim();
+  if(!text||!state?.scenarioSpec)return {changed:false,events:[]};
+  const events=[];
+  const key=rpgKey(state.scenarioSpec.name||state.scenarioName);
+  if(key!=='a promise between families' && key!=='a-promise-between-families')return {changed:false,events};
+  const loc=rpgKey(state.currentLocation||'');
+  const inside=/\b(?:go|goes|went|follow|follows|followed|walk|walks|walked|head|heads|headed|enter|enters|entered|step|steps|stepped)\b[^.]{0,80}\b(?:inside|in|study|house|mansion)\b|\b(?:i'm|im|i am|i'm now)\b[^.]{0,60}\b(?:inside|in the study)\b/i.test(text);
+  if((loc.includes('outside the morningstar estate')||state.currentScenePhase==='outside_estate_arrival')&&inside){
+    state.currentLocation="Gerald's Study";
+    state.currentScenePhase='morningstar_study_family_waiting';
+    state.openingComplete=false;
+    const present=['Gerald Morningstar','Mana Morningstar','Luci Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
+    for(const n of present)setCharacterLocation(n,"Gerald's Study",'waiting',true);
+    setCharacterLocation('Shane Stormwell',"Gerald's Study",'with Gerald',true);
+    setCharacterLocation('Elizabeth Vale','Morningstar Estate — elsewhere in the house','elsewhere in the house',false);
+    events.push('gerald-study-arrival');
+    addWorldEvent('Shane entered Gerald\'s Study; Gerald and his seven daughters were waiting there.',present.concat(['Shane Stormwell']),"Gerald's Study",80);
+  }
+  // Once Gerald has offered refreshments, the request becomes a world event rather than a dialogue branch.
+  if(state.currentScenePhase==='morningstar_study_family_waiting' && /\b(?:tea|coffee|drink|refreshment|refreshments)\b/i.test(text)){
+    if(!state.worldState.plannedEvents.some(e=>e?.id==='refreshments-requested')){
+      state.worldState.plannedEvents.push({id:'refreshments-requested',status:'active',turn:Number(state.runtimeEngine?.turn||0),location:"Gerald's Study"});
+      state.currentScenePhase='morningstar_study_refreshments_requested';
+      events.push('refreshments-requested');
+    }
+  }
+  // Refreshments are an established event. On the next player turn in the study, Elizabeth can arrive naturally.
+  if(state.currentScenePhase==='morningstar_study_refreshments_requested' && Number(state.runtimeEngine?.turn||0)>0){
+    const req=state.worldState.plannedEvents.find(e=>e?.id==='refreshments-requested');
+    if(req && Number(req.turn)<Number(state.runtimeEngine.turn||0)){
+      setCharacterLocation('Elizabeth Vale',"Gerald's Study",'arriving with refreshments',true);
+      req.status='completed'; req.completedTurn=Number(state.runtimeEngine.turn||0);
+      state.currentScenePhase='morningstar_study_elizabeth_arrival';
+      addWorldEvent('Elizabeth Vale entered Gerald\'s Study carrying the requested refreshments.',['Elizabeth Vale'],"Gerald's Study",85);
+      events.push('elizabeth-arrival');
+    }
+  }
+  if(events.length){
+    if(state.currentScenePhase==='morningstar_study_elizabeth_arrival')state.openingComplete=true;
+    rpgReconcileRuntimeScene();
+  }
+  return {changed:events.length>0,events};
+}
+
 async function addAction(){
   if(!activePlayer()){openPlayerPicker();toast('Choose your player character first');return;}
   if(storyBusy)return;
@@ -1106,6 +1153,7 @@ async function addAction(){
   const turnSnapshot=pushTurnSnapshot(v);
   if(!state.runtimeEngine||typeof state.runtimeEngine!=='object')state.runtimeEngine={version:2,currentScene:{participants:[],location:'',focus:'',lastAction:''},snapshots:[],turn:0};
   state.runtimeEngine.turn=Number(state.runtimeEngine.turn||0)+1;
+  applyEngineSceneTransitions(v);
   state.runtimeEngine.currentScene={...(state.runtimeEngine.currentScene||{}),location:state.currentLocation||'Unknown location',lastAction:v};
   recordPlayerWorldIntent(v);
   try{
@@ -1151,12 +1199,10 @@ async function addAction(){
         }
       }else{
         lastRedo=null; updateRedoButton();
-        // Local fallback remains available when AI is disabled.
-        const reaction=characterReaction(v);
-        const entries=reaction?reaction.entries.filter(e=>!isDuplicateEntry(e)):[];
-        for(const entry of entries){
-          state.story.push(entry); await save(); render(); keepStoryAtLatest(); await wait(2500);
-        }
+        // World Brain is the primary narrative path. When it is disabled, preserve the
+        // player's action and world transition but never fabricate an NPC response.
+        await save();
+        toast('World Brain is off — your action was saved.');
       }
     }catch(err){
       console.error(err);
@@ -1404,7 +1450,11 @@ function makeScenario(type){
   }
   base.characterKnowledge={Shane:[]};
   for(const p of base.party){if(!base.characterKnowledge[p.name])base.characterKnowledge[p.name]=[];}
-  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;base.inGameDay=1;base.timeOfDay='morning';base.currentLocation=t.worldProfile?.start||'Unknown location';base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});
+  base.playerMemory=[];base.sharedFacts=[];base.items=[];base.background=null;
+  const initialRuntime=t.scenarioSpec?.initialState||{};
+  base.inGameDay=Math.max(1,Number(initialRuntime.inGameDay)||1);
+  base.timeOfDay=String(initialRuntime.timeOfDay||'morning');
+  base.currentLocation=String(initialRuntime.currentLocation||t.worldProfile?.start||'Unknown location');base.longTermMemory={worldFacts:[],events:[],characterMemories:{},unresolved:[]};base.npcs=structuredClone(t.npcs||[]);base.worldProfile=structuredClone(t.worldProfile||{});base.scenarioSpec=structuredClone(t.scenarioSpec||{});
   return base;
 }
 function scenarioRecords(){
@@ -2196,10 +2246,16 @@ function validateAndCommitAIStateTransaction(tx,action,entries){
 
 async function commitAIStateTransaction(action,entries,isNative=false,nativeResult=null){
   try{
-    /* DFR Native owns its own narrative output. Never wake an external model merely to
-       interpret a native turn; native state transactions will be added directly as
-       deterministic engine rules mature. */
-    if(isNative){ const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true}; applyAIRelationships(tx); return tx; }
+    /*
+     * World Brain owns prose decisions. The engine then asks a separate validator
+     * to turn observable consequences into structured state updates. Native response
+     * pools do not participate in the normal path.
+     */
+    if(isNative){
+      const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
+      applyAIRelationships(tx);
+      return tx;
+    }
     const proposal=await extractAIStateTransaction(action,entries);
     const tx=validateAndCommitAIStateTransaction(proposal,action,entries);
     /* Engine appliers are now actually connected to the validated transaction. */
@@ -2216,12 +2272,12 @@ async function commitAIStateTransaction(action,entries,isNative=false,nativeResu
 
 
 /* ================================================================
-   DFR NATIVE LANGUAGE ENGINE v0.1
+   LEGACY DFR NATIVE LANGUAGE ENGINE — DIAGNOSTIC ONLY
    Purpose-built local narrative engine. No external model required.
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence';
+const DFR_NATIVE_LANGUAGE_VERSION='legacy-diagnostic-0.9.0';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2559,6 +2615,19 @@ function dfrResponse(person,rel,intent,action,seed){
     if(remembered){
       const safeMemory=dfrText(remembered,220).replace(/[“”]/g,'').replace(/[.?!]+$/,'');
       return pick(style==='warm'?[`I remember. You told me ${safeMemory}.`,`Yes, I remember you telling me ${safeMemory}.`]:style==='playful'?[`I remember that. You told me ${safeMemory}.`]:style==='measured'?[`Yes. You told me ${safeMemory}.`]:[`I remember you mentioning ${safeMemory}.`,`Yes, I remember that.`],seed);
+    }
+    if(/\bwhat\s+(?:do|can)\s+you\s+see\b/.test(String(q||'').toLowerCase())){
+      if(name==='Gerald'){
+        return pick([
+          'I see a man who has just ridden two and a half hours to hear something he thinks could have been said over the phone. I also see that you are not convinced I have told you the real reason yet.',
+          'I see you are impatient for a straight answer, Shane. That is fair. You came here expecting me to tell you why, and I have been asking you to wait.',
+          'I see that you are testing whether I will actually answer you instead of steering the conversation somewhere else. So let me be clear: the funeral is not why you are here.'
+        ],seed);
+      }
+      return pick([
+        'I see you standing there, waiting for an answer.',
+        'I see what is in front of me. I am not sure that is the question you meant to ask.'
+      ],seed);
     }
     if(topic==='presence'){
       if(name==='Gerald')return pick(['This is my home, Shane. But I also asked you here because there are a few things we need to discuss.','I invited you here for a reason. We should talk.','Your being here matters, Shane. Come inside and we can talk properly.'],seed);
@@ -2903,9 +2972,10 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
       beat('*Gerald holds your gaze, his expression becoming more serious.*','There is more to what Finch asked of me, and I think you deserve to hear it properly.')
     ],topic:c.topic,stage:c.stage};
   }
-  if((topic==='finch_request'||stage==='finch_request'||topic==='invitation_reason'||stage==='reason_for_invitation') && /\b(?:funeral arrangements?|funeral|burial|bury|memorial service|service for finch)\b/.test(a)){
+  if(/\b(?:funeral arrangements?|funeral|burial|bury|memorial service|service for finch)\b/.test(a) &&
+     ['family_introduction','refreshments_pending','finch_request','invitation_reason','reason_for_invitation'].includes(String(topic||stage||''))){
     return {beats:[
-      beat('*Gerald gives a small shake of his head, his expression turning more serious.*','No. It is not about the funeral arrangements, Shane. Those practical matters are not why I asked you to come here.'),
+      beat('*Gerald gives a small shake of his head, his expression becoming more serious.*','No. It is not about the funeral arrangements, Shane. Those practical matters are not why I asked you to come here.'),
       beat('*He folds his hands on the desk and holds your gaze.*','This is about something Finch entrusted to me before he died. I wanted to speak to you about it properly, in person.')
     ],topic:'finch_request',stage:'finch_request'};
   }
@@ -3168,7 +3238,7 @@ function dfrNativeGenerate(action){
   rpgReconcileRuntimeScene();
   const player=activePlayer();
   if(!player)throw new Error('DFR Native Language Engine: no player');
-  const special=dfrSpecialSceneResponse(action,`${state.runtimeEngine?.turn||0}|scene|${action}`);
+  const nativeNonce=String(Date.now())+'|'+Math.random().toString(36).slice(2,8); const special=dfrSpecialSceneResponse(action,`${state.runtimeEngine?.turn||0}|scene|${action}|${nativeNonce}`);
   if(special){
     const specialTarget=special.target?dfrPerson(special.target):null;
     const specialIntent=dfrIntent(action);
@@ -3218,7 +3288,7 @@ function dfrNativeGenerate(action){
      Questions, narration and unrelated scene text do not automatically become shared memory. */
   const sharedStatement=dfrExplicitPlayerStatement(action);
   if(sharedStatement)dfrRememberPrivateKnowledge(target,sharedStatement);
-  const seed=`${state.runtimeEngine?.turn||0}|${target.name}|${intent}|${action}`;
+  const nativeNonce2=String(Date.now())+'|'+Math.random().toString(36).slice(2,8); const seed=`${state.runtimeEngine?.turn||0}|${target.name}|${intent}|${action}|${nativeNonce2}`;
   let physical=dfrActionForEmotion(target,emotion,seed+'a',intent);
   let dialogue=dfrResponse(target,rel,intent,action,seed+'b');
   const recent=dfrRecentText();
@@ -3285,18 +3355,26 @@ function dfrNativeGenerate(action){
 }
 
 async function callStoryAI(action,correctedSource,qualityRetry=false){
-  /* DFR Native is the primary narrative engine. The optional external prose path remains a development fallback only. */
-  if(aiSettings.nativeEngine!==false){
-    return dfrNativeGenerate(action);
-  }
+  /*
+   * DFR WORLD BRAIN v1
+   * The language model is the narrative intelligence. DFR owns the world state,
+   * scenario isolation, player control, memories, relationships and validation.
+   * The old response-pool Native generator is retained only as a diagnostic
+   * fallback and is NEVER selected automatically.
+   */
   const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
   const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
   if(!endpoint)throw new Error('No local AI endpoint configured');
   const ctx=await buildRPGWorkingPrompt(action);
-  const prompt=`You are the prose layer of a persistent RPG engine.
+  const prompt=`You are DFR World Brain, the narrative intelligence running inside a persistent RPG world.
+
+You are not a branching dialogue lookup table and you are not a narrator following a fixed script.
+You reason from the current scenario, world state, NPC knowledge, goals, relationships, memories and recent events,
+then decide what the NPCs and environment naturally do next.
 
 The ENGINE owns canon, memories, relationships, world state and player control.
-You only write the next natural scene.
+You own the moment-to-moment narrative decisions and NPC behaviour within those constraints.
+The scenario is data. Never import facts, characters or memories from another scenario.
 
 PLAYER:
 ${JSON.stringify(ctx.player)}
@@ -3341,7 +3419,7 @@ Rules:
 - Use each NPC's established personality, behaviour, knowledge and speech style.
 - Respect relationship history and current relationship values.
 - Treat the scenario canon and CURRENT SCENE STATE as authoritative.
-- The scenario's startingSituation.intro describes events that already happened. Do not restart them.
+- The scenario's startingSituation.intro describes the opening context, not a completed cutscene. Respect CURRENT SCENE STATE and let the player control every transition.
 - If the scenario says two characters already know each other, never introduce them as strangers.
 - If a character is a former partner, family member or established acquaintance, preserve that relationship.
 - Generated prose in RECENT SCENE is history, not canon. If it conflicts with explicit scenario canon, follow the scenario canon.
@@ -3359,6 +3437,17 @@ Rules:
 - If the player directly addresses an NPC, that NPC should normally answer or react to the substance of what was said.
 - Prefer 1-3 meaningful NPC contributions when the scene supports conversation; do not let the response become mostly narration.
 - Every turn should move the conversation or situation forward: new information, a new emotional beat, a question from an NPC, a decision, an interruption, or a concrete change in the scene.
+- Treat NPC knowledge as individual knowledge. A character cannot know a fact merely because it exists elsewhere in the scenario.
+- Maintain each NPC's independent goals, boundaries, emotional state and relationship history.
+- NPCs may initiate actions, interrupt, disagree, ask questions, leave, return or change plans when justified by their goals and the current situation.
+- Unspecified details should be developed coherently rather than answered with a generic acknowledgement.
+- If the player asks a specific question, answer that question or explain naturally why the NPC cannot answer it.
+- Do not fall back to phrases such as "I see", "Go on", "Alright", or "Tell me more" when the latest player action clearly requires substantive content.
+- Use long-term memories when relevant, not merely the last turn.
+- Treat unresolved story threads as things the world can naturally revisit; do not force them into every turn.
+- If the player changes subject, follow the new subject while preserving the existing world state.
+- If the player asks something unexpected, reason from the current world rather than searching for a predefined response.
+- When the player uses Refresh, the engine will provide a new generation seed. Produce a materially different valid response without changing established facts or rewinding the world.
 - Do not repeat a physical action already shown in RECENT SCENE. If someone already stepped closer, do not have them step closer again without a new reason.
 - Do not reuse distinctive dialogue phrases from RECENT SCENE.
 - Never copy the player's wording into an NPC's dialogue.
@@ -3477,11 +3566,10 @@ function makeScenarioFromTemplate(t){
   }
   base.playerCandidates=base.party.filter(isPlayerCandidate).map(p=>p.name);
   base.playerCharacterName='';
-  base.openingComplete=true;
-  // The scripted opening is already consumed by buildImportedOpening().
-  // Keep the phase explicit so the model never has to infer whether the arrival/reunion
-  // has already happened from prose alone.
-  base.currentScenePhase='free_play_after_opening';
+  base.openingComplete=false;
+  // The opening text is context, not a consumed cutscene. The player still controls
+  // the arrival and every subsequent transition.
+  base.currentScenePhase=String(t.scenarioSpec?.initialState?.phase||'opening');
   base.story=buildImportedOpening(t,base.party);
   base.characterKnowledge={};
   for(const p of base.party)base.characterKnowledge[p.name]=Array.isArray(p.knowledge)?structuredClone(p.knowledge):[];
