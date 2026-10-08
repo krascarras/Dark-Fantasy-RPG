@@ -406,7 +406,7 @@ jobs:
           set -euo pipefail
           grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
           grep -q 'android:usesCleartextTraffic="true"' app/src/main/AndroidManifest.xml
-          grep -q 'DarkFantasyLocalAI' app/src/main/java/com/darkfantasyrpg/MainActivity.java
+          grep -q 'DarkFantasyLocalAI' app/src/main/java/com/darkfantasyrpg/app/MainActivity.kt
           echo "PASS: Android INTERNET permission"
           echo "PASS: Android cleartext local-AI networking"
           echo "PASS: DarkFantasyLocalAI bridge"
