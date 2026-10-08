@@ -52,7 +52,7 @@ jobs:
           const html = fs.readFileSync(indexPath, "utf8");
 
           const required = [
-            "DFR_NATIVE_LANGUAGE_VERSION='0.6.0-study-opening'",
+            "DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence'",
             "function dfrNativeGenerate",
             "function callStoryAI",
             "function dfrConversationState",
@@ -61,10 +61,11 @@ jobs:
             "function dfrRecordFact",
             "dfrNativeHistory",
             "*",
-            "v6.1.0-dfr-native-study-opening",
+            "v6.2.0-dfr-native-study-opening-persistence",
             "prefer tea or coffee",
             "small intercom built into the desk",
             "Elizabeth entered Gerald",
+            "if(!idbOk)",
           ];
 
           for (const marker of required) {
@@ -117,7 +118,7 @@ jobs:
             try { fs.unlinkSync(tempFile); } catch {}
           }
 
-          console.log("PASS: DFR Native v6.1.0 study-opening source checks");
+          console.log("PASS: DFR Native v6.2.0 study-opening/persistence source checks");
           console.log("PASS: Native engine markers present");
           console.log("PASS: study/daughters/refreshments/Elizabeth opening markers present");
           console.log("PASS: legacy external AI markers absent");
@@ -193,8 +194,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 101
-                  versionName '6.1.0-dfr-native-study-opening'
+                  versionCode 102
+                  versionName '6.2.0-dfr-native-study-opening-persistence'
               }
 
               compileOptions {
@@ -307,9 +308,20 @@ jobs:
                           filePathCallback = callback
 
                           return try {
+                              val acceptTypes = params?.acceptTypes?.filter { it.isNotBlank() } ?: emptyList()
+                              val wantsImage = acceptTypes.any { it.startsWith("image/") }
+                              val wantsJson = acceptTypes.any { it.contains("json", ignoreCase = true) }
+
                               val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                   addCategory(Intent.CATEGORY_OPENABLE)
-                                  type = "application/json"
+                                  type = when {
+                                      wantsImage && !wantsJson -> "image/*"
+                                      wantsImage && wantsJson -> "*/*"
+                                      else -> "application/json"
+                                  }
+                                  if (type == "*/*" || type == "application/json") {
+                                      putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/json"))
+                                  }
                               }
                               startActivityForResult(
                                   Intent.createChooser(intent, "Choose RPG file"),
@@ -379,10 +391,12 @@ jobs:
           ! unzip -l "$APK" | grep -q 'assets/dfr-native/'
           unzip -p "$APK" assets/index.html > /tmp/index.html
 
-          grep -q 'v6.1.0-dfr-native-study-opening' /tmp/index.html
-          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.6.0-study-opening'" /tmp/index.html
+          grep -q 'v6.2.0-dfr-native-study-opening-persistence' /tmp/index.html
+          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence'" /tmp/index.html
           grep -q 'function dfrNativeGenerate' /tmp/index.html
           grep -q 'function callStoryAI' /tmp/index.html
+          grep -q 'if(!idbOk)' /tmp/index.html
+          grep -q 'IndexedDB save failed; using localStorage fallback' /tmp/index.html
           grep -q 'prefer tea or coffee' /tmp/index.html
           grep -q 'small intercom built into the desk' /tmp/index.html
           grep -q 'Elizabeth entered Gerald' /tmp/index.html
@@ -398,5 +412,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v6.1.0-dfr-native-study-opening
+          name: Dark-Fantasy-RPG-v6.2.0-dfr-native-study-opening-persistence
           path: app/build/outputs/apk/debug/app-debug.apk
