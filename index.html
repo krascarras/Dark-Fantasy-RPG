@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v6.1.0-dfr-native-study-opening</div>
+<div class="version-badge">v6.2.0-dfr-native-study-opening-persistence</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -480,21 +480,31 @@ async function save(){
     await idbPut(KEY,data); idbOk=true;
     if(state?.scenarioId)await idbPut(scenarioKey(state.scenarioId),data);
     if(state?.scenarioId){
-      const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
-      localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));
+      const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
+      records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
+      try{localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));}catch(err){console.warn('Scenario index localStorage update failed',err);}
     }
   }catch(err){
     console.warn('IndexedDB save failed; using localStorage fallback',err);
   }
-  try{
-    localStorage.setItem(KEY,data);
-    if(state?.scenarioId)localStorage.setItem(scenarioKey(state.scenarioId),data);
-  }catch(err){
-    console.error('Local save fallback failed',err);
-    {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';}
-    toast('Could not save the game on this device.');
-    return false;
+
+  // IndexedDB is the primary save store. A full JSON copy in localStorage can
+  // exceed Android WebView's quota once images/backgrounds/turn snapshots grow.
+  if(!idbOk){
+    try{
+      localStorage.setItem(KEY,data);
+      if(state?.scenarioId)localStorage.setItem(scenarioKey(state.scenarioId),data);
+    }catch(err){
+      console.error('Local save fallback failed',err);
+      {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';}
+      toast('Could not save the game on this device.');
+      return false;
+    }
+  }else{
+    // Keep only a tiny marker in localStorage; never duplicate the full game.
+    try{localStorage.setItem(KEY+'_storage','indexeddb');}catch(err){}
   }
+
   {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';}
   return true;
 }
@@ -2211,7 +2221,7 @@ async function commitAIStateTransaction(action,entries,isNative=false,nativeResu
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='0.6.0-study-opening';
+const DFR_NATIVE_LANGUAGE_VERSION='0.7.0-study-opening-persistence';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2892,6 +2902,12 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
       beat('*Gerald answers without hesitation.*',text),
       beat('*Gerald holds your gaze, his expression becoming more serious.*','There is more to what Finch asked of me, and I think you deserve to hear it properly.')
     ],topic:c.topic,stage:c.stage};
+  }
+  if((topic==='finch_request'||stage==='finch_request'||topic==='invitation_reason'||stage==='reason_for_invitation') && /\b(?:funeral arrangements?|funeral|burial|bury|memorial service|service for finch)\b/.test(a)){
+    return {beats:[
+      beat('*Gerald gives a small shake of his head, his expression turning more serious.*','No. It is not about the funeral arrangements, Shane. Those practical matters are not why I asked you to come here.'),
+      beat('*He folds his hands on the desk and holds your gaze.*','This is about something Finch entrusted to me before he died. I wanted to speak to you about it properly, in person.')
+    ],topic:'finch_request',stage:'finch_request'};
   }
   if((topic==='arrangement_ready'||stage==='arrangement_ready') && /\b(?:finch|dying wish|promise|what did he want|what did finch ask|what did he say|what did he want me to know)\b/.test(a)){
     const answers=[
