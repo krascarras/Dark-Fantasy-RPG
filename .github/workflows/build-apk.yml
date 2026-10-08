@@ -32,8 +32,8 @@ jobs:
         run: |
           set -euo pipefail
           test -f index.html
-          test -f dfr-native-file.test.mjs
-          node dfr-native-file.test.mjs
+          test -f tests/dfr-native-single-file.test.mjs
+          node tests/dfr-native-single-file.test.mjs
 
       - name: Create Android project
         shell: bash
@@ -100,8 +100,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 100
-                  versionName '6.0.0-dfr-native-single-file'
+                  versionCode 101
+                  versionName '6.1.0-dfr-native-study-opening'
               }
 
               compileOptions {
@@ -286,10 +286,13 @@ jobs:
           ! unzip -l "$APK" | grep -q 'assets/dfr-native/'
           unzip -p "$APK" assets/index.html > /tmp/index.html
 
-          grep -q 'v6.0.0-dfr-native-single-file' /tmp/index.html
-          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.5.0-relationship-continuity'" /tmp/index.html
+          grep -q 'v6.1.0-dfr-native-study-opening' /tmp/index.html
+          grep -q "DFR_NATIVE_LANGUAGE_VERSION='0.6.0-study-opening'" /tmp/index.html
           grep -q 'function dfrNativeGenerate' /tmp/index.html
           grep -q 'function callStoryAI' /tmp/index.html
+          grep -q 'prefer tea or coffee' /tmp/index.html
+          grep -q 'small intercom built into the desk' /tmp/index.html
+          grep -q 'Elizabeth entered Gerald' /tmp/index.html
 
           if grep -Eiq 'litertlm|gemma-4|AndroidLocalAI|LiteRT' /tmp/index.html; then
             echo 'Legacy external AI dependency marker found in packaged app.'
@@ -302,5 +305,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v6.0.0-dfr-native-single-file
+          name: Dark-Fantasy-RPG-v6.1.0-dfr-native-study-opening
           path: app/build/outputs/apk/debug/app-debug.apk
