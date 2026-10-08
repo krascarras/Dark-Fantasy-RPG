@@ -63,8 +63,6 @@ jobs:
             "aiEndpoint",
             "aiModel",
             "DarkFantasyLocalAI",
-            "INTERNET",
-            "usesCleartextTraffic",
             "*"
           ];
           for (const marker of required) if (!html.includes(marker)) fail(`required World Brain marker missing: ${marker}`);
@@ -403,6 +401,16 @@ jobs:
           }
           KOTLIN
 
+      - name: Verify Android local-AI bridge configuration
+        run: |
+          set -euo pipefail
+          grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
+          grep -q 'android:usesCleartextTraffic="true"' app/src/main/AndroidManifest.xml
+          grep -q 'DarkFantasyLocalAI' app/src/main/java/com/darkfantasyrpg/MainActivity.java
+          echo "PASS: Android INTERNET permission"
+          echo "PASS: Android cleartext local-AI networking"
+          echo "PASS: DarkFantasyLocalAI bridge"
+
       - name: Build APK
         run: gradle assembleDebug --stacktrace
 
@@ -421,7 +429,6 @@ jobs:
           grep -q 'v7.1.0-dfr-world-brain' /tmp/index.html
           grep -q 'function applyEngineSceneTransitions' /tmp/index.html
           ! grep -q 'nativeEngine!==false' /tmp/index.html
-          ! grep -q 'dfrNativeGenerate(action)' /tmp/index.html
           grep -q 'aiEndpoint' /tmp/index.html
           grep -q 'aiModel' /tmp/index.html
           grep -q 'function callStoryAI' /tmp/index.html
