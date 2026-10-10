@@ -59,7 +59,9 @@ jobs:
             "Elizabeth Vale",
             "small intercom built into the desk",
             "prefer tea or coffee",
-            "v7.1.0-dfr-world-brain",
+            "v7.1.2-dfr-world-brain",
+            "onclick=\"testAI()\"",
+            "function testAI()",
             "aiEndpoint",
             "aiModel",
             "DarkFantasyLocalAI",
@@ -157,8 +159,8 @@ jobs:
                   applicationId 'com.darkfantasyrpg.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 105
-                  versionName '7.1.0-dfr-world-brain'
+                  versionCode 107
+                  versionName '7.1.2-dfr-world-brain'
               }
 
               compileOptions {
@@ -426,7 +428,7 @@ jobs:
           ! unzip -l "$APK" | grep -q 'assets/dfr-native/'
           unzip -p "$APK" assets/index.html > /tmp/index.html
 
-          grep -q 'v7.1.0-dfr-world-brain' /tmp/index.html
+          grep -q 'v7.1.2-dfr-world-brain' /tmp/index.html
           grep -q 'function applyEngineSceneTransitions' /tmp/index.html
           ! grep -q 'nativeEngine!==false' /tmp/index.html
           grep -q 'aiEndpoint' /tmp/index.html
@@ -445,11 +447,11 @@ jobs:
             exit 1
           fi
 
-          echo 'Packaged DFR Native single-file engine verified.'
+          echo 'Packaged DFR World Brain single-file engine verified.'
           ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dark-Fantasy-RPG-v7.1.0-dfr-world-brain
+          name: Dark-Fantasy-RPG-v7.1.2-dfr-world-brain
           path: app/build/outputs/apk/debug/app-debug.apk
