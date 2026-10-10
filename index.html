@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v7.1.0-dfr-world-brain</div>
+<div class="version-badge">v7.1.2-dfr-world-brain</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -113,6 +113,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
       <p class="small" id="dfrNativeStatus">World Brain architecture v1 — local model required for generated narrative.</p>
       <div class="actions" style="margin-top:8px">
         <button class="btn" onclick="saveAISettings()">Save story settings</button>
+        <button class="btn" onclick="testAI()">Test AI connection</button>
         <button class="btn danger" onclick="clearAISettings()">Reset story settings</button>
       </div>
       <div id="aiProgressWrap" style="display:none;margin-top:10px">
@@ -262,8 +263,13 @@ if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'
       const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},60000);
       window.__darkFantasyAIResolvers[id]=(ok,body)=>{
         clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
-        if(ok){try{resolve(JSON.parse(body));}catch(e){reject(new Error('Local AI returned invalid JSON'))}}
-        else reject(new Error(String(body||'Local AI request failed')));
+        if(ok){
+          try{resolve(JSON.parse(body));}
+          catch(e){
+            const preview=String(body||'').replace(/\s+/g,' ').slice(0,220);
+            reject(new Error('Local AI returned invalid JSON. Response begins: '+(preview||'[empty response]')));
+          }
+        }else reject(new Error(String(body||'Local AI request failed')));
       };
       try{window.DarkFantasyLocalAI.post(String(endpoint),JSON.stringify(payload),id);}
       catch(e){clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);}
@@ -277,9 +283,12 @@ function localAIInstalled(){return false;}
 function setAIProgress(percent,message){const status=document.getElementById('aiStatus');if(status&&message)status.textContent=String(message);}
 function updateNativeAIControls(){}
 function downloadLocalAI(){toast('DFR Native is built in — no AI download is required.');}
-window.onLocalAIResult=function(id,text){
+window.onLocalAIResult=function(id,text,ok){
   const fn=window.__darkFantasyAIResolvers?.[id];
-  if(fn)fn(true,String(text||''));
+  if(!fn)return;
+  const body=String(text||'');
+  if(ok===false){fn(false,body||'Local AI request failed');return;}
+  fn(true,body);
 };
 window.onLocalAIError=function(id,message){
   const fn=window.__darkFantasyAIResolvers?.[id];
