@@ -32,7 +32,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </style>
 </head>
 <body>
-<div class="version-badge">v7.1.2-dfr-world-brain</div>
+<div class="version-badge">v7.1.7-dfr-native</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -95,7 +95,7 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </section>
 
 <section id="lore" class="tab">
-  <div class="card"><h2>📜 World Lore</h2><p class="small">This page is loaded from the active scenario. The story AI treats the imported scenario as this campaign's canon.</p></div>
+  <div class="card"><h2>📜 World Lore</h2><p class="small">This page is loaded from the active scenario. DFR Native treats the imported scenario as this campaign's canon.</p></div>
   <div id="scenarioLoreContent"></div>
 </section>
 
@@ -106,29 +106,19 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPlayerPicker()">🎭 Change player character</button><span id="activePlayerLabel" class="small"></span></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
-      <h3>🧠 DFR World Brain</h3>
-      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local DFR World Brain model</label>
-      <p class="small">The World Brain is the narrative intelligence for this campaign. DFR owns canon, memory, relationships, world state and player control; the local language model generates the moment-to-moment story and NPC behaviour.</p>
-      <div class="row" style="margin-top:8px"><label style="flex:1">Local AI endpoint<input id="aiEndpoint" value="http://127.0.0.1:11434/api/chat" autocomplete="off"></label><label style="flex:1">Model<input id="aiModel" value="local-development-model" autocomplete="off"></label></div>
-      <p class="small" id="dfrNativeStatus">World Brain architecture v1 — local model required for generated narrative.</p>
+      <h3>🧠 DFR Native Intelligence</h3>
+      <p class="small">The native story engine runs inside DFR. It uses campaign canon, scene presence, character personalities, relationship values and stored conversation history to choose NPC responses. No Qwen, separate model, endpoint or network connection is required.</p>
+      <p class="small" id="dfrNativeStatus">Native engine ready to test.</p>
       <div class="actions" style="margin-top:8px">
-        <button class="btn" onclick="saveAISettings()">Save story settings</button>
-        <button class="btn" onclick="testAI()">Test AI connection</button>
-        <button class="btn danger" onclick="clearAISettings()">Reset story settings</button>
+        <button class="btn" onclick="testAI()">Test DFR Native</button>
       </div>
-      <div id="aiProgressWrap" style="display:none;margin-top:10px">
-        <div style="height:12px;border-radius:999px;background:#24364d;overflow:hidden;border:1px solid #35516f">
-          <div id="aiProgressBar" style="height:100%;width:0%;transition:width .25s ease;background:#8B5CF6"></div>
-        </div>
-        <div class="small" id="aiProgressText" style="margin-top:5px">0%</div>
-      </div>
-      <p class="small" id="aiStatus">Local AI is off — no generated narrative will be requested.</p>
+      <p class="small" id="aiStatus">DFR Native runs locally inside the app. No external AI service is used for story responses.</p>
     </div>
-    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The engine still preserves and validates campaign state offline.</p>
+    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be part of the narrative. DFR Native generates story responses inside the app without a separate model or network service; campaign state remains engine-owned and offline.</p>
     <input id="bgFile" type="file" accept="image/*" hidden onchange="setBackground(this.files[0])">
   </div>
   <div class="card"><h3>🎭 Scenarios, worlds & saves</h3>
-    <p class="small">Each scenario is its own campaign. You can build worlds and characters with ChatGPT, export them as JSON, then import them here. Imported content becomes the campaign's canon; anything you leave open can be expanded naturally by the world/story AI.</p>
+    <p class="small">Each scenario is its own campaign. You can build worlds and characters with ChatGPT, export them as JSON, then import them here. Imported content becomes the campaign's canon; unspecified details are handled by DFR Native's built-in story rules.</p>
     <div class="actions" style="margin-bottom:10px">
       <button class="btn" onclick="document.getElementById('scenarioImportFile').click()">📥 Import scenario</button>
       <button class="btn" onclick="exportScenarioBlueprint()">📤 Export scenario blueprint</button>
@@ -209,112 +199,14 @@ const defaultState={
 };
 let state=loadState();
 
-const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
-const LOCAL_AI_DEFAULT_MODEL='local-development-model';
-let aiSettings=loadAISettings();
-let aiLastError=localStorage.getItem(KEY+'_ai_error')||'';
-function loadAISettings(){
-  try{
-    const raw=localStorage.getItem(KEY+'_ai')||localStorage.getItem(LEGACY_KEY+'_ai');
-    if(raw){
-      const x=JSON.parse(raw);
-      return {
-        enabled:x.enabled!==false,
-        engine:'world-brain',
-        endpoint:String(x.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT,
-        model:String(x.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL
-      };
-    }
-  }catch(e){}
-  return {enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
-}
-function saveAISettings(){
-  const enabled=!!document.getElementById('aiEnabled')?.checked;
-  const endpoint=String(document.getElementById('aiEndpoint')?.value||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT;
-  const model=String(document.getElementById('aiModel')?.value||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  aiSettings={...aiSettings,enabled,engine:'world-brain',endpoint,model};
-  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
-  updateAIStatus();
-  toast(enabled?'Local AI settings saved':'Local AI settings saved — local AI is off');
-}
-function clearAISettings(){
-  aiSettings={enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
-  aiLastError='';
-  localStorage.removeItem(KEY+'_ai_error');
-  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
-  updateAIStatus();
-  toast('Local AI settings cleared');
-}
+const DFR_NATIVE_LANGUAGE_VERSION='1.0.1-native';
+let aiLastError=localStorage.getItem(KEY+'_native_error')||'';
 function updateAIStatus(){
-  const box=document.getElementById('aiEnabled');
-  const endpoint=document.getElementById('aiEndpoint');
-  const model=document.getElementById('aiModel');
-  if(box)box.checked=!!aiSettings.enabled;
-  if(endpoint)endpoint.value=aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT;
-  if(model)model.value=aiSettings.model||LOCAL_AI_DEFAULT_MODEL;
   const status=document.getElementById('aiStatus');
-  if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — no generated narrative will be requested.';
+  if(status)status.textContent=aiLastError||'DFR Native runs locally inside the app. No external AI service is used for story responses.';
+  const nativeStatus=document.getElementById('dfrNativeStatus');
+  if(nativeStatus)nativeStatus.textContent='DFR Native Language Engine '+DFR_NATIVE_LANGUAGE_VERSION+' — ready.';
 }
-function localAIRequest(endpoint,payload){
-if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
-    return new Promise((resolve,reject)=>{
-      const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
-      if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
-      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},60000);
-      window.__darkFantasyAIResolvers[id]=(ok,body)=>{
-        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
-        if(ok){
-          try{resolve(JSON.parse(body));}
-          catch(e){
-            const preview=String(body||'').replace(/\s+/g,' ').slice(0,220);
-            reject(new Error('Local AI returned invalid JSON. Response begins: '+(preview||'[empty response]')));
-          }
-        }else reject(new Error(String(body||'Local AI request failed')));
-      };
-      try{window.DarkFantasyLocalAI.post(String(endpoint),JSON.stringify(payload),id);}
-      catch(e){clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);}
-    });
-  }
-  return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-    .then(async res=>{const text=await res.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!res.ok)throw new Error(data?.error?.message||data?.error||text||('Local AI HTTP '+res.status));return data;});
-}
-function nativeAIAvailable(){return false;}
-function localAIInstalled(){return false;}
-function setAIProgress(percent,message){const status=document.getElementById('aiStatus');if(status&&message)status.textContent=String(message);}
-function updateNativeAIControls(){}
-function downloadLocalAI(){toast('DFR Native is built in — no AI download is required.');}
-window.onLocalAIResult=function(id,text,ok){
-  const fn=window.__darkFantasyAIResolvers?.[id];
-  if(!fn)return;
-  const body=String(text||'');
-  if(ok===false){fn(false,body||'Local AI request failed');return;}
-  fn(true,body);
-};
-window.onLocalAIError=function(id,message){
-  const fn=window.__darkFantasyAIResolvers?.[id];
-  if(fn)fn(false,String(message||'Local AI failed'));
-};
-window.__localAIStatus=function(message){
-  const msg=String(message||'');
-  const match=msg.match(/(\d{1,3})%/);
-  if(/✗|failed|error/i.test(msg)){
-    aiLastError=msg;
-    localStorage.setItem(KEY+'_ai_error',msg);
-    setAIProgress(match?Number(match[1]):0,msg);
-  }else if(match){
-    setAIProgress(Number(match[1]),msg);
-  }else if(/download|connecting|verifying/i.test(msg)){
-    setAIProgress(0,msg);
-  }else if(/installed|downloaded successfully|already installed/i.test(msg)){
-    aiLastError='';
-    localStorage.removeItem(KEY+'_ai_error');
-    setAIProgress(100,msg);
-  }else{
-    const status=document.getElementById('aiStatus');
-    if(status)status.textContent=msg;
-  }
-  updateNativeAIControls();
-};
 function scrubInvalidLoreText(s){ return s; }
 function compactText(value, maxChars){
   const limit = Math.max(20, Number(maxChars) || 200);
@@ -484,39 +376,51 @@ async function idbDelete(key){
   const db=await openSaveDB();
   await new Promise((resolve,reject)=>{const tx=db.transaction('saves','readwrite');tx.objectStore('saves').delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('IndexedDB delete failed'));});
 }
+async function idbPutMany(entries){
+  const db=await openSaveDB();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('saves','readwrite');
+    const store=tx.objectStore('saves');
+    for(const [key,value] of entries)store.put(value,key);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error('IndexedDB batch save failed'));
+    tx.onabort=()=>reject(tx.error||new Error('IndexedDB batch save aborted'));
+  });
+}
 async function save(){
   const data=JSON.stringify(state);
+  const entries=[[KEY,data]];
+  if(state?.scenarioId)entries.push([scenarioKey(state.scenarioId),data]);
   let idbOk=false;
   try{
-    await idbPut(KEY,data); idbOk=true;
-    if(state?.scenarioId)await idbPut(scenarioKey(state.scenarioId),data);
-    if(state?.scenarioId){
-      const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
-      records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
-      try{localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));}catch(err){console.warn('Scenario index localStorage update failed',err);}
-    }
+    // The active campaign and its scenario-keyed copy succeed or fail together.
+    await idbPutMany(entries);
+    idbOk=true;
   }catch(err){
     console.warn('IndexedDB save failed; using localStorage fallback',err);
   }
-
-  // IndexedDB is the primary save store. A full JSON copy in localStorage can
-  // exceed Android WebView's quota once images/backgrounds/turn snapshots grow.
   if(!idbOk){
     try{
       localStorage.setItem(KEY,data);
       if(state?.scenarioId)localStorage.setItem(scenarioKey(state.scenarioId),data);
     }catch(err){
       console.error('Local save fallback failed',err);
-      {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';}
-      toast('Could not save the game on this device.');
+      const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';
+      toast('Could not save the game on this device. Your action has not been committed.');
       return false;
     }
-  }else{
+  }
+  if(state?.scenarioId){
+    const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
+    records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
+    try{localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));}
+    catch(err){console.warn('Scenario index update failed',err);}
+  }
+  if(idbOk){
     // Keep only a tiny marker in localStorage; never duplicate the full game.
     try{localStorage.setItem(KEY+'_storage','indexeddb');}catch(err){}
   }
-
-  {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';}
+  const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';
   return true;
 }
 async function loadSavedState(){
@@ -838,64 +742,6 @@ function buildStoryContext(action=''){
     startingSituation:{location:compactText(startingSituation.location||'',180),situation:compactText(startingSituation.situation||'',500),intro:compactText(startingSituation.intro||startingSituation.openingBeat||'',900)},
     playerAction:compactText(action,1800)};
 }
-function parseNarrativeEntries(text){
-  const player=activePlayer();
-  const playerKey=player?rpgKey(player.name):'';
-  const known=[...(state.npcs||[]).map(n=>n.name),...state.party.filter(p=>!playerKey||rpgKey(p.name)!==playerKey).map(p=>p.name)]
-    .filter(Boolean).sort((a,b)=>b.length-a.length);
-  const normalised=String(text||'').replace(/\r/g,'').trim();
-  const blocks=normalised.split(/\n\s*\n+/).map(x=>x.trim()).filter(Boolean);
-  const entries=[];
-  const findKnownName=(s)=>known.find(n=>new RegExp('\\b'+n.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i').test(s))||'';
-
-  for(let block of blocks){
-    block=block.replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').trim();
-    if(!block)continue;
-    let speaker='';
-    let markerMatch=block.match(/^\[\s*(?:SPEAKER\s*:\s*)?([^\]]+)\]\s*/i);
-    if(markerMatch){
-      const candidate=markerMatch[1].trim();
-      if(!/^narrator$/i.test(candidate))speaker=known.find(n=>n.toLowerCase()===candidate.toLowerCase())||'';
-      block=block.slice(markerMatch[0].length).trim();
-    }else{
-      for(const name of known){
-        const re=new RegExp('^\\s*(?:\\*\\*|__)?'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\*\\*|__)?\\s*:\\s*','i');
-        if(re.test(block)){speaker=name;block=block.replace(re,'').trim();break;}
-      }
-    }
-
-    // Recovery for the optional prose layer occasionally omitting markers: if a paragraph contains a
-    // clear NPC attribution immediately around dialogue, render it as that NPC.
-    if(!speaker){
-      for(const name of known){
-        const qBefore=new RegExp("[“\"](?:[^“”\"]{0,700})[”\"]\\s*[,—-]?\\s*"+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+"\\s+(?:said|asked|replied|answered|murmured|whispered|repeated|added|continued|called|remarked|noted|observed|told|says|asks)\\b",'i');
-                const qAfter=new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"[^“”\"]{0,180}[“\"]",'i');
-        if(qBefore.test(block)||qAfter.test(block)){speaker=name;break;}
-      }
-    }
-
-    if(!block)continue;
-    entries.push(speaker
-      ? {type:'character',speaker,text:normaliseAIText(block,'character')}
-      : {type:'gm',text:normaliseAIText(block,'gm')});
-  }
-  if(!entries.length && normalised)entries.push({type:'gm',text:normaliseAIText(normalised,'gm')});
-  return entries.filter(e=>e.text);
-}
-
-function rpgNormCompare(s){return String(s||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();}
-function rpgPlayerEchoes(entries,action){
- const player=activePlayer(), pn=player?.name||'', src=rpgNormCompare(action), words=src.split(' ').filter(w=>w.length>2);
- const pnRe=pn?new RegExp('\\b'+pn.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i'):null;
- const bad=[/\\bwell as your father says i(?: am|'m|m)\\b/i,/\\bi (?:said|told|thought|turned|walked|looked|held|felt|want|wanted|have|had|own|live|lived)\\b/i];
- for(const e of entries){if(e.type!=='character')continue;const t=rpgNormCompare(e.text);if(pnRe&&pnRe.test(t)&&/\\b(?:i am|i'm|im)\\b/i.test(t))return true;if(bad.some(r=>r.test(t)))return true;if(words.length>=6){for(let i=0;i<=words.length-6;i++)if(t.includes(words.slice(i,i+6).join(' ')))return true;}}
- return false;
-}
-function rpgRepeatedPhysicalBeat(entries){
- const recent=state.story.slice(-10).map(e=>rpgNormCompare(e.text)).join(' '), current=entries.map(e=>rpgNormCompare(e.text)).join(' '); if(!recent||!current)return false;
- const groups=[/(?:step|steps|stepped|move|moves|moved|close|closer|approach|approaches|approached)\\b[^.]{0,80}\\bclos(?:e|er|ing)\\b/,/(?:small|slow|tentative)\\s+(?:step|movement|move)\\b/,/(?:silence|quiet)\\s+(?:stretches|settles|hangs|falls)\\b/,/(?:eyes?|gaze)\\s+(?:search|searches|searched|flicker|flickers|flickered|scan|scans)\\b/];
- return groups.some(r=>r.test(current)&&r.test(recent));
-}
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
   if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
@@ -936,8 +782,8 @@ function applyAIRelationships(result){
 function normaliseAIText(text, type){
   let s=String(text||'').trim();
   if(!s)return '';
-  // The model is instructed to use these markers. This light post-processing fixes the
-  // most common presentation mistakes without rewriting the actual prose.
+  // Native dialogue and action templates use these markers. This light post-processing fixes
+  // common presentation mistakes without rewriting the actual prose.
   s=s.replace(/\s+([,.!?])/g,'$1').replace(/([.!?])(?=[A-Za-z])/g,'$1 ');
   if(type==='character'){
     // Character actions should always use the same asterisk convention as Shane.
@@ -952,6 +798,11 @@ function normaliseAIText(text, type){
       }
       return m;
     });
+    // Close a malformed first action paragraph before the dialogue, never after the quote.
+    const split=s.indexOf('\n\n');
+    const actionPart=split<0?s:s.slice(0,split);
+    if(actionPart.startsWith('*') && (actionPart.match(/\*/g)||[]).length%2===1)
+      s=actionPart+'*'+(split<0?'':s.slice(split));
   }
   return s;
 }
@@ -995,76 +846,59 @@ async function typewriteAIEntry(entry, initialPause=0){
   keepStoryAtLatest();
 }
 async function testAI(){
-  const endpoint=String(document.getElementById('aiEndpoint')?.value||aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
-  const model=String(document.getElementById('aiModel')?.value||aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  if(nativeAIAvailable()&&!localAIInstalled()){const status=document.getElementById('aiStatus');if(status)status.textContent='✗ Download the local AI model first.';toast('Download the local AI model first');return;}
-  if(!endpoint&&!nativeAIAvailable()){toast('Enter a local AI endpoint first');return;}
-  aiSettings={...aiSettings,endpoint,model,enabled:true};
-  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   const status=document.getElementById('aiStatus');
-  if(status)status.textContent='Testing the local model directly…';
-  toast('Testing local AI…');
+  const oldState=state;
   try{
-    const payload={model,messages:[
-      {role:'system',content:'You are a local RPG narrative model. Reply with one natural, short paragraph. Do not use JSON, headings or metadata.'},
-      {role:'user',content:'A player has just entered a modern English house and looks around. Describe what happens next in 2 or 3 natural sentences.'}
-    ],stream:false};
-    const data=await localAIRequest(endpoint,payload);
-    const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
-    if(!text)throw new Error('Local AI returned no text');
-    aiLastError='';localStorage.removeItem(KEY+'_ai_error');
-    if(status)status.textContent='✓ Local AI is responding — '+model+'.';
-    toast('✓ Local AI works');
+    if(!activePlayer())throw new Error('Choose a player character before testing DFR Native.');
+    // Exercise the actual native generation path on a disposable state copy.
+    state=JSON.parse(JSON.stringify(oldState));
+    const result=dfrNativeGenerate('What happens next?');
+    const entries=aiEntries(result);
+    if(!result?.native||!entries.length)throw new Error('Native engine did not produce a story response.');
+    if(entries.some(e=>activePlayer()&&e.speaker===activePlayer().name))throw new Error('Native engine attempted to speak for the player.');
+    aiLastError='';localStorage.removeItem(KEY+'_native_error');
+    if(status)status.textContent='✓ DFR Native test passed — generated '+entries.length+' native response entry/entries without an external model.';
+    toast('✓ DFR Native works');
   }catch(e){
-    const msg=String(e?.message||e||'Unknown error').replace(/\s+/g,' ').trim();
-    aiLastError='✗ Local AI test failed: '+msg;
-    localStorage.setItem(KEY+'_ai_error',aiLastError);
+    const msg=String(e?.message||e||'Unknown native engine error').replace(/\s+/g,' ').trim();
+    aiLastError='✗ DFR Native test failed: '+msg;
+    localStorage.setItem(KEY+'_native_error',aiLastError);
     if(status)status.textContent=aiLastError;
-    toast('✗ Local AI test failed — see AI status');
-  }
+    toast('✗ DFR Native test failed');
+  }finally{state=oldState;}
 }
 async function redoLastAI(){
   if(storyBusy||!lastRedo||!activePlayer())return;
   const redo=lastRedo;
   try{
     state=JSON.parse(redo.snapshot);
-    await save();
-    render();
-    keepStoryAtLatest();
-    setStoryBusy(true);
-    toast('Redoing the latest response…');
-    try{
-      if(!(aiSettings.enabled&&aiSettings.endpoint)){
-        throw new Error('Local AI is not enabled');
-      }
-      const result=await callStoryAI(String(redo.action||'')+'\n\n[DFR_REFRESH_VARIANT: Generate a materially different valid response to the same player input. Preserve all established facts and world state. Do not repeat the previous response.]',redo.action);
-      /* Redo is prose-only too. The engine owns state; The optional prose layer never commits RPG state. */
-      await save();
-      const entries=aiEntries(result);
-      if(!entries.length)throw new Error('Local AI returned no usable story entries');
-      await commitAIStateTransaction(redo.action,entries,result?.native===true,result);
-      await save();
-      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
-      toast('New response generated');
-    }catch(err){
-      console.error(err);
-      const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
-      aiLastError='✗ Local AI redo failed: '+detail;
-      localStorage.setItem(KEY+'_ai_error',aiLastError);
-      const aiStatus=document.getElementById('aiStatus');if(aiStatus)aiStatus.textContent=aiLastError;
-      toast('Redo failed — the previous story state was restored.');
-      state=JSON.parse(redo.snapshot);
-      await save();render();keepStoryAtLatest();
-    }finally{
-      setStoryBusy(false);
-      document.getElementById('action')?.focus({preventScroll:true});
+    for(const previous of (redo.previousEntries||[])){
+      if(!previous?.speaker)continue;
+      const text=String(previous.text||'');
+      const physical=(text.match(/\*[^*\n]+\*/g)||[]).join(' ');
+      const dialogue=(text.match(/[“"]([^”"]+)[”"]/g)||[]).map(x=>x.slice(1,-1)).join(' ');
+      dfrRememberNative(previous.speaker,dfrIntent(redo.action),dialogue||text,physical);
     }
+    if(!await save())throw new Error('Could not restore the saved turn before Redo.');
+    render();keepStoryAtLatest();setStoryBusy(true);
+    toast('Generating a new DFR Native response…');
+    const result=dfrNativeGenerate(redo.action||'');
+    const entries=aiEntries(result);
+    if(!result?.native||!entries.length)throw new Error('DFR Native returned no usable story entries.');
+    redo.previousEntries=structuredClone(entries);lastRedo=redo;
+    await commitAIStateTransaction(redo.action,entries,true,result);
+    if(!await save())throw new Error('Could not save the regenerated response; the previous saved turn was retained.');
+    for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
+    toast('New native response generated');
   }catch(err){
     console.error(err);
-    toast('Could not redo that response.');
+    const detail=String(err?.message||err||'Unknown native engine error').replace(/\s+/g,' ').trim();
+    aiLastError='✗ DFR Native redo failed: '+detail;
+    localStorage.setItem(KEY+'_native_error',aiLastError);
+    const status=document.getElementById('aiStatus');if(status)status.textContent=aiLastError;
+    toast('Redo failed — previous story state restored.');
     try{state=JSON.parse(redo.snapshot);await save();render();keepStoryAtLatest();}catch(e){}
-    setStoryBusy(false);
-  }
+  }finally{setStoryBusy(false);document.getElementById('action')?.focus({preventScroll:true});}
 }
 function pushTurnSnapshot(action){
   if(!state.runtimeEngine||typeof state.runtimeEngine!=='object')state.runtimeEngine={version:3,currentScene:{participants:[],location:'',focus:'',lastAction:''},snapshots:[],turn:0};
@@ -1175,53 +1009,31 @@ async function addAction(){
     keepStoryAtLatest();
     toast('Saved');
     setStoryBusy(true);
-    lastRedo={snapshot:JSON.stringify(state),action:v};
+    lastRedo={snapshot:JSON.stringify(state),action:v,previousEntries:[]};
     updateRedoButton();
+    const postActionState=JSON.stringify(state);
     let result=null;
     try{
-      if(aiSettings.enabled&&aiSettings.endpoint){
-        result=await callStoryAI(v,v);
-        const corrected=String(result.corrected_action||'').trim();
-        if(corrected && corrected!==v){
-          const last=state.story[state.story.length-1]; if(last&&last.type==='player')last.text=corrected;
-        }
-        // The optional prose layer is prose-only. Canonical relationship, memory, NPC and world changes
-        // are committed only by validated engine transactions, never by model output.
-        addWorldEvent(`${playerName()} acted in ${state.currentLocation||'the current location'}.`,[playerName()],state.currentLocation||'',35);
-        await save();
-        if(result.mana_cost>0){
-          state.mana=Math.max(0,state.mana-result.mana_cost);
-          if(state.mana===0){toast('Mana exhausted — rest or meditate before pushing further.');}
-        }
-        const entries=aiEntries(result);
-        if(entries.length){
-          await commitAIStateTransaction(v,entries,result?.native===true,result);
-          await save();
-        }
-        if(!entries.length){
-          toast('AI had no immediate response');
-        }else{
-          for(let i=0;i<entries.length;i++){
-            await typewriteAIEntry(entries[i],i===0?100:180);
-          }
-          toast('Story continues');
-        }
-      }else{
-        lastRedo=null; updateRedoButton();
-        // World Brain is the primary narrative path. When it is disabled, preserve the
-        // player's action and world transition but never fabricate an NPC response.
-        await save();
-        toast('World Brain is off — your action was saved.');
-      }
+      // DFR Native is the only gameplay narrative route. No endpoint or external model is consulted.
+      result=dfrNativeGenerate(v);
+      const entries=aiEntries(result);
+      if(!result?.native||!entries.length)throw new Error('DFR Native returned no usable story entries.');
+      if(lastRedo)lastRedo.previousEntries=structuredClone(entries);
+      addWorldEvent(`${playerName()} acted in ${state.currentLocation||'the current location'}.`,[playerName()],state.currentLocation||'',35);
+      await commitAIStateTransaction(v,entries,true,result);
+      if(!await save())throw new Error('Could not save the generated response; the saved player action has been retained.');
+      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?100:180);
+      toast('Story continues — DFR Native');
     }catch(err){
       console.error(err);
-      const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
-      aiLastError='✗ Local AI failed: '+detail;
-      localStorage.setItem(KEY+'_ai_error',aiLastError);
+      // Discard partial world/relationship mutations while keeping the already-saved player action.
+      try{state=JSON.parse(postActionState);await save();render();keepStoryAtLatest();}catch(rollbackError){console.error('DFR Native rollback failed',rollbackError);}
+      const detail=String(err?.message||err||'Unknown DFR Native error').replace(/\s+/g,' ').trim();
+      aiLastError='✗ DFR Native failed: '+detail;
+      localStorage.setItem(KEY+'_native_error',aiLastError);
       const aiStatus=document.getElementById('aiStatus'); if(aiStatus)aiStatus.textContent=aiLastError;
-      // Do not fake an NPC response when the local model fails. Keep the player's
-      // action saved and surface the real error so the AI path can be diagnosed.
-      toast('Local AI failed — your action was saved. Check Game → Local Story AI.');
+      // Keep the player's action saved and report a genuine native-engine error.
+      toast('DFR Native failed — your action was saved. Check Game → DFR Native Intelligence.');
     }finally{setStoryBusy(false);area.focus({preventScroll:true});}
   }catch(err){
     console.error(err); try{state=JSON.parse(oldState);render();}catch(e){}
@@ -1607,7 +1419,7 @@ loadSavedState().then(async()=>{
     await cleanDuplicateScenarios(); render(); keepStoryAtLatest();
   }
 }).catch(err=>console.warn(err));
-setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
+setTimeout(updateAIStatus,0);
 
 document.addEventListener('DOMContentLoaded',()=>updateRedoButton());
 
@@ -1698,11 +1510,11 @@ function applyAINPCs(result){
 
 /* ========================= RPG CORE v5.0 =========================
    Persistent campaign files, segmented character state, relationship baselines,
-   relevance retrieval, and a bounded working context for the local model.
-   The local model is the prose layer; this engine owns canon and state.
+   scenario packages, segmented character state, relationship baselines, and persistent campaign state.
+   DFR Native generates the prose; this engine owns canon and state.
 =================================================================== */
 const RPG_CORE_VERSION='5.4.0-dfr-native';
-const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
+const RPG_RUNTIME_ARCHITECTURE='native-story-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
 async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
@@ -1794,499 +1606,69 @@ function rpgExtractRelationships(spec, party){
 }
 
 /* Persist the package as logical files. The phone can keep a large campaign;
-   only selected records are loaded into the model's working context. */
+   the segmented package mirrors the campaign for export and recovery. */
 async function rpgPersistPackage(){
-  if(!state?.scenarioId)return;
-  const sid=state.scenarioId;
-  await rpgPut(`campaign/${sid}/scenario`, {
-    id:sid,name:state.scenarioName,type:state.scenarioType,
-    world:rpgClone(state.worldProfile||{}),
-    canon:rpgClone(state.scenarioSpec||{}),
-    opening:rpgClone(state.story?.slice(0,80)||[])
-  });
-  const chars={};
-  for(const p of (state.party||[])){
-    chars[p.name]={
-      id:p.id||p.name,name:p.name,role:p.role,race:p.race,age:p.age,
-      control:p.control,playerControlled:!!p.playerControlled,
-      personality:p.personality,appearance:p.appearance,visualCanon:p.visualCanon,
-      behaviourCanon:p.behaviourCanon,speechStyle:p.speechStyle,
-      likes:rpgClone(p.likes||[]),dislikes:rpgClone(p.dislikes||[]),
-      fears:rpgClone(p.fears||[]),goals:rpgClone(p.goals||[]),
-      secrets:rpgClone(p.secrets||[]),morals:p.morals,
-      knowledge:rpgClone(p.knowledge||[])
-    };
-  }
-  await rpgPut(`campaign/${sid}/characters`,chars);
-  await rpgPut(`campaign/${sid}/relationships`,rpgClone(state.relationships||{}));
-  await rpgPut(`campaign/${sid}/memories`,rpgClone(state.longTermMemory||{}));
-  await rpgPut(`campaign/${sid}/timeline`,rpgClone(state.timeline||state.events||[]));
-  await rpgPut(`campaign/${sid}/runtime`,{
-    location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
-    npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
-    worldState:rpgClone(state.worldState||{}),dfrConversation:rpgClone(state.dfrConversation||{}),dfrNativeHistory:rpgClone(state.dfrNativeHistory||[]),dfrPhysicalState:rpgClone(state.dfrPhysicalState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
-  });
-}
-
-/* Read the persistent package and retrieve only records relevant to this turn. */
-async function rpgLoadRelevantContext(action){
-  const sid=state.scenarioId;
-  const all=await Promise.all([
-    rpgGet(`campaign/${sid}/scenario`),
-    rpgGet(`campaign/${sid}/characters`),
-    rpgGet(`campaign/${sid}/relationships`),
-    rpgGet(`campaign/${sid}/memories`),
-    rpgGet(`campaign/${sid}/runtime`)
-  ]);
-  const [scenario,characters,relationships,memories,runtime]=all;
-  const player=String(state.playerCharacterName||'').trim();
-  const playerObj=characters?.[player]||state.party?.find(p=>p.name===player)||{};
-  const activeNames=new Set();
-  const sceneText=String(action||'')+' '+String(state.currentLocation||'');
-  const npcs=Array.isArray(state.npcs)?state.npcs:[];
-  for(const p of (state.party||[])){
-    if(p.name===player)continue;
-    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
-    let score=0;
-    if(rel)score+=100;
-    if(sceneText.toLowerCase().includes(rpgKey(p.name)))score+=80;
-    if(p.currentLocation&&rpgKey(p.currentLocation)===rpgKey(state.currentLocation))score+=40;
-    if(npcs.some(n=>rpgKey(n.name)===rpgKey(p.name)&&rpgKey(n.location||'')===rpgKey(state.currentLocation)))score+=30;
-    if(score>0)activeNames.add(p.name);
-  }
-  /* If the scene has just begun, prefer the scenario's opening cast. */
-  if(!activeNames.size){
-    for(const e of (state.story||[]).slice(-8)){
-      if(e?.speaker)activeNames.add(e.speaker);
-    }
-  }
-  const active=[];
-  for(const name of activeNames){
-    const p=characters?.[name]||state.party?.find(x=>x.name===name);
-    if(!p)continue;
-    active.push({
-      name:p.name,role:p.role,personality:p.personality,behaviourCanon:p.behaviourCanon,
-      speechStyle:p.speechStyle,goals:p.goals,likes:p.likes,dislikes:p.dislikes,
-      fears:p.fears,morals:p.morals,secrets:p.secrets
-    });
-  }
-  const rels=[];
-  for(const p of active){
-    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
-    if(rel)rels.push({
-      characters:rel.characters,affection:rel.affection,trust:rel.trust,
-      attraction:rel.attraction,comfort:rel.comfort,tension:rel.tension,bond:rel.bond,
-      label:rel.label,history:rel.history,meaning:rel.meaning
-    });
-  }
-  const playerMem=memories?.characterMemories?.[player]||[];
-  const relevantMem=[];
-  for(const p of active){
-    const arr=memories?.characterMemories?.[p.name]||[];
-    relevantMem.push(...arr.slice(-8));
-  }
-  relevantMem.push(...playerMem.slice(-8));
-  const uniqueMem=[...new Map(relevantMem.map(x=>[JSON.stringify(x),x])).values()].slice(-12);
-  return {
-    scenario:{name:scenario?.name||state.scenarioName,world:scenario?.world||state.worldProfile,canon:scenario?.canon||state.scenarioSpec},
-    player:playerObj,
-    activeCharacters:active,
-    relationships:rels,
-    memories:uniqueMem,
-    runtime:runtime||{},
-    recent:(state.story||[]).slice(-8),
-    action:String(action||'').trim()
-  };
-}
-
-function rpgCompactText(v,max){
-  let s=typeof v==='string'?v:JSON.stringify(v);
-  s=String(s||'').replace(/\s+/g,' ').trim();
-  return s.length>max?s.slice(0,Math.max(0,max-1))+'…':s;
-}
-
-/* Build a deliberately small working set. Storage can be large; model input cannot. */
-async function buildRPGWorkingPrompt(action){
-  rpgReconcileRuntimeScene();
-  const c=await rpgLoadRelevantContext(action);
-  const rawCanon=c.scenario?.canon&&typeof c.scenario.canon==='object'?c.scenario.canon:{};
-
-  // Party characters are real scene participants too. The previous build only exposed
-  // state.npcs to the model, which meant imported scenario characters such as Elizabeth
-  // could have their relationship data stored correctly but their personality/history
-  // omitted from the actual generation context.
-  const recentText=c.recent.map(e=>String(e?.text||'')).join(' ');
-  const actionText=String(action||'');
-  const partyCandidates=(state.party||[])
-    .filter(p=>{
-      if(!p||!p.name||p.name===c.player?.name||isActivePlayer(p))return false;
-      // A relationship makes an NPC relevant, but it does NOT put them in the scene.
-      // Scene participation requires an explicit present=true state AND the character's
-      // authoritative location to match the player's current location.
-      return isScenePresent(p.name);
-    })
-    .map(p=>{
-      const rel=c.relationships.find(r=>
-        Array.isArray(r.characters) && r.characters.some(n=>rpgKey(n)===rpgKey(p.name))
-      );
-      let score=0;
-      if(rel)score+=100;
-      if(new RegExp('\\b'+String(p.name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(recentText+' '+actionText))score+=90;
-      if((c.recent||[]).some(e=>String(e?.speaker||'').toLowerCase()===String(p.name).toLowerCase()))score+=70;
-      return {p,rel,score};
-    })
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,4);
-
-  const worldNPCs=(state.npcs||[])
-    .filter(n=>n&&n.name&&isScenePresent(n.name))
-    .map(n=>{
-      const recentSpeaker=(c.recent||[]).some(e=>rpgKey(e?.speaker)===rpgKey(n.name));
-      const addressed=new RegExp('\\b'+String(n.name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(recentText+' '+actionText);
-      const score=relevanceScore(n,c.player,state.currentLocation)+(recentSpeaker?90:0)+(addressed?80:0);
-      return {...n,_score:score};
-    })
-    .sort((a,b)=>b._score-a._score)
-    .slice(0,4);
-
-  const active=[];
-  const seen=new Set();
-  for(const item of [...partyCandidates.map(x=>x.p),...worldNPCs]){
-    const key=rpgKey(item.name);
-    if(!key||seen.has(key))continue;
-    seen.add(key);
-    const rel=c.relationships.find(r=>
-      Array.isArray(r.characters) && r.characters.some(n=>rpgKey(n)===key)
-    );
-    const r=characterRuntime(item);
-    const sceneRec=characterSceneRecord(item.name);
-    active.push({
-      name:item.name,
-      role:item.role,
-      location:sceneRec.location,
-      scenePresence:'PRESENT',
-      personality:rpgCompactText(item.personality,850),
-      behaviour:rpgCompactText(item.behaviourCanon||item.behaviorCanon,650),
-      speech:rpgCompactText(item.speechStyle,450),
-      goals:(item.goals||[]).slice(0,4),
-      fears:(item.fears||[]).slice(0,3),
-      morals:rpgCompactText(item.morals,220),
-      knowledge:(item.knowledge||[]).slice(-6).map(x=>rpgCompactText(x,220)),
-      relationshipGuidance:rpgCompactText(item.relationshipGuidance,700),
-      relationship:rel?{
-        affection:rel.affection,trust:rel.trust,attraction:rel.attraction,
-        comfort:rel.comfort,tension:rel.tension,bond:rel.bond,
-        history:rpgCompactText(rel.history,700),
-        meaning:rpgCompactText(rel.meaning,500)
-      }:null
-    });
-  }
-
-  const memories=c.memories.slice(-10).map(m=>rpgCompactText(m,500));
-  const recent=c.recent.slice(-6).map(e=>({
-    speaker:e.speaker||'Narrator',type:e.type||'gm',text:rpgCompactText(e.text,900)
-  }));
-
-  // These fields are deliberately promoted into the working context. They are scenario
-  // canon, not optional prose: the model must know what has already happened before it
-  // decides what happens next.
-  const starting=rawCanon.startingSituation||{};
-  const sceneCanon={
-    name:rawCanon.name||c.scenario.name||state.scenarioName,
-    description:rpgCompactText(rawCanon.description,650),
-    tone:rpgCompactText(rawCanon.tone,300),
-    startingSituation:{
-      location:rpgCompactText(starting.location||state.currentLocation,220),
-      situation:rpgCompactText(starting.situation,650),
-      intro:rpgCompactText(starting.intro,950),
-      openingBeat:rpgCompactText(starting.openingBeat,350)
-    },
-    generatorGuidance:rpgCompactText(rawCanon.generatorGuidance,1000),
-    rules:(rawCanon.rules||[]).slice(0,8).map(x=>rpgCompactText(x,220)),
-    storyThreads:(rawCanon.storyThreads||[]).slice(0,4).map(x=>rpgCompactText(x,260))
-  };
-
-  const currentSceneState={
-    phase:state.currentScenePhase||'free_play',
-    location:String(state.currentLocation||'Unknown'),
-    scriptedOpeningCompleted:!!state.openingComplete,
-    instruction: state.openingComplete
-      ? 'The scripted opening has already happened. Continue from the current story; do not restart, replay or rewrite it.'
-      : 'The opening is still in progress. Follow the scenario opening sequence and current scene phase; do not skip ahead to later reveals.'
-  };
-  const allSceneCharacters=Object.entries(state.worldState?.characters||{});
-  currentSceneState.presentCharacters=allSceneCharacters
-    .filter(([n,v])=>v&&v.present!==false&&rpgKey(v.location||'')===rpgKey(state.currentLocation||''))
-    .map(([n,v])=>({name:n,location:v.location,activity:v.activity||'present'}));
-  currentSceneState.absentCharacters=allSceneCharacters
-    .filter(([n,v])=>!v||v.present===false||rpgKey(v.location||'')!==rpgKey(state.currentLocation||''))
-    .map(([n,v])=>({name:n,location:v?.location||'',reason:v?.present===false?'not-present-in-scene':'different-location'}));
-  currentSceneState.plannedEvents=Array.isArray(state.worldState?.plannedEvents)?state.worldState.plannedEvents.slice(-8):[];
-  currentSceneState.completedEvents=Array.isArray(state.worldState?.events)?state.worldState.events.slice(-8):[];
-
-  return {
-    scenario:sceneCanon,
-    player:{name:c.player.name,role:c.player.role,personality:rpgCompactText(c.player.personality,500)},
-    activeCharacters:active,
-    relationships:c.relationships.slice(0,4).map(r=>({
-      characters:r.characters,affection:r.affection,trust:r.trust,
-      attraction:r.attraction,comfort:r.comfort,tension:r.tension,bond:r.bond,
-      history:rpgCompactText(r.history,800),meaning:rpgCompactText(r.meaning,500)
-    })),
-    memories,recent,
-    sceneState:currentSceneState,
-    presentCharacters:currentSceneState.presentCharacters,
-    absentCharacters:currentSceneState.absentCharacters,
-    plannedEvents:currentSceneState.plannedEvents,
-    completedEvents:currentSceneState.completedEvents,
-    location:String(state.currentLocation||'Unknown'),
-    action:String(action||'').trim()
-  };
-}
-
-/*
- * Validate the model's turn before it reaches the story log.
- * A prose generator can occasionally echo the player's input or repeat a physical beat from
- * the immediately preceding scene. Those are generation errors, not canon.
- */
-function rpgTurnQuality(entries, action){
-  const issues=[];
-  if(!entries?.length)issues.push('empty-response');
-  if(rpgPlayerEchoes(entries,action))issues.push('player-voice-or-echo');
-  if(rpgRepeatedPhysicalBeat(entries))issues.push('repeated-physical-beat');
-  if((entries||[]).filter(e=>e.type==='character').length>3)issues.push('too-many-npc-speakers');
-  const playerText=String(action||'').replace(/\s+/g,' ').trim().toLowerCase();
-  const words=playerText.split(/\s+/).filter(w=>w.length>4);
-  for(const e of entries||[]){
-    if(e.type!=='character')continue;
-    const text=String(e.text||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(words.length>=8){
-      const hits=words.filter(w=>text.includes(w)).length;
-      if(hits/words.length>=0.72 && text.length>=Math.min(120,playerText.length*0.55))issues.push('player-echo');
-    }
-    if(/\b(?:i|i'm|i am|i said|i told|i thought)\b/.test(text) && /\bshane\b/i.test(text))issues.push('player-voice');
-  }
-  const unique=[...new Set(issues)];
-  return {ok:unique.length===0,issues:unique,reason:unique.join(', ')};
-}
-
-function rpgRepeatedBeatWarning(){
-  const recent=(state.story||[]).slice(-8).map(e=>String(e?.text||'')).join(' ');
-  const warnings=[];
-  if(/take[s]? a small step closer|move[s]? closer|close[sd]? the (remaining )?distance/i.test(recent))
-    warnings.push('An NPC has already moved closer in the recent scene. Do not repeat another step closer unless the player explicitly changes the physical situation.');
-  if(/silence (?:stretch|settle|hang)|the silence/i.test(recent))
-    warnings.push('The scene has already used a silence beat. Advance the conversation instead of repeating another prolonged silence.');
-  return warnings.join('\n');
-}
-
-function rpgSceneContinuityIssues(entries, ctx, action){
-  rpgReconcileRuntimeScene();
-  const activeNames=new Set((ctx.activeCharacters||[]).map(x=>rpgKey(x.name)));
-  const absent=(ctx.absentCharacters||[]).map(x=>typeof x==='string'?x:x?.name).filter(Boolean);
-  const issues=[];
-  for(const e of entries||[]){
-    if(e.type==='character'){
-      const speaker=String(e.speaker||'').trim();
-      // Presence has two authoritative views in the runtime: the canonical character
-      // record and the current-scene projection. They must agree. A character being
-      // omitted from the compact ACTIVE NPC list is NOT the same thing as being absent.
-      // Prefer the canonical scene record, then reconcile against currentPeople so a
-      // valid speaker cannot be rejected merely because a context projection was stale.
-      const sceneRecord= speaker && typeof characterSceneRecord==='function' ? characterSceneRecord(speaker) : null;
-      const currentPeople=(ctx?.worldContext?.currentPeople||[]).some(x=>rpgKey(x?.name||x)===rpgKey(speaker));
-      const authoritativePresent=!!(sceneRecord?.scenePresent || currentPeople);
-      if(!authoritativePresent)issues.push(`inactive-speaker:${speaker||'unknown'}`);
-      else if(!activeNames.has(rpgKey(speaker)) && !currentPeople)issues.push(`uncontextualized-speaker:${speaker}`);
-    }
-    const text=String(e.text||'');
-    for(const name of absent){
-      const re=new RegExp('\\b'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
-      if(!re.test(text))continue;
-      // Mentioning an absent person is fine (for example, answering a question about
-      // where Elizabeth is). What is invalid is silently giving that person physical
-      // presence, observation, dialogue or an action in the current scene.
-      const physical=new RegExp('(?:'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'|she|he)\\s+(?:had been |was |were |is |are |stood|sat|walked|entered|came|arrived|watched|observed|listened|looked|glanced|stared|leaned|smiled|frowned|spoke|said|asked|replied|answered|gestured|moved|stepped|followed|waited|approached|took|turned|shifted)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:watching|observing|listening|waiting|standing|sitting|looking|speaking|talking|following|entering)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:gaze|eyes|voice|expression|posture)\\b','i');
-      if(physical.test(text))issues.push(`absent-character:${name}`);
-    }
-  }
-  return [...new Set(issues)];
-}
-
-/* The model is a prose renderer. It never owns campaign state. */
-async function extractAIStateTransaction(action,entries){
-  /*
-   * The prose model remains the voice. A second, tiny structured pass is used only
-   * to propose state changes. The engine validates the proposal before committing it.
-   * This keeps canon/state ownership out of the model while allowing relationships,
-   * memories and NPC state to actually develop over time.
-   */
-  const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
-  const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  if(!endpoint && !nativeAIAvailable())return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{}};
-
-  const player=activePlayer();
-  const playerNameValue=player?.name||playerName();
-  const allCharacters=[...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name);
-  const characterNames=[...new Set(allCharacters.map(x=>x.name))];
-  const activeNames=[...new Set((buildRPGStateCharacterNames()).filter(Boolean))];
-  const responseText=(entries||[]).map(e=>`${e.type==='character'?(e.speaker||'NPC'):'Narrator'}: ${String(e.text||'')}`).join('\n').slice(0,5000);
-  const actionText=String(action||'').trim().slice(0,1800);
-  const relationshipSnapshot=Object.values(state.relationships||{}).slice(0,12).map(r=>({
-    characters:r.characters,affection:r.affection,trust:r.trust,attraction:r.attraction,
-    comfort:r.comfort,tension:r.tension,bond:r.bond
-  }));
-
-  const prompt=`You are the STATE TRANSACTION EXTRACTOR for a persistent RPG engine.
-Do not write story prose. Return ONLY valid JSON.
-
-The prose below has already passed the scene-safety validator. Your job is to identify ONLY small state changes that are directly supported by the player's action and the generated scene.
-The ENGINE remains authoritative. Never invent facts, memories, relationships, locations, arrivals, travel, possessions or events that are not explicitly supported by the turn.
-
-PLAYER: ${playerNameValue}
-CURRENT LOCATION: ${String(state.currentLocation||'Unknown')}
-KNOWN CHARACTERS: ${JSON.stringify(characterNames)}
-CHARACTERS PRESENT IN THIS SCENE: ${JSON.stringify(activeNames)}
-CURRENT RELATIONSHIPS: ${JSON.stringify(relationshipSnapshot)}
-
-PLAYER ACTION:
-${actionText}
-
-GENERATED SCENE:
-${responseText}
-
-Return exactly this JSON shape:
-{"relationship_changes":[],"memory_updates":[],"npc_updates":[],"world_updates":{}}
-
-relationship_changes: only clear relationship movement caused by this turn. Each item must contain name, with, and optional *_delta fields. Deltas must be between -5 and +5. Never create a relationship merely because two characters are known.
-memory_updates: only explicit information established or experienced in this turn. Each item: character, text, type, importance. Character must be a known character. Do not give a character knowledge they did not witness or receive in this turn.
-npc_updates: only clear changes to the current mood/topic/concern/intent of a character PRESENT in this scene. Never change location or presence here.
-world_updates: leave empty unless the turn explicitly establishes a simple timeOfDay or inGameDay change. Never change location, character presence, travel or canon here.
-If there is no clearly supported change, return an empty array/object.
-Do not include explanations, markdown or code fences.`;
-
-  const payload={model,messages:[{role:'system',content:prompt}],stream:false,options:{temperature:0.15,max_tokens:700}};
-  let data;
-  try{data=await localAIRequest(endpoint,payload);}catch(e){return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:String(e?.message||e||'state extraction failed')};}
-  const raw=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
   try{
-    const cleaned=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
-    return JSON.parse(cleaned);
-  }catch(e){
-    return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:'invalid state transaction JSON'};
+    if(!state?.scenarioId)return false;
+    const sid=state.scenarioId;
+    await rpgPut(`campaign/${sid}/scenario`, {
+      id:sid,name:state.scenarioName,type:state.scenarioType,
+      world:rpgClone(state.worldProfile||{}),
+      canon:rpgClone(state.scenarioSpec||{}),
+      opening:rpgClone(state.story?.slice(0,80)||[])
+    });
+    const chars={};
+    for(const p of (state.party||[])){
+      chars[p.name]={
+        id:p.id||p.name,name:p.name,role:p.role,race:p.race,age:p.age,
+        control:p.control,playerControlled:!!p.playerControlled,
+        personality:p.personality,appearance:p.appearance,visualCanon:p.visualCanon,
+        behaviourCanon:p.behaviourCanon,speechStyle:p.speechStyle,
+        likes:rpgClone(p.likes||[]),dislikes:rpgClone(p.dislikes||[]),
+        fears:rpgClone(p.fears||[]),goals:rpgClone(p.goals||[]),
+        secrets:rpgClone(p.secrets||[]),morals:p.morals,
+        knowledge:rpgClone(p.knowledge||[])
+      };
+    }
+    await rpgPut(`campaign/${sid}/characters`,chars);
+    await rpgPut(`campaign/${sid}/relationships`,rpgClone(state.relationships||{}));
+    await rpgPut(`campaign/${sid}/memories`,rpgClone(state.longTermMemory||{}));
+    await rpgPut(`campaign/${sid}/timeline`,rpgClone(state.timeline||state.events||[]));
+    await rpgPut(`campaign/${sid}/runtime`,{
+      location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
+      npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
+      worldState:rpgClone(state.worldState||{}),dfrConversation:rpgClone(state.dfrConversation||{}),dfrNativeHistory:rpgClone(state.dfrNativeHistory||[]),dfrPhysicalState:rpgClone(state.dfrPhysicalState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
+    });
+    return true;
+  }catch(err){
+    // This segmented cache is optional; the main campaign save remains authoritative.
+    console.warn('DFR package cache unavailable; keeping the main campaign save',err);
+    return false;
   }
 }
 
-function buildRPGStateCharacterNames(){
-  const here=String(state.currentLocation||'').trim();
-  const out=[];
-  for(const p of state.party||[]){if(p?.name && isScenePresent(p.name))out.push(p.name);}
-  for(const n of state.npcs||[]){if(n?.name && isScenePresent(n.name))out.push(n.name);}
-  return [...new Set(out)];
-}
-
-function validateAndCommitAIStateTransaction(tx,action,entries){
-  const empty={relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{}};
-  if(!tx||typeof tx!=='object')return empty;
-  const player=activePlayer();
-  const playerNameValue=player?.name||playerName();
-  const known=new Map([...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name).map(x=>[rpgKey(x.name),x]));
-  const present=new Set(buildRPGStateCharacterNames().map(rpgKey));
-  const out={...empty};
-
-  if(Array.isArray(tx.relationship_changes)){
-    for(const c of tx.relationship_changes.slice(0,8)){
-      const name=String(c?.name||'').trim(), withName=String(c?.with||c?.other||c?.target||playerNameValue).trim();
-      if(!name||!withName||!known.has(rpgKey(name))||!known.has(rpgKey(withName)))continue;
-      if(!present.has(rpgKey(name)) && rpgKey(name)!==rpgKey(playerNameValue))continue;
-      if(!present.has(rpgKey(withName)) && rpgKey(withName)!==rpgKey(playerNameValue))continue;
-      const item={name,with:withName};
-      for(const k of ['bond','reputation','affection','trust','attraction','comfort','tension']){
-        const dk=k+'_delta';
-        if(c[dk]===undefined)continue;
-        const n=Number(c[dk]);
-        if(Number.isFinite(n)&&n!==0)item[dk]=Math.max(-5,Math.min(5,n));
-      }
-      if(Object.keys(item).length>2)out.relationship_changes.push(item);
-    }
-  }
-
-  if(Array.isArray(tx.memory_updates)){
-    for(const m of tx.memory_updates.slice(0,10)){
-      const character=String(m?.character||m?.characterName||'').trim();
-      const textValue=String(m?.text||m?.memory||m?.fact||'').replace(/\s+/g,' ').trim();
-      if(!character||!textValue||!known.has(rpgKey(character)))continue;
-      /* A character memory must belong to a participant in this turn. This prevents
-         the extractor from leaking the scene into unrelated characters' memories. */
-      if(!present.has(rpgKey(character)) && rpgKey(character)!==rpgKey(playerNameValue))continue;
-      if(textValue.length>320)continue;
-      out.memory_updates.push({
-        character,
-        text:textValue,
-        type:String(m?.type||'event').slice(0,40),
-        importance:Math.max(1,Math.min(100,Number(m?.importance)||50)),
-        source:'validated_scene_turn'
-      });
-    }
-  }
-
-  if(Array.isArray(tx.npc_updates)){
-    for(const u of tx.npc_updates.slice(0,8)){
-      const name=String(u?.name||u?.character||'').trim();
-      if(!name||!present.has(rpgKey(name))||rpgKey(name)===rpgKey(playerNameValue))continue;
-      const item={name};
-      for(const k of ['mood','currentGoal','currentConcern','currentTopic','intent']){
-        if(u[k]!==undefined){
-          const value=String(u[k]||'').replace(/\s+/g,' ').trim();
-          if(value.length<=220)item[k]=value;
-        }
-      }
-      if(Object.keys(item).length>1)out.npc_updates.push(item);
-    }
-  }
-
-  if(tx.world_updates&&typeof tx.world_updates==='object'){
-    if(typeof tx.world_updates.timeOfDay==='string' && tx.world_updates.timeOfDay.length<=40)out.world_updates.timeOfDay=tx.world_updates.timeOfDay;
-    if(Number.isFinite(Number(tx.world_updates.inGameDay)))out.world_updates.inGameDay=Math.max(1,Math.min(99999,Number(tx.world_updates.inGameDay)));
-  }
-
-  return out;
-}
-
-async function commitAIStateTransaction(action,entries,isNative=false,nativeResult=null){
+async function commitAIStateTransaction(action,entries,isNative=true,nativeResult=null){
   try{
-    /*
-     * World Brain owns prose decisions. The engine then asks a separate validator
-     * to turn observable consequences into structured state updates. Native response
-     * pools do not participate in the normal path.
-     */
-    if(isNative){
-      const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
-      applyAIRelationships(tx);
-      return tx;
-    }
-    const proposal=await extractAIStateTransaction(action,entries);
-    const tx=validateAndCommitAIStateTransaction(proposal,action,entries);
-    /* Engine appliers are now actually connected to the validated transaction. */
+    // DFR Native is the only narrative engine. It owns its state updates directly;
+    // this transaction applies only validated relationship deltas returned by that engine.
+    const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
     applyAIRelationships(tx);
-    applyAIMemory({...tx,action:String(action||'').trim()});
-    applyAINPCs(tx);
-    applyAIWorldUpdates(tx);
     return tx;
   }catch(e){
-    console.warn('AI state transaction skipped',e);
-    return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:String(e?.message||e||'transaction failed')};
+    // A failed relationship update is a failed story transaction. Let addAction/Redo
+    // restore the post-player-action snapshot instead of silently saving partial state.
+    console.error('DFR Native relationship transaction failed',e);
+    throw e;
   }
 }
 
 
 /* ================================================================
-   LEGACY DFR NATIVE LANGUAGE ENGINE — DIAGNOSTIC ONLY
-   Purpose-built local narrative engine. No external model required.
+   DFR NATIVE LANGUAGE ENGINE — OFFLINE STORY GENERATION
+   Purpose-built local narrative engine. No external model or network connection required.
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
-const DFR_NATIVE_LANGUAGE_VERSION='legacy-diagnostic-0.9.0';
 const DFR_NATIVE_LEXICON={
   greeting:['Hello.','Hey.','Good to see you.','I wasn’t expecting you.','Hello. Come in.','There you are.','Hi. How are you?','Hello. What brings you over?','Hey. It’s good to see you.','Hello. I was wondering when you would arrive.'],
   question:['What brings you here?','What happened?','Is everything alright?','What do you need?','What exactly do you mean?','What are you getting at?','What is it you want to know?','Can you explain that?','What should I understand from that?','Where are you going with this?'],
@@ -2569,7 +1951,7 @@ function dfrActionForEmotion(person,emotion,seed,intent="neutral"){
     'soft concern':[`*${name}'s expression softens.*`,`*${name} looks at you with quiet concern.*`,`*${name} pauses, clearly choosing their words carefully.*`,`*${name} edges a little closer, giving you her full attention.*`],
     direct:[`*${name} looks at you directly.*`,`*${name} answers without hesitation.*`,`*${name} holds your gaze.*`,`*${name} straightens, standing squarely before you.*`],
     calm:[`*${name} gives a small nod.*`,`*${name} relaxes, accepting the moment.*`,`*${name} offers a quiet nod.*`,`*${name} settles back into a comfortable stance.*`],
-    neutral:[`*${name} considers that for a moment.*`,`*${name} listens without interrupting.*`,`*${name} looks thoughtful for a moment.`]
+    neutral:[`*${name} considers that for a moment.*`,`*${name} listens without interrupting.*`,`*${name} looks thoughtful for a moment.*`]
   };
   const intentOptions={
     question:[`*${name} tilts their head slightly, considering the question.*`,`*${name} studies you for a moment before answering.*`,`*${name} raises an eyebrow, weighing the question.*`,`*${name} takes a moment to decide how to answer.*`,`*${name} gives you a measured look.*`],
@@ -2792,18 +2174,22 @@ function dfrGroupAcknowledgement(person,seed,selected=false){
   return {physical,dialogue};
 }
 function dfrGroupEntryResponse(action,seed){
+  const a=dfrActionText(action).toLowerCase();
   if(!dfrActionMentionsAllGirls(action))return null;
+  // Mentioning "everyone" in ordinary dialogue must never teleport the cast or replay introductions.
+  const actualArrival= /\b(?:enter|entered|entering|walk into|walked into|walking into|step into|stepped into|stepping into|come into|came into|join|joined|joining|arrive|arrived|arriving|gather|gathered|gathering|call everyone into|ask everyone to come)\b/.test(a);
+  if(!actualArrival)return null;
   const c0=dfrConversationState();
   if(['family_introduction','elizabeth_entered','elizabeth_apology','elizabeth_conversation','arrangement_ready','arrangement_explained'].includes(String(c0.stage||'')))return null;
-  const a=dfrActionText(action).toLowerCase();
+  if(state.worldState?.events?.some(e=>String(e?.id||'')==='morningstar-family-gathered' && e.status==='completed'))return null;
   const location=/\b(?:study|drawing room|library|lounge|sitting room)\b/.test(a)?'Morningstar Estate — Study':'Morningstar Estate — Study';
-  const openingGroup=['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Freya Morningstar'];
+  const openingGroup=['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
   dfrSetSceneOnly(openingGroup,location);
   setCharacterLocation('Elizabeth Vale','Morningstar Estate — elsewhere in the house','working elsewhere',false);
   const c=dfrConversationState();
   c.stage='family_introduction'; c.topic='family_introduction'; state.currentScenePhase='family_introduction';
   if(!state.worldState.events.some(e=>String(e?.id||'')==='morningstar-family-gathered'))state.worldState.events.push({id:'morningstar-family-gathered',status:'completed',at:Date.now(),description:'Shane entered the study with Gerald and the Morningstar family gathered there.'});
-  const people=DFR_MORNINGSTAR_GROUP.map(n=>dfrPerson(n)).filter(Boolean);
+  const people=openingGroup.map(n=>dfrPerson(n)).filter(Boolean);
   const voices=new Set();
   // Let several personalities speak, but never force every NPC to have dialogue.
   for(const n of people){
@@ -2871,16 +2257,26 @@ function dfrHomeArrivalResponse(action,seed){
 function dfrDynamicTravelResponse(action,seed){
   const a=dfrActionText(action).toLowerCase();
   const loc=dfrRequestedTravelLocation(action); if(!loc)return null;
-  const follows=/\b(?:we|everyone|all of us)\b/.test(a);
+  const groupTravel=/\bwe\b.{0,35}\b(?:go|head|travel|walk|leave|move|come|follow|drive|ride)\b|\b(?:everyone|all of us|the group|all the girls|the whole family)\b.{0,35}\b(?:go|head|travel|walk|leave|move|come|follow|drive|ride)\b/.test(a) && !/\b(?:don't|do not|never|not)\b.{0,35}\b(?:we|everyone|all of us|the group|all the girls|the whole family)\b/.test(a);
   const active=[...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name&&isScenePresent(x.name)&&!isActivePlayer(x));
-  if(follows){
-    dfrSetSceneOnly([...(active.map(x=>x.name))],loc);
+  const explicitlyTaken=active.filter(p=>{
+    const name=String(p.name||'');
+    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return new RegExp('\\b(?:take|bring|ask|invite|lead|walk|travel|go)\\b.{0,50}\\b'+escaped+'\\b|\\b'+escaped+'\\b.{0,40}\\b(?:with me|with us|comes with|come with|joins me|join me)\\b','i').test(action);
+  });
+  let travellers=[];
+  if(groupTravel){
+    travellers=active;
+    dfrSetSceneOnly(active.map(x=>x.name),loc);
   }else{
+    // Moving Shane alone changes only his location; companions remain where they were.
     dfrSetRuntimeLocation(loc);
-    for(const p of active)setCharacterLocation(p.name,loc,'present',true);
+    for(const p of explicitlyTaken)setCharacterLocation(p.name,loc,'travelling with Shane',true);
+    travellers=explicitlyTaken;
   }
   const c=dfrConversationState(); c.stage='travelled'; c.topic='world_state'; state.currentScenePhase='travelled';
-  addWorldEvent(`The group travelled to ${loc}.`,[activePlayer()?.name,...active.map(x=>x.name)].filter(Boolean),loc,45);
+  const names=[activePlayer()?.name,...travellers.map(x=>x.name)].filter(Boolean);
+  addWorldEvent(`${groupTravel||travellers.length?'The group':'Shane'} travelled to ${loc}.`,names,loc,45);
   return {entries:[{type:'gm',text:`*The journey takes you to ${loc}. The surroundings are different from the estate, and the new location becomes part of the campaign world.*`}],topic:c.topic,stage:c.stage};
 }
 
@@ -2897,7 +2293,7 @@ function dfrAdvanceScenarioForAction(action,target){
     if(!state.worldState.events.some(e=>String(e?.id||'')==='gerald-moved-inside'))state.worldState.events.push({id:'gerald-moved-inside',status:'completed',at:Date.now(),description:'Gerald brought Shane inside to the study for their private conversation.'});
     return 'gerald_private_conversation';
   }
-  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(why did you call|why.*invite|what is this (?:all )?about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
+  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(?:why did you (?:call|invite|summon|ask me to come)|why.*invite|what is this (?:all )?about|what (?:do|does|did|would|will) (?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|(?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|what do we need to discuss|what are we here to discuss|what do you want to tell me|why.*ask.*come|reason.*call)\b/.test(a)){
     c.topic='invitation_reason'; c.stage='reason_for_invitation'; return c.stage;
   }
   if((name==='Gerald'||name==='Gerald Morningstar') && /\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a)){
@@ -2910,7 +2306,7 @@ function dfrInferConsistencyTopic(action,target){
   const a=dfrActionText(action).toLowerCase();
   const c=dfrConversationState();
   if(target&&dfrFirstName(target).toLowerCase()==='gerald'){
-    if(/\b(why did you call|why.*invite|why.*ask.*come|why am i here|why are you asking me here|what is this (?:all )?about|what do we need to discuss|what did you want to discuss|reason.*call|something (?:we|you) (?:need|needed|want|wanted) to (?:talk|discuss)|something to (?:talk|discuss)|something (?:important|specific) to discuss|tell me why you called me|tell me why he called me|why he called me|why you called me)\b/.test(a))return 'invitation_reason';
+    if(/\b(?:why did you (?:call|invite|summon|ask me to come)|why.*invite|why.*ask.*come|why am i here|why are you asking me here|what is this (?:all )?about|what (?:do|does|did|would|will) (?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|(?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|what do we need to discuss|what are we here to discuss|what did you want to discuss|what do you want to tell me|reason.*call|something (?:we|you) (?:need|needed|want|wanted) to (?:talk|discuss)|something to (?:talk|discuss)|something (?:important|specific) to discuss|tell me why you called me|tell me why he called me|why he called me|why you called me)\b/.test(a))return 'invitation_reason';
     if(/\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a))return 'finch_request';
   }
   if(/\b(remember|recall|last time|before|earlier|you told me|you said)\b/.test(a))return 'memory_recall';
@@ -3027,17 +2423,53 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
     const answers=[
       'Finch asked me to look after you, but there was more to his request than that. He wanted you to have a future here, if you chose it.',
       'It was Finch’s dying wish. He wanted me to make sure you were not left alone, and he wanted you to get to know my daughters properly.',
-      'Finch asked me to give you a chance to become part of this family, but only if that was something you genuinely wanted. Nobody is being forced into anything.'
+      'Finch asked me to give you a chance to become part of this family, but only if that was something you genuinely wanted. Nobody is being forced into anything.',
+      'He wanted you to have people you could turn to after he was gone. He never intended that kindness to become a debt you owed us.',
+      'The promise was to open this door for you, Shane—not to decide whether you walked through it. That part has always been yours.',
+      'Finch hoped you would meet my daughters and judge for yourself whether you could feel at home here. He wanted an opportunity for you, not an obligation.',
+      'He was worried about you facing everything alone. I promised to offer you a place among us, while leaving you free to decide what that means.',
+      'Finch asked me to make sure you had a choice and people around you. He did not ask me to dictate your future, and I would not do that.'
     ];
     const text=dfrChooseNovel(answers,seed,{target:'Gerald Morningstar',intent:'question',kind:'dialogue'});
     dfrRecordFact('Gerald revealed that Finch wanted Shane to have a future with the Morningstar family and to get to know Gerald’s daughters, with no one being forced.','Gerald','Gerald');
     c.stage='arrangement_explained'; c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_request'); c.unresolved=[...c.unresolved,'player_reaction_to_finch_request'];
-    const closingOptions=['He entrusted that decision to you, Shane. I will respect whatever you choose.','Finch left the decision with you, Shane. I will not make it for you.','He wanted you to have the choice, Shane. That choice remains yours.'];
+    const closingOptions=[
+      'He entrusted that decision to you, Shane. I will respect whatever you choose.',
+      'Finch left the decision with you, Shane. I will not make it for you.',
+      'He wanted you to have the choice, Shane. That choice remains yours.',
+      'His promise brought you here, but your decision determines what follows.',
+      'Nobody here is entitled to your trust. That has to be earned, not demanded.',
+      'Meet them at your own pace. No one needs an answer from you today.',
+      'I can offer you a place here, but I cannot decide whether it becomes home.',
+      'Take the time you need. This family must make its own impression on you.'
+    ];
+    const openingPhysicals=[
+      '*Gerald pauses, giving the words time to settle.*',
+      '*Gerald folds his hands on the desk, choosing each word with care.*',
+      '*His gaze drifts briefly towards the window before returning to you.*',
+      '*Gerald gives a slow nod, his expression grave but steady.*',
+      '*He draws a quiet breath before speaking about Finch again.*',
+      '*Gerald rests his fingertips against the desk and considers you for a moment.*',
+      '*A faint crease forms between Gerald’s brows as he weighs his answer.*',
+      '*Gerald’s voice softens slightly when he mentions his old friend.*'
+    ];
+    const closingPhysicals=[
+      '*His expression remains composed, though sadness briefly touches his eyes.*',
+      '*Gerald leaves a moment of silence rather than pressing you for a response.*',
+      '*He leans back slightly, making it clear he will not crowd your decision.*',
+      '*Gerald holds your gaze without trying to steer your answer.*',
+      '*He turns his attention back to you, patient and unhurried.*',
+      '*Gerald’s shoulders ease a fraction as he finishes explaining.*',
+      '*He gives a small, reassuring nod and lets the choice remain open.*',
+      '*Gerald sits quietly, allowing you room to decide what you think.*'
+    ];
     if(!c.threads||typeof c.threads!=='object')c.threads={}; const closingCount=Number(c.threads.finchClosingCount||0); c.threads.finchClosingCount=closingCount+1;
     const closing=closingOptions[closingCount%closingOptions.length];
+    const physical=dfrChooseNovel(openingPhysicals,seed,{target:'Gerald Morningstar',intent:'question',kind:'physical'});
+    const closingPhysical=closingPhysicals[closingCount%closingPhysicals.length];
     return {beats:[
-      beat('*Gerald pauses, giving the words time to settle.*',text),
-      beat('*His expression remains composed, but there is a trace of sadness when he mentions Finch.*',closing)
+      beat(physical,text),
+      beat(closingPhysical,closing)
     ],topic:c.topic,stage:c.stage};
   }
   return null;
@@ -3175,7 +2607,7 @@ function dfrRefreshmentResponse(action,seed){
     const daughters=['Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
     const present=['Gerald Morningstar',...daughters];
     dfrSetSceneOnly(present,'Gerald\'s Study');
-    setCharacterLocation('Elizabeth Vale','Morningstar Estate — Gerald\'s Study','arriving with refreshments',true);
+    setCharacterLocation('Elizabeth Vale',"Gerald's Study",'arriving with refreshments',true);
     c.stage='elizabeth_entered'; c.topic='elizabeth_reveal'; state.currentScenePhase='elizabeth_entered';
     const physical='*The door opens and Elizabeth steps inside carrying the tray. She takes one step into the room, looks up—and stops dead in her tracks when she sees you.*';
     const dialogue='...Shane?';
@@ -3267,7 +2699,7 @@ function dfrNativeGenerate(action){
   const rel=state.relationships?.[rpgRelationshipKey(target.name,player.name)]||state.relationships?.[rpgRelationshipKey(player.name,target.name)]||null;
   const intent=dfrIntent(action), emotion=dfrEmotion(target,rel,intent);
   const nativeRelationshipChanges=dfrNativeRelationshipChanges(target,rel,intent,action,emotion);
-  const consistency=dfrConsistencyResponse(target,rel,intent,action,`${state.runtimeEngine?.turn||0}|${target.name}|consistency|${action}`);
+  const consistency=dfrConsistencyResponse(target,rel,intent,action,`${state.runtimeEngine?.turn||0}|${target.name}|consistency|${action}|${nativeNonce}`);
   if(consistency.dialogue){
     if(Array.isArray(consistency.entries)&&consistency.entries.length){
       for(const e of consistency.entries){
@@ -3290,7 +2722,6 @@ function dfrNativeGenerate(action){
       entries.push({type:'character',speaker:target.name,text:normaliseAIText(`${physical}\n\n“${dialogue}”`,'character')});
     }
     dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
-    dfrRememberPrivateKnowledge(target,`${target.name}/conversation: ${consistency.dialogue}`);
     return {action:String(action||'').trim(),entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
   }
   /* Explicit player statements are private knowledge for the NPC who actually heard them.
@@ -3363,147 +2794,6 @@ function dfrNativeGenerate(action){
   return {action:String(action||'').trim(),entries:genericEntries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrInferConsistencyTopic(action,target),stage:state.dfrConversation?.stage||'free_conversation'}};
 }
 
-async function callStoryAI(action,correctedSource,qualityRetry=false){
-  /*
-   * DFR WORLD BRAIN v1
-   * The language model is the narrative intelligence. DFR owns the world state,
-   * scenario isolation, player control, memories, relationships and validation.
-   * The old response-pool Native generator is retained only as a diagnostic
-   * fallback and is NEVER selected automatically.
-   */
-  const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
-  const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
-  if(!endpoint)throw new Error('No local AI endpoint configured');
-  const ctx=await buildRPGWorkingPrompt(action);
-  const prompt=`You are DFR World Brain, the narrative intelligence running inside a persistent RPG world.
-
-You are not a branching dialogue lookup table and you are not a narrator following a fixed script.
-You reason from the current scenario, world state, NPC knowledge, goals, relationships, memories and recent events,
-then decide what the NPCs and environment naturally do next.
-
-The ENGINE owns canon, memories, relationships, world state and player control.
-You own the moment-to-moment narrative decisions and NPC behaviour within those constraints.
-The scenario is data. Never import facts, characters or memories from another scenario.
-
-PLAYER:
-${JSON.stringify(ctx.player)}
-
-ACTIVE NPCS ONLY:
-${JSON.stringify(ctx.activeCharacters)}
-
-RELATIONSHIPS:
-${JSON.stringify(ctx.relationships)}
-
-RELEVANT MEMORIES:
-${JSON.stringify(ctx.memories)}
-
-RECENT SCENE:
-${JSON.stringify(ctx.recent)}
-
-CURRENT SCENE STATE:
-${JSON.stringify(ctx.sceneState)}
-
-ABSENT / OUT-OF-SCENE CHARACTERS:
-${JSON.stringify(ctx.absentCharacters)}
-
-SCENARIO:
-${JSON.stringify(ctx.scenario)}
-
-LOCATION:
-${ctx.location}
-
-LATEST PLAYER ACTION:
-${ctx.action}
-
-Rules:
-- Never write the player's dialogue, thoughts, feelings, choices or actions.
-- React specifically to the latest player action. If the player spoke to someone, answer what they actually said rather than restarting the scene.
-- Advance the conversation or situation. Do not repeat a movement, step, silence, gaze, emotional beat or explanation already present in RECENT STORY.
-- Only active NPCs may speak or act.
-- ACTIVE NPCS ONLY means characters explicitly marked PRESENT in the CURRENT SCENE STATE. A relationship or importance does not make a character present.
-- ABSENT / OUT-OF-SCENE CHARACTERS is authoritative. Do not give any listed character dialogue, physical actions, observation, listening, reaction, entrance, or physical presence.
-- If an absent character is mentioned in scenario lore, memories or relationships, treat that as background information only. It does not make them present.
-- If the latest player action does not cause a valid arrival event, keep absent characters out of the scene.
-- A character may enter only when the player or a valid established event actually causes an arrival. Treat that arrival as a real scene transition, not something to assume from the character's importance.
-- Use each NPC's established personality, behaviour, knowledge and speech style.
-- Respect relationship history and current relationship values.
-- Treat the scenario canon and CURRENT SCENE STATE as authoritative.
-- The scenario's startingSituation.intro describes the opening context, not a completed cutscene. Respect CURRENT SCENE STATE and let the player control every transition.
-- If the scenario says two characters already know each other, never introduce them as strangers.
-- If a character is a former partner, family member or established acquaintance, preserve that relationship.
-- Generated prose in RECENT SCENE is history, not canon. If it conflicts with explicit scenario canon, follow the scenario canon.
-- PLANNED EVENTS are intentions only; never narrate them as completed until the current scene actually reaches them.
-- COMPLETED EVENTS are history; do not resurrect them as new events.
-- CURRENT SCENE STATE is authoritative for who is present, absent and where they are. Never teleport a character merely because the prose would be convenient.
-- Do not introduce a character who is explicitly absent from the current scene unless the player or an established event causes their arrival.
-- Do not move the player character, change location or skip a scene phase unless the player's action or an explicit valid scene transition supports it.
-- Do not invent knowledge that the characters do not have.
-- Do not import lore from another scenario.
-- Do not make every NPC speak. Prefer the one or two NPCs most relevant to the player's action.
-- Do not turn the response into a list, JSON, analysis or game instructions.
-- Write natural prose appropriate to this scenario.
-- Let NPCs initiate, react, interrupt or change the scene when their established state supports it.
-- If the player directly addresses an NPC, that NPC should normally answer or react to the substance of what was said.
-- Prefer 1-3 meaningful NPC contributions when the scene supports conversation; do not let the response become mostly narration.
-- Every turn should move the conversation or situation forward: new information, a new emotional beat, a question from an NPC, a decision, an interruption, or a concrete change in the scene.
-- Treat NPC knowledge as individual knowledge. A character cannot know a fact merely because it exists elsewhere in the scenario.
-- Maintain each NPC's independent goals, boundaries, emotional state and relationship history.
-- NPCs may initiate actions, interrupt, disagree, ask questions, leave, return or change plans when justified by their goals and the current situation.
-- Unspecified details should be developed coherently rather than answered with a generic acknowledgement.
-- If the player asks a specific question, answer that question or explain naturally why the NPC cannot answer it.
-- Do not fall back to phrases such as "I see", "Go on", "Alright", or "Tell me more" when the latest player action clearly requires substantive content.
-- Use long-term memories when relevant, not merely the last turn.
-- Treat unresolved story threads as things the world can naturally revisit; do not force them into every turn.
-- If the player changes subject, follow the new subject while preserving the existing world state.
-- If the player asks something unexpected, reason from the current world rather than searching for a predefined response.
-- When the player uses Refresh, the engine will provide a new generation seed. Produce a materially different valid response without changing established facts or rewinding the world.
-- Do not repeat a physical action already shown in RECENT SCENE. If someone already stepped closer, do not have them step closer again without a new reason.
-- Do not reuse distinctive dialogue phrases from RECENT SCENE.
-- Never copy the player's wording into an NPC's dialogue.
-- Do not finish with "What do you do?".
-- EVERY paragraph MUST begin with exactly one speaker marker: [Narrator] or [NPC NAME].
-- Use [Narrator] only for description that belongs to nobody.
-- Put an NPC's spoken dialogue and that NPC's own physical actions under that NPC's marker.
-- Never put NPC dialogue under [Narrator].
-RETURN ONLY THE STORY WITH SPEAKER MARKERS.`;
-
-  /* Conservative input guard. It trims background sections before touching the player action. */
-  const MAX_PROMPT_CHARS=10000;
-  let finalPrompt=prompt;
-  if(finalPrompt.length>MAX_PROMPT_CHARS){
-    const marker='\nLATEST PLAYER ACTION:\n';
-    const at=finalPrompt.indexOf(marker);
-    const tail=at>=0?finalPrompt.slice(at):'\nLATEST PLAYER ACTION:\n'+String(action||'');
-    const head=Math.max(3500,MAX_PROMPT_CHARS-tail.length-10);
-    finalPrompt=finalPrompt.slice(0,head)+'\n…\n'+tail;
-  }
-  const payload={model,messages:[{role:'system',content:finalPrompt}],stream:false,options:{temperature:0.82}};
-  const data=await localAIRequest(endpoint,payload);
-  const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
-  if(!text)throw new Error('Local AI returned no story text');
-  const entries=parseNarrativeEntries(text);
-  if(!entries.length)throw new Error('Local AI returned no scene text');
-  const continuityIssues=rpgSceneContinuityIssues(entries,ctx,action);
-  if(continuityIssues.length && !qualityRetry){
-    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: Scene continuity violation: ${continuityIssues.join(', ')}. Regenerate from scratch. Only PRESENT NPCs may physically appear, speak, act, observe or react. Ensure every speaking NPC is included in ACTIVE NPCS ONLY. Never control the player. Do not teleport anyone or restart historical events.`;
-    return await callStoryAI(retryAction,correctedSource||action,true);
-  }
-  if(continuityIssues.length)throw new Error('Local AI could not produce a scene-safe response: '+continuityIssues.join(', '));
-  const quality=rpgTurnQuality(entries,action);
-  if(!quality.ok && !qualityRetry){
-    const correction=`
-
-GENERATION CORRECTION: Your previous draft violated the scene rules. Generate the turn again from scratch. Never write the player's dialogue, thoughts, feelings or actions. Never give an absent character physical presence, dialogue, observation or reaction. Never use an inactive speaker. Do not repeat a recent physical beat. Respond directly to the latest player action and move the scene forward.`;
-    const retryAction=String(action||'')+' '+correction;
-    return await callStoryAI(retryAction,correctedSource||action,true);
-  }
-  const safeEntries=quality.ok?entries:entries.filter(e=>e.type!=='character' || !/\b(?:i|i'm|i am|i said|i told|i thought)\b/i.test(String(e.text||'')));
-  if(!safeEntries.length)throw new Error('Local AI could not produce a valid NPC response without taking over the player.');
-  return {action:String(correctedSource||action).trim(),entries:safeEntries,narrativeText:text,
-    relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
-}
-
-/* Scenario relationship baselines are applied before generic 20-point defaults. */
 function rpgRuntimeIntegrityAudit(){
   const issues=[];
   const ws=state?.worldState||{};
