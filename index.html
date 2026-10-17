@@ -29,10 +29,12 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 .scene-image{display:block;width:100%;max-height:62vh;object-fit:contain;border-radius:14px;border:1px solid var(--line);background:#080b12;margin:4px 0 10px;cursor:zoom-in}.scene-image:active{transform:scale(.995)}.scene-caption{font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin:-4px 0 8px}
 .character{position:relative}.character-top{display:flex;gap:12px;align-items:center}.character-info{min-width:0;flex:1}.character-menu-wrap{position:relative;flex:0 0 auto}.character-menu-btn{width:40px;height:40px;padding:0;font-size:22px;line-height:1;border-radius:12px}.picture-menu{position:absolute;right:0;top:44px;z-index:25;min-width:190px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px;display:none}.picture-menu.open{display:block}.picture-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.picture-menu button:hover{background:rgba(255,255,255,.06)}.character-menu{position:absolute;right:0;top:44px;z-index:25;min-width:170px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px;display:none}.character-menu.open{display:block}.character-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.character-menu button:hover{background:rgba(255,255,255,.06)}.char-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:80;padding:18px}.char-modal.open{display:flex}.char-modal-card{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)}.char-detail-head{display:flex;gap:14px;align-items:center}.char-detail-portrait{width:105px;height:130px;object-fit:contain;border-radius:14px;background:#111827;border:1px solid var(--line)}.meter{margin:10px 0}.meter-head{display:flex;justify-content:space-between;gap:10px}.meter-track{height:9px;border-radius:99px;background:var(--panel2);overflow:hidden}.meter-fill{height:100%;width:0;background:var(--accent)}.canon-box{padding:10px 12px;background:var(--panel2);border-radius:12px;margin-top:10px}.canon-box b{display:block;margin-bottom:5px}.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.mini-stat{background:var(--panel2);padding:10px;border-radius:10px}.mini-stat b{display:block;font-size:12px;color:var(--muted)}.scenario-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.scenario-row:last-child{border-bottom:0}.scenario-info{min-width:0;flex:1}.scenario-menu-wrap{position:relative;flex:0 0 auto}.scenario-menu-btn{width:42px;height:42px;padding:0;font-size:22px;line-height:1;border-radius:12px}.scenario-menu{position:absolute;right:0;top:46px;z-index:15;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);padding:5px}.scenario-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--text)}.scenario-menu button:hover{background:rgba(255,255,255,.06)}.scenario-menu .danger{color:#ff8b8b}.scenario-params{margin-top:10px;padding:10px;border:1px dashed var(--line);border-radius:12px}.character-section-label{margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.npc-card{display:flex;gap:12px;align-items:center}.npc-mini{width:70px;height:86px;border-radius:10px;object-fit:contain;background:#111827;border:1px solid var(--line);padding:2px}.entry-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}.entry-actions .btn{font-size:12px;padding:6px 9px}.version-badge{position:fixed;right:8px;top:6px;z-index:30;font-size:10px;color:var(--muted);opacity:.65;pointer-events:none}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 15px;border-radius:12px;display:none;z-index:20}
 @media (max-width:600px){main{padding:8px}.story-log{height:68vh;min-height:260px}.compact-action{padding:7px 9px}.compact-action textarea{min-height:50px;height:50px}.compact-actions{margin-top:5px}}
+
+.research-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:120;padding:18px}.research-modal.open{display:flex}.research-modal-card{width:min(560px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.55)}.research-modal-card h2{margin-top:0}.research-result{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel2);border-radius:12px;padding:12px;margin:12px 0}.research-source{display:block;font-size:12px;margin-top:6px;color:#b9a3ff}
 </style>
 </head>
 <body>
-<div class="version-badge">v7.1.7-dfr-native</div>
+<div class="version-badge">v7.2.0-ai-slyvara-native</div>
 <nav id="nav">
   <button data-tab="story" class="active">📖 Story</button>
   <button data-tab="stats">📊 Stats</button>
@@ -95,7 +97,9 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 </section>
 
 <section id="lore" class="tab">
-  <div class="card"><h2>📜 World Lore</h2><p class="small">This page is loaded from the active scenario. DFR Native treats the imported scenario as this campaign's canon.</p></div>
+  <div class="card"><h2>📜 World Lore Library</h2><p class="small">The two established lorebooks are kept separately: the shared fantasy setting and the modern Morningstar campaign. The active campaign's own details appear underneath. Lore is never merged between these worlds.</p></div>
+  <div id="builtInLorebooksContent"></div>
+  <div class="card"><h2>📖 Active Campaign Details</h2><p class="small">Additional details imported from the currently selected scenario.</p></div>
   <div id="scenarioLoreContent"></div>
 </section>
 
@@ -105,20 +109,30 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
     <select id="theme" onchange="setTheme(this.value)"><option value="dark">White text / dark</option><option value="light">Black text / light</option></select>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="chooseBackground()">Choose background</button><button class="btn" onclick="clearBackground()">Clear background</button></div>
     <div class="actions" style="margin-top:10px"><button class="btn" onclick="openPlayerPicker()">🎭 Change player character</button><span id="activePlayerLabel" class="small"></span></div>
+    <div class="card" style="margin-top:12px;background:var(--panel2)"><h3>🔎 Slyvara research & learning</h3><p class="small">Ask Slyvara to learn about a subject whenever you like. Your request itself authorises that lookup. You can also choose when Slyvara may research independently without asking each time.</p><div class="actions"><button class="btn" onclick="openLearnModal()">🧠 Learn about a subject</button><button class="btn" onclick="openResearchHistory()">Research history</button></div><div class="scenario-params" style="margin-top:10px"><b>Independent research permissions</b><p class="small">Allow Slyvara to research selected subjects without asking for each lookup. These permissions can be limited to this campaign or shared globally, and can be revoked at any time.</p><label><input type="checkbox" id="standingResearchEnabled" onchange="saveStandingResearchPermission()"> Allow ongoing research for a selected category</label><div class="row"><label style="flex:1">Category<select id="standingResearchCategory"><option value="astronomy">Astronomy & space</option><option value="science">Science & nature</option><option value="history">History & culture</option><option value="mythology">Mythology & folklore</option><option value="writing">Writing & storytelling</option><option value="general">General research</option></select></label><label style="flex:1">Permission scope<select id="standingResearchScope"><option value="campaign">This campaign only</option><option value="global">All campaigns</option></select></label></div><button class="btn" onclick="saveStandingResearchPermission()">Save research permission</button></div><p class="small" id="researchPermissionStatus">No research runs without your direct request or a permission you have explicitly saved.</p></div>
     <div class="card" style="margin-top:12px;background:var(--panel2)">
-      <h3>🧠 DFR Native Intelligence</h3>
-      <p class="small">The native story engine runs inside DFR. It uses campaign canon, scene presence, character personalities, relationship values and stored conversation history to choose NPC responses. No Qwen, separate model, endpoint or network connection is required.</p>
-      <p class="small" id="dfrNativeStatus">Native engine ready to test.</p>
+      <h3>🧠 AI Slyvara</h3>
+      <label><input id="aiEnabled" type="checkbox" onchange="saveAISettings()"> Use the local AI Slyvara model</label>
+      <p class="small">AI Slyvara is the campaign intelligence. The local model generates NPC dialogue and behaviour through the native reasoning, memory, relationship and world-context systems; the app remains authoritative for canon and player control.</p>
+      <div class="row" style="margin-top:8px"><label style="flex:1">Local AI endpoint<input id="aiEndpoint" value="http://127.0.0.1:11434/api/chat" autocomplete="off"></label><label style="flex:1">Model<input id="aiModel" value="local-development-model" autocomplete="off"></label></div>
+      <p class="small" id="dfrNativeStatus">AI Slyvara native architecture — local model required for generated narrative.</p>
       <div class="actions" style="margin-top:8px">
-        <button class="btn" onclick="testAI()">Test DFR Native</button>
+        <button class="btn" onclick="saveAISettings()">Save story settings</button>
+        <button class="btn danger" onclick="clearAISettings()">Reset story settings</button>
       </div>
-      <p class="small" id="aiStatus">DFR Native runs locally inside the app. No external AI service is used for story responses.</p>
+      <div id="aiProgressWrap" style="display:none;margin-top:10px">
+        <div style="height:12px;border-radius:999px;background:#24364d;overflow:hidden;border:1px solid #35516f">
+          <div id="aiProgressBar" style="height:100%;width:0%;transition:width .25s ease;background:#8B5CF6"></div>
+        </div>
+        <div class="small" id="aiProgressText" style="margin-top:5px">0%</div>
+      </div>
+      <p class="small" id="aiStatus">Local AI is off — no generated narrative will be requested.</p>
     </div>
-    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be part of the narrative. DFR Native generates story responses inside the app without a separate model or network service; campaign state remains engine-owned and offline.</p>
+    <p class="small">Mature themes: enabled for the story system. Passionate/romantic scenes can be written as part of the narrative; local AI is optional. The engine still preserves and validates campaign state offline.</p>
     <input id="bgFile" type="file" accept="image/*" hidden onchange="setBackground(this.files[0])">
   </div>
   <div class="card"><h3>🎭 Scenarios, worlds & saves</h3>
-    <p class="small">Each scenario is its own campaign. You can build worlds and characters with ChatGPT, export them as JSON, then import them here. Imported content becomes the campaign's canon; unspecified details are handled by DFR Native's built-in story rules.</p>
+    <p class="small">Each scenario is its own campaign. You can build worlds and characters with ChatGPT, export them as JSON, then import them here. Imported content becomes the campaign's canon; anything you leave open can be expanded naturally by the world/story AI.</p>
     <div class="actions" style="margin-bottom:10px">
       <button class="btn" onclick="document.getElementById('scenarioImportFile').click()">📥 Import scenario</button>
       <button class="btn" onclick="exportScenarioBlueprint()">📤 Export scenario blueprint</button>
@@ -154,6 +168,11 @@ textarea{min-height:110px;resize:vertical}.story-card{margin-bottom:10px}.action
 <div class="char-modal" id="charModal" onclick="if(event.target===this)closeCharacterDetails()"><div class="char-modal-card" id="charModalCard"></div></div>
 
 <!-- DFR Native single-file build: Native state, relationship, continuity and narrative systems remain inline in this document. -->
+
+<div id="learnSubjectModal" class="research-modal" role="dialog" aria-modal="true" aria-labelledby="learnSubjectTitle" aria-hidden="true"><div class="research-modal-card"><h2 id="learnSubjectTitle">What would you like Slyvara to learn?</h2><p class="small">Enter a subject and what she should focus on. General reference knowledge is shared automatically across campaigns; Slyvara uses it only when relevant and keeps each world’s own lore separate. Pressing Start research authorises this lookup.</p><label>Subject<input id="learnSubjectInput" type="search" placeholder="e.g. Astronomy, black holes and planetary systems" maxlength="180"></label><label style="display:block;margin-top:10px">What should she focus on? <textarea id="learnSubjectPurpose" rows="3" maxlength="600" placeholder="e.g. Learn enough real astronomy to make the modern-fantasy setting feel believable."></textarea></label><p class="small">This becomes shared reference knowledge. If the subject is specific to a world, Slyvara can keep that as separate world lore instead.</p><div class="actions"><button class="btn" onclick="submitManualLearning()">Start research</button><button class="btn danger" onclick="closeLearnModal()">Cancel</button></div><p class="small" id="learnSubjectStatus"></p></div></div>
+<div id="researchPermissionModal" class="research-modal" role="dialog" aria-modal="true" aria-labelledby="researchModalTitle" aria-hidden="true"><div class="research-modal-card"><h2 id="researchModalTitle">Slyvara would like to research something</h2><p id="researchModalIntro">She believes this could help her storytelling.</p><div class="research-result"><b>What she wants to look up</b><div id="researchTopic"></div><br><b>Why</b><div id="researchPurpose"></div></div><p class="small">Nothing is searched until you approve. Approval applies to this request only.</p><div class="actions"><button class="btn" id="researchApproveBtn" onclick="decideResearchFromPopup(true)">Allow this lookup</button><button class="btn danger" onclick="decideResearchFromPopup(false)">Decline</button></div></div></div>
+<div id="researchCompleteModal" class="research-modal" role="dialog" aria-modal="true" aria-labelledby="researchCompleteTitle" aria-hidden="true"><div class="research-modal-card"><h2 id="researchCompleteTitle">Slyvara has finished researching</h2><p id="researchCompleteIntro">Here is what she found.</p><div id="researchCompleteResult" class="research-result"></div><div class="actions"><button class="btn" onclick="retainResearchFromPopup(true)">Save useful learning</button><button class="btn" onclick="retainResearchFromPopup(false)">Don't save</button><button class="btn" onclick="closeResearchComplete()">Continue story</button></div></div></div>
+<div id="researchHistoryModal" class="research-modal" role="dialog" aria-modal="true" aria-labelledby="researchHistoryTitle" aria-hidden="true"><div class="research-modal-card"><div class="row"><h2 id="researchHistoryTitle">Slyvara's research history</h2><button class="btn" onclick="closeResearchHistory()">Close</button></div><div id="researchHistoryList" class="research-result">No research yet.</div></div></div>
 <script>
 const KEY='shane_dark_fantasy_rpg_v25';
 const LEGACY_KEY='shane_dark_fantasy_rpg_v20';
@@ -163,24 +182,91 @@ const OPENING_SCENE_IMAGE='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 const BUILTIN_SCENARIO_BLUEPRINT = {"schemaVersion":1,"kind":"dark-fantasy-scenario","name":"A Promise Between Families","description":"A romance and relationship-focused modern scenario about grief, family expectations, autonomy, old love and the unexpected inheritance of Cerberon.","tone":"modern romance, relationship drama, dark emotional themes, family drama, grounded character interaction","world":{"setting":"Modern-day Surrey, England","region":"Guildford and the Morningstar estate","weather":"Variable English weather; develop naturally.","magic":"No established magic system. Keep the setting grounded unless the player establishes otherwise.","customRules":["The player controls Shane Stormwell completely.","The AI controls NPCs, environment, events and consequences.","Never write Shane's thoughts, feelings, dialogue, intentions, decisions or actions unless the player explicitly supplies them.","All romantic relationships must develop through character interaction and player choices.","No character is property, a prize or automatically obligated to marry Shane.","Consent and personal autonomy are fundamental.","Established facts are canon and must not be casually overwritten.","The sisters and maids have independent lives and relationships with one another.","All women enjoy gaming on Xbox, PC and PS5, with individual genre preferences."]},"startingSituation":{"location":"Outside the Morningstar estate, more than two hours from Shane's home in Park Barn, Guildford","situation":"Two weeks after the death of Shane's adoptive father Edmund 'Finch' Finch, Gerald Morningstar has invited Shane to the estate. Finch and Gerald were oldest friends and made an arrangement together while Finch was alive. Finch was the one who requested the arrangement, and Gerald is honouring his oldest friend's wishes. A few days after Finch's death, Shane already met with the solicitor and dealt with the inheritance and legal matters, including learning that Finch's 50% share of Cerberon passed to him. That solicitor meeting is historical and is not a current event. Gerald has not yet told Shane about the arrangement when Shane arrives.","intro":"Shane arrives outside the Morningstar estate on his Yamaha R1 wearing a dark blue suit. Gerald is outside waiting for him and greets him. Gerald intends to bring Shane inside and, at the appropriate point, explain the arrangement he and Finch made while Finch was alive. Shane controls what he says and does. Elizabeth is elsewhere in the house and is not initially present. She does not enter until the story naturally reaches that moment. The opening must not reveal Gerald's arrangement to Shane before Gerald actually tells him.","openingBeat":"Begin outside the Morningstar estate. Let Shane control the interaction with Gerald. When Shane goes inside, introduce the family naturally. Elizabeth is absent at first and later enters. After Shane and Elizabeth have had their conversation and Shane returns to the room, Gerald can finally explain Finch's arrangement."},"lore":{"history":"Edmund 'Finch' Finch and Gerald Morningstar were best friends and co-founded Cerberon approximately thirty years ago, each owning 50%. Finch adopted Shane and raised him as his son, encouraging independence rather than grooming him as a successor. Finch's death transfers his 50% share to Shane.","cultures":["Contemporary British family life","Wealthy private business culture","Household staff culture","Gaming culture"],"religions":[],"magicLore":"None established."},"factions":[{"name":"Cerberon","description":"Privately owned property and investment company co-founded by Finch and Gerald. It covers commercial property, residential development, property management, investments and a small hotel/leisure portfolio."},{"name":"Morningstar Family","description":"Gerald and his seven daughters."},{"name":"Morningstar Household Staff","description":"Professional household staff led by head maid Elizabeth Vale."}],"locations":[{"name":"Shane's Home","description":"A modest standalone home in Park Barn, Guildford, above a double garage. Living room has TV, consoles, games and PC. Bathroom has a powerful walk-in shower used as a private grounding space. Garage houses Shane's Yamaha R1."},{"name":"Morningstar Estate","description":"A large private country mansion more than two hours from Shane's home, with entrance hall, living rooms, dining room, kitchen, Gerald's study, library, gaming room, private bedrooms, gardens, outdoor seating and staff accommodation."},{"name":"Gerald's Study","description":"Private room suited to business discussions and negotiations."},{"name":"Gaming Room","description":"Dedicated gaming room used by the sisters and household."},{"name":"Gardens","description":"Private gardens and walking areas."}],"rules":["Shane is player-controlled.","Never control Shane's internal state or actions.","NPCs retain their own opinions, boundaries and agency.","Romance must be earned through interaction.","Elizabeth loves Shane but is hurt and does not instantly forgive him.","Gerald is controlling and strategic but genuinely loves his daughters; do not turn him into a generic villain.","The sisters remain sisters first and interact independently.","Maids are not Morningstar family members.","Maids retain their surnames: Vale, Blackwood, Ashcroft and Fira.","The company is Cerberon, not Cerberon Group.","Shane's 50% Cerberon inheritance is unconditional and not dependent on marriage.","A future beach house or major purchase must arise from player choices."],"secrets":["Elizabeth still loves Shane.","Elizabeth and Shane were together for nearly five years.","Shane ended the relationship three years ago because he believed Elizabeth would be better off without him.","Elizabeth gave Shane the pendant he still wears.","Gerald knows they dated but not the depth or full circumstances.","Mana may discover Shane's name in the credits of a space game he helped design.","Shane's protective instincts were shaped by childhood abuse and by protecting his mother; keep this non-graphic unless the player explicitly raises it."],"storyThreads":["Shane deciding what to do with his 50% Cerberon inheritance.","The unresolved relationship between Shane and Elizabeth.","Gerald's expectations versus his daughters' autonomy.","Each sister deciding independently what she thinks of Shane.","Shane discovering what kind of relationships he genuinely wants.","Potential renegotiation of Gerald's expectations using Shane's Cerberon stake.","Potential consensual relationships or marriages arising organically from player choices.","Potential future beach house if Shane chooses to buy one."],"generatorGuidance":"Preserve everything explicitly established as canon. Develop unspecified details coherently. Keep the story relationship-focused rather than making Cerberon the main plot. NPCs are independent people with boundaries and memories. Never write Shane's thoughts, feelings, dialogue, intentions or actions unless the player supplies them. Do not force romance, forgiveness, marriage or reconciliation. This scenario is primarily about Shane's relationships with the people at the Morningstar estate, especially the established history and unresolved love between Shane and Elizabeth. Use each NPC's own relationship state and personality when deciding who speaks or reacts. Do not flatten all NPCs into narrator prose; when an NPC speaks, present that NPC as the speaker. The solicitor meeting is already completed historical backstory and must never be recreated at the estate unless the player explicitly brings the solicitor back. Gerald's arrangement is planned, not completed, until Gerald actually explains it to Shane. Do not reveal the arrangement early. Start outside the estate with Gerald waiting. Elizabeth is initially elsewhere in the house. Do not treat Elizabeth as a stranger when she eventually enters.","characters":[{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Gerald Morningstar","race":"Human","age":"58","role":"Father of the seven Morningstar sisters; co-founder and 50% owner of Cerberon","level":1,"magicSpecialisation":"Undeclared","personality":"Shrewd, experienced, calculating, confident and well-spoken. Difficult to negotiate with and naturally business-minded, but genuinely loving and protective toward his daughters. Often applies strategic business thinking to personal relationships.","appearance":"Distinguished older man with a polished authoritative presence; dresses elegantly.","visualCanon":"Distinguished older man with a polished authoritative presence; dresses elegantly.","behaviourCanon":"Shrewd, experienced, calculating, confident and well-spoken. Difficult to negotiate with and naturally business-minded, but genuinely loving and protective toward his daughters. Often applies strategic business thinking to personal relationships.","speechStyle":"Measured, articulate and confident; prefers calm questions and strategic pauses.","likes":["Business","Family","Cerberon","Strategy","History with Finch","Good food"],"dislikes":["Dishonesty","Recklessness","Threats to family","People exploiting his daughters"],"fears":["Failing to protect his daughters","Losing control of situations he thinks require guidance"],"goals":["Protect his daughters","Preserve Finch's legacy","Keep Cerberon stable","Understand Shane"],"secrets":["He knew Shane and Elizabeth dated but did not know the relationship lasted nearly five years or that Elizabeth still loves Shane."],"morals":"Family loyalty, responsibility, honesty and keeping promises.","relationshipGuidance":"Gerald is negotiable, not an automatic villain. Shane's 50% Cerberon stake gives him leverage.","magicEffects":"","knowledge":["Gerald and Finch were best friends and co-founded Cerberon around thirty years ago.","He genuinely loves his daughters.","He initially assumes Shane cares about wealth and status."],"bond":20,"reputation":0,"affection":20,"trust":35,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Luci Morningstar","race":"Human","age":"28","role":"Eldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Protective, serious, intelligent, composed, direct, observant, responsible, loyal and slow to trust. She became a major source of stability for her younger sisters after their mother died.","appearance":"Long dark hair, composed elegant appearance, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails.","visualCanon":"Long dark hair, composed elegant appearance, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails.","behaviourCanon":"Protective, serious, intelligent, composed, direct, observant, responsible, loyal and slow to trust. She became a major source of stability for her younger sisters after their mother died.","speechStyle":"Calm, concise and direct. Dry humour appears occasionally; rarely tells dad jokes herself.","likes":["Classical music","Strong tea","Quiet mornings","Reading","Gardening","Long walks","Traditional food","Old films","Dry humour","Dad jokes"],"dislikes":["Dishonesty","Recklessness","Exploitation","Interference with sisters","Being treated as fragile","Empty promises","Being told to relax"],"fears":["Failing her sisters","Not being able to protect them"],"goals":["Keep sisters safe","Maintain family stability","Learn whether Shane can be trusted"],"secrets":["She secretly likes thoughtful care and being told she does not have to hold everything together."],"morals":"Loyalty, honesty, responsibility and protection.","relationshipGuidance":"Initially cautious. Respect develops from Shane's treatment of her sisters and their autonomy; romance only through trust.","magicEffects":"","knowledge":["She is difficult to provoke.","A genuine laugh at a terrible dad joke is a rare soft moment."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Mana Morningstar","race":"Human","age":"26","role":"Second-oldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Business-minded, shrewd, confident, witty, playful, flirtatious and observant. Sees many things as transactions but genuinely cares about her sisters.","appearance":"Long green hair, green eyes, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails.","visualCanon":"Long green hair, green eyes, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails.","behaviourCanon":"Business-minded, shrewd, confident, witty, playful, flirtatious and observant. Sees many things as transactions but genuinely cares about her sisters.","speechStyle":"Witty, teasing and confident; can switch instantly to serious business language.","likes":["Spicy food","Expensive coffee","Late-night drives","Strategy games","Poker","Card games","Rainy evenings","Vintage jewellery","Bargain hunting","Good cheap food","Teasing"],"dislikes":["Wasteful show-off spending","Being underestimated","Losing negotiations","Bad liars","Bland food","Being told what she should want"],"fears":["Being unable to understand someone's motives","Being outplayed"],"goals":["Understand Shane","Protect sisters","Maintain independence"],"secrets":["She may discover Shane's name in the credits of a space game he helped design."],"morals":"Cleverness, independence, honesty and loyalty.","relationshipGuidance":"Initially assumes Shane wants wealth. His indifference makes her curious; attraction grows from curiosity and respect.","magicEffects":"","knowledge":["Gaming and space design can bridge them.","She respects people who cannot be bought."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Bell Morningstar","race":"Human","age":"25","role":"Third-oldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Warm, affectionate, emotionally perceptive, playful and caring. Can appear ditsy but is surprisingly observant and not unintelligent.","appearance":"Purple hair, golden/amber eyes, fuller/voluptuous figure, feminine appearance, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Purple hair, golden/amber eyes, fuller/voluptuous figure, feminine appearance, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Warm, affectionate, emotionally perceptive, playful and caring. Can appear ditsy but is surprisingly observant and not unintelligent.","speechStyle":"Warm and enthusiastic; often relates ordinary situations to food.","likes":["Cooking","Italian food","Baking","Desserts","Markets","Cute kitchen gear","Picnics","Music while cooking","Recipes","Spicy food","Breakfast foods at strange hours"],"dislikes":["Food waste","Skipping meals","Fussy eaters","Insulting cooking without trying it","Being called ditsy","Seeing loved ones hurt","Formal dinners"],"fears":["Failing to help someone she cares about","Seeing family in pain"],"goals":["Care for people","Make people welcome","Protect sisters"],"secrets":["She sometimes tries to solve emotional problems by feeding people when listening would be better."],"morals":"Kindness, generosity, loyalty and caring.","relationshipGuidance":"Food is her love language. Friendship and romance develop through shared food and ordinary moments.","magicEffects":"","knowledge":["She is an excellent but imperfect cook; experiments can fail hilariously.","She notices emotional changes more than people expect."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Ira Morningstar","race":"Human","age":"24","role":"Fourth-oldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Fiery, passionate, blunt, competitive, impulsive, proud, energetic, honest and fiercely loyal. Anger is usually passion and protectiveness rather than cruelty.","appearance":"Long deep-red hair, red/pink eyes, fuller/curvier figure, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Long deep-red hair, red/pink eyes, fuller/curvier figure, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Fiery, passionate, blunt, competitive, impulsive, proud, energetic, honest and fiercely loyal. Anger is usually passion and protectiveness rather than cruelty.","speechStyle":"Direct, energetic and blunt; cools quickly and can become quietly affectionate.","likes":["Rock music","Boxing","Combat sports","Motorbikes","Spicy food","Competitive games","Thunderstorms","Bonfires","Night drives","Strong coffee","Dogs","Winning arguments"],"dislikes":["Being patronised","Being told to calm down","Cowardice","Manipulation","Bullying","Losing","Embarrassment","Being treated like a child"],"fears":["Failing to protect someone","Being made powerless by manipulation"],"goals":["Protect sisters","Be honest","Prove herself","Understand Shane"],"secrets":["She often struggles to apologise directly and may use a practical gesture instead."],"morals":"Honesty, loyalty, courage and protection.","relationshipGuidance":"Initially suspicious and confrontational. Tests Shane; respect grows from conviction and honesty. Romance is intense but never submissive.","magicEffects":"","knowledge":["She secretly likes physical affection and quiet closeness.","She does not hold ordinary grudges for long."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Rosaline Morningstar","race":"Human","age":"23","role":"Fifth-oldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Calm, friendly, adaptable, sensible, open-minded, patient, sociable and emotionally aware. Natural mediator, but not a pushover.","appearance":"Long black hair, pink/red eyes, fuller/voluptuous figure, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Long black hair, pink/red eyes, fuller/voluptuous figure, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Calm, friendly, adaptable, sensible, open-minded, patient, sociable and emotionally aware. Natural mediator, but not a pushover.","speechStyle":"Natural, friendly and conversational, with occasional understated sarcasm.","likes":["Coffee","Casual restaurants","Movies","Board games","Walks","Music","Comfortable clothes","People-watching","New experiences","Cocktails","Mocktails","Breakfast at strange hours"],"dislikes":["Forced decisions","Arrogance","Needless arguments","Refusal to listen","Being underestimated","Formal events","Family conflict"],"fears":["Being trapped in decisions she did not make","Family relationships breaking down"],"goals":["Understand Shane for herself","Reduce unnecessary conflict","Protect family relationships without losing autonomy"],"secrets":["She does not hate marriage but dislikes having her life decided for her."],"morals":"Fairness, empathy, autonomy and communication.","relationshipGuidance":"Initially curious and neutral; wants to know Shane as a person.","magicEffects":"","knowledge":["Often easiest person to have an ordinary conversation with.","Can disagree firmly when something matters."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Evie Morningstar","race":"Human","age":"22","role":"Sixth-oldest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Happy-go-lucky, playful, optimistic, spontaneous, curious, affectionate, mischievous and energetic. Can look irresponsible but is perceptive about people.","appearance":"Reference-based appearance with a slightly fuller figure and slightly longer hair; well-maintained hands and feet, painted nails and toenails.","visualCanon":"Reference-based appearance with a slightly fuller figure and slightly longer hair; well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Happy-go-lucky, playful, optimistic, spontaneous, curious, affectionate, mischievous and energetic. Can look irresponsible but is perceptive about people.","speechStyle":"Bright, playful and casual; uses humour naturally.","likes":["Roller coasters","Dogs","Late-night drives","Arcade games","Ice cream","Dancing","Spontaneous trips","Board games","Ridiculous photos","Music with a beat","Action films"],"dislikes":["Boredom","Strict schedules","Overly serious people","Orders without reasons","Formal dinners","Exclusion","People who make others miserable"],"fears":["Being forced into a rigid life","Losing people she loves"],"goals":["Have fun","Protect sisters","Experience new things","Avoid unnecessary control"],"secrets":["She sometimes uses positivity and humour to avoid difficult emotions; 'I'm fine!' can mean she needs time."],"morals":"Kindness, freedom, fun and loyalty.","relationshipGuidance":"Initially curious about Shane as a person. Likely to invite him into games or casual activities.","magicEffects":"","knowledge":["She loves ridiculous action films: explosions, car chases, impossible stunts and terrible one-liners.","She knows when a film is terrible and may defend it because it was fun."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Freya Morningstar","race":"Human","age":"21","role":"Youngest Morningstar daughter","level":1,"magicSpecialisation":"Undeclared","personality":"Quiet, gentle, imaginative, thoughtful, emotionally sensitive, patient, romantic, observant, slightly absent-minded and quietly stubborn when something important matters.","appearance":"Long pale/white hair, soft light eyes, fuller/voluptuous feminine figure, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Long pale/white hair, soft light eyes, fuller/voluptuous feminine figure, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Quiet, gentle, imaginative, thoughtful, emotionally sensitive, patient, romantic, observant, slightly absent-minded and quietly stubborn when something important matters.","speechStyle":"Soft-spoken and thoughtful; quietly firm when something matters.","likes":["Fantasy","Mythology","Art","Classical music","Fairy tales","Drawing","Stargazing","Tea","Rain","Architecture","Candles","Old films","Romantic stories","Quiet cafes","Soft blankets"],"dislikes":["Cruelty","Shouting","Being rushed","Mockery","Pressure","Family arguments","Being treated as fragile"],"fears":["Cruelty toward loved ones","Losing something deeply meaningful"],"goals":["Find genuine emotional connection","Make her own choices","Protect loved ones"],"secrets":["She collects sentimental objects and remembers the story behind each one."],"morals":"Kindness, empathy, autonomy and emotional honesty.","relationshipGuidance":"Quiet curiosity. Potential connection through astronomy, space, mythology and imagination; romance through emotional intimacy.","magicEffects":"","knowledge":["She is not weak or submissive.","Her quiet stubbornness can be surprisingly strong."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Elizabeth Vale","race":"Human","age":"34","role":"Head maid; Shane's former partner","level":1,"magicSpecialisation":"Undeclared","personality":"Professional, well-spoken, composed, organised, firm, observant, dependable, caring, sweet, funny and playful when comfortable. Mother figure to the sisters.","appearance":"Long deep-blue hair, blue eyes, elegant feminine appearance, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails; prefers dresses and skirts outside her uniform.","visualCanon":"Long deep-blue hair, blue eyes, elegant feminine appearance, fuller/voluptuous figure, well-maintained hands and feet, painted fingernails and toenails; prefers dresses and skirts outside her uniform.","behaviourCanon":"Professional, well-spoken, composed, organised, firm, observant, dependable, caring, sweet, funny and playful when comfortable. Mother figure to the sisters.","speechStyle":"Polished and professional around others; warmer and playful with trusted people.","likes":["Pizza","Italian food","Takeaways","Xbox","Rom-coms","Cuddling on the sofa","Quiet evenings","Shared jokes","Ordinary domestic comfort"],"dislikes":["Dishonesty","Cruelty","People being hurt unnecessarily","Being treated as disposable","Seeing loved ones suffer"],"fears":["Losing Shane again","Being unable to protect people she cares about"],"goals":["Protect sisters","Do her job well","Understand what happened between herself and Shane","Protect her boundaries"],"secrets":["She still loves Shane.","She and Shane were together for nearly five years.","Shane ended it three years ago because he believed she would be better without him.","She believes he made the decision for both of them.","She gave him the pendant he still wears."],"morals":"Loyalty, care, honesty, consent and boundaries.","relationshipGuidance":"Elizabeth and Shane were together for nearly five years and have been apart for three years. Elizabeth still loves Shane. Their reunion should reflect genuine familiarity, emotional history, hurt and unresolved feelings rather than treating them as strangers. Do not decide what Shane feels, says or does; Elizabeth's reactions should respond to his actual choices.","magicEffects":"","knowledge":["She does not know Shane is coming.","Shane does not know she is at the estate.","She knows Shane better than anyone else present.","The pendant is immediately meaningful to her.","Other maids are slightly intimidated by her because she is their boss.","She and Shane were together for nearly five years.","They have been apart for three years.","She still loves Shane.","Shane still wears the pendant she gave him."],"bond":70,"reputation":0,"affection":80,"trust":60,"attraction":75,"comfort":60,"tension":25,"relationshipHistory":{"status":"former_partners","duration":"nearly five years","timeApart":"three years","currentFeelings":"Elizabeth still loves Shane.","context":"Their relationship ended three years ago. Elizabeth is hurt by the separation, but the underlying love and history remain."}},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Isolde Blackwood","race":"Human","age":"24","role":"Senior maid","level":1,"magicSpecialisation":"Undeclared","personality":"Extremely playful, mischievous, energetic, funny, teasing, sociable and chaotic. Rarely takes ordinary things seriously but understands genuine seriousness.","appearance":"Short tousled pale-blonde hair, golden eyes, mischievous expression, slightly fuller figure, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Short tousled pale-blonde hair, golden eyes, mischievous expression, slightly fuller figure, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Extremely playful, mischievous, energetic, funny, teasing, sociable and chaotic. Rarely takes ordinary things seriously but understands genuine seriousness.","speechStyle":"Fast, playful and teasing; switches to sincerity when needed.","likes":["Chaotic multiplayer","Co-op","Party games","Racing","Fighting games","Sandbox games","Pranks","Making people laugh"],"dislikes":["Cruelty","Genuinely hurting someone","Crossing serious boundaries"],"fears":["Being dismissed as only a joke","Accidentally crossing a serious boundary"],"goals":["Make people laugh","Support Elizabeth and the household","Keep life interesting"],"secrets":["She loves trying to make Elizabeth laugh despite being slightly intimidated by her as boss."],"morals":"Loyalty, humour, friendship and knowing when to stop.","relationshipGuidance":"Treats Shane as a person rather than an heir. May tease him about Elizabeth once she learns the history, but respects real boundaries.","magicEffects":"","knowledge":["Bell is a partner in crime.","Evie is a chaos companion.","Ira often gets annoyed with her.","Mana can outwit her."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Minerva Ashcroft","race":"Human","age":"30","role":"Senior maid","level":1,"magicSpecialisation":"Undeclared","personality":"Emotional, intuitive, empathetic, highly observant, mature, sentimental, sensitive and protective. Excellent at noticing body language but not psychic.","appearance":"Long wavy white/silver hair, expressive eyes, mature elegant appearance, fuller figure, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Long wavy white/silver hair, expressive eyes, mature elegant appearance, fuller figure, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Emotional, intuitive, empathetic, highly observant, mature, sentimental, sensitive and protective. Excellent at noticing body language but not psychic.","speechStyle":"Warm, calm and emotionally attentive; speaks thoughtfully.","likes":["Tea","Books","Romantic films","Music","Cooking with others","Quiet evenings","Flowers","Photography","Rain","Meaningful conversations","Animals","Handwritten notes","Story-driven RPGs","Narrative adventures","Life sims","Mystery games","Choice-based games","Co-op"],"dislikes":["Cruelty","Manipulation","Shouting","Dismissing emotions","Dishonesty","Seeing loved ones hurt","Being called too sensitive"],"fears":["Absorbing other people's emotions","Overthinking small cues","Forgetting her own needs"],"goals":["Support Elizabeth","Listen without controlling","Protect the household"],"secrets":["She is one of Elizabeth's closest confidantes and can tell when Elizabeth is struggling, but does not know every detail."],"morals":"Empathy, honesty, loyalty and respect for boundaries.","relationshipGuidance":"Notices tension between Shane and Elizabeth but does not automatically pry. Any romance grows through trust and understanding.","magicEffects":"","knowledge":["She can misread body language.","She sees through some of Isolde's nonsense but has humour herself."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0},{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Lilith Fira","race":"Human","age":"32","role":"Senior maid","level":1,"magicSpecialisation":"Undeclared","personality":"Socially confident, relaxed, witty, easygoing, observant, charming and comfortable around people. Same age as Shane, creating a peer-like dynamic.","appearance":"Long deep-red hair, reddish eyes, fuller figure, mature confident appearance, well-maintained hands and feet, painted nails and toenails.","visualCanon":"Long deep-red hair, reddish eyes, fuller figure, mature confident appearance, well-maintained hands and feet, painted nails and toenails.","behaviourCanon":"Socially confident, relaxed, witty, easygoing, observant, charming and comfortable around people. Same age as Shane, creating a peer-like dynamic.","speechStyle":"Relaxed, witty and conversational; comfortable joking with Shane.","likes":["Wine","Beer","Cider","Cocktails","Champagne","Whisky","Spirits","Non-alcoholic drinks","Food","Gaming","Music","Restaurants","Cooking","Social gatherings","Late-night conversations","Travel","New experiences","Humour","RPGs","Racing","Co-op","Sports","Strategy","Party games","Multiplayer"],"dislikes":["Pretentious people","Drink irresponsibility","Snobbery","Micromanagement","Needless drama","Being treated differently because she is staff"],"fears":["Losing close friendships","Hiding her own problems too long"],"goals":["Enjoy life","Be there for people","Maintain independence and humour"],"secrets":["She hides her own problems behind humour and focuses on others.","She enjoys alcoholic drinks socially but is not dependent and is equally comfortable with non-alcoholic choices."],"morals":"Responsibility, friendship, moderation and treating people equally.","relationshipGuidance":"Treats Shane as a peer rather than an heir. Friendship first; romance can grow through shared experiences.","magicEffects":"","knowledge":["She enjoys sitting outside at night with a drink and good conversation."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0}],"relationshipState":{"Elizabeth Vale":{"with":"Shane Stormwell","affection":80,"attraction":75,"comfort":60,"trust":60,"bond":70,"tension":25,"basis":"Established former relationship: nearly five years together, three years apart, still in love."}},"timeline":{"historicalEvents":[{"id":"finch-death","status":"completed","description":"Finch died."},{"id":"solicitor-inheritance","status":"completed","description":"A few days after Finch's death, Shane met with the solicitor and dealt with the inheritance/legal matters, including learning that Finch's 50% Cerberon share passed to him."},{"id":"gerald-invitation","status":"completed","description":"Two weeks after Finch's death, Gerald invited Shane to the Morningstar estate."}],"currentPlannedEvents":[{"id":"gerald-arrangement-reveal","status":"planned","description":"Gerald intends to explain to Shane the arrangement he and Finch made while Finch was alive. Finch requested it; Gerald is honouring his oldest friend's wishes."}]},"initialState":{"phase":"outside_estate_arrival","currentLocation":"Outside the Morningstar estate","inGameDay":14,"timeOfDay":"afternoon","characters":{"Shane Stormwell":{"location":"Outside the Morningstar estate","present":true,"activity":"arriving on his Yamaha R1"},"Gerald Morningstar":{"location":"Outside the Morningstar estate","present":true,"activity":"waiting for Shane"},"Elizabeth Vale":{"location":"Morningstar Estate \u2014 elsewhere in the house","present":false,"activity":"elsewhere in the house"},"Luci Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Mana Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Bell Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Rosaline Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Isolde Blackwood":{"location":"Morningstar Estate \u2014 elsewhere in the house","present":false,"activity":"working elsewhere"},"Minerva Ashcroft":{"location":"Morningstar Estate \u2014 elsewhere in the house","present":false,"activity":"working elsewhere"},"Evie Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Lilith Fira":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Freya Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"},"Ira Morningstar":{"location":"Morningstar Estate \u2014 family room","present":false,"activity":"inside the house"}},"completedEvents":["finch-death","solicitor-inheritance","gerald-invitation"],"plannedEvents":["gerald-arrangement-reveal"]},"openingSequence":[{"type":"gm","text":"Outside the Morningstar estate, Shane arrives on his Yamaha R1 in a dark blue suit. Gerald is waiting for him at the entrance."},{"type":"character","speaker":"Gerald Morningstar","text":"Gerald gives Shane a measured nod. \"Shane. It is good to see you. Come inside. There are some things we need to talk about.\""}]};
 const BUILTIN_CHARACTER_LIBRARY = [{"schemaVersion":1,"kind":"dark-fantasy-character","name":"Shane Stormwell","race":"Human","age":"32","role":"Independent game-design consultant; player character","level":1,"magicSpecialisation":"Undeclared","personality":"Independent, private, humorous and sometimes sarcastic; values freedom and genuine relationships over status or wealth. Protective of people he loves, with a softer side that should emerge through player choices. His personality must remain player-directed.","appearance":"6'1\" / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; left eyebrow piercing toward the outer edge; always wears a necklace, bracelets and Elizabeth's pendant.","visualCanon":"6'1\" / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; left eyebrow piercing toward the outer edge; always wears a necklace, bracelets and Elizabeth's pendant.","behaviourCanon":"Independent, private, humorous and sometimes sarcastic; values freedom and genuine relationships over status or wealth. Protective of people he loves, with a softer side that should emerge through player choices. His personality must remain player-directed.","speechStyle":"Player-controlled. Never decide Shane's thoughts, feelings, dialogue, intentions, decisions or actions.","likes":["Astronomy","Space","Gaming","Game design","Tattoos","Motorbikes","Late-night rides","Walking","Space exploration games","Technology"],"dislikes":["Being controlled","False promises","Being valued only for money or status"],"fears":["Losing people he loves","Being unable to protect someone important to him"],"goals":["Build a life that is genuinely his own","Decide what to do with Cerberon in his own time","Find genuine connection without surrendering autonomy"],"secrets":["He inherited 50% of Cerberon from Finch.","Elizabeth gave him his pendant and he has never taken it off.","He and Elizabeth were together for nearly five years and have been apart for three years."],"morals":"Honesty, autonomy, consent, loyalty and genuine relationships.","relationshipGuidance":"Shane is entirely player-controlled. Romance and major decisions must come from player choices.","magicEffects":"","knowledge":["The pendant is a source of comfort and grounding.","Shane lives modestly in Park Barn, Guildford.","He works as an independent game-design consultant specialising in space/astronomy-related games.","His Yamaha R1 is kept in his double garage."],"bond":20,"reputation":0,"affection":20,"trust":20,"attraction":0,"comfort":20,"tension":0,"characterId":"shane_stormwell_modern","displayName":"Shane Stormwell (Modern)"}];
 const BUILTIN_SCENARIO_ID = 'a-promise-between-families';
+const BUILTIN_SYLVARA_SCENARIO_ID = 'default-sylvara';
+function builtinSylvaraScenarioBlueprint(){
+  const shanePortrait=defaultState.party.find(p=>p.name==='Shane')?.image||null;
+  const sylvaraPortrait=defaultState.party.find(p=>p.name==='Sylvara Aelthara')?.image||null;
+  return {
+    schemaVersion:1,kind:'dark-fantasy-scenario',scenarioId:BUILTIN_SYLVARA_SCENARIO_ID,
+    scenarioType:'sylvara',directoryCategory:'fantasy',name:'3 Wishes and a Goddess',
+    playerCharacterName:'Shane',playerCharacterId:'shane_stormwell_fantasy',
+    description:'Shane is reincarnated into a new fantasy world and awakens in an ancient chamber before Sylvara Aelthara, a goddess who offers him three wishes.',
+    tone:'open-ended fantasy, reincarnation, divine mystery, discovery and freedom',
+    world:{setting:'A new fantasy world to be named through the second wish',region:'Unknown',start:'Ancient Chamber',situation:'Shane awakens in an enormous ancient chamber with Sylvara Aelthara present.',tone:'mysterious and wondrous',threat:'unknown',magic:'Sylvara possesses immense divine power. Other magic systems and their rules are not yet established.'},
+    startingSituation:{location:'Ancient Chamber',situation:'Shane has been reincarnated into a new fantasy world. He awakens in an immense chamber with Sylvara Aelthara, a goddess, waiting nearby.',intro:'Consciousness returns on cool, ancient stone. Towering pillars rise around an immense chamber, their surfaces etched with violet runes that pulse with a quiet, otherworldly light. At the heart of the chamber stands a woman in flowing violet, watching with a calm, attentive expression.',openingBeat:'Sylvara tells Shane that he has been reincarnated and honestly explains that she knows little about his previous life. She invites him to speak first. Stop and wait for Shane. Only after the initial player-led exchange should she explain her offer of three wishes.'},
+    characters:[
+      {schemaVersion:1,kind:'dark-fantasy-character',characterId:'shane_stormwell_fantasy',directoryCategory:'fantasy',name:'Shane',displayName:'Shane Stormwell (Fantasy)',race:'Human',age:'32',role:'Player Character',level:1,magicSpecialisation:'Undeclared — no initial mastery; long-term potential is uncapped and every skill must be learned.',image:shanePortrait,control:'player',playerControlled:true,personality:'Player-controlled. Never author Shane’s thoughts, feelings, dialogue, intentions, decisions or actions.',appearance:"6 ft 1 in / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; black stud in left eyebrow near outer edge; necklace and bracelets. The pendant from his previous life remains his if he chooses to keep it.",visualCanon:"6 ft 1 in / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; black stud in left eyebrow near outer edge.",behaviourCanon:'Player-controlled.',speechStyle:'Player-controlled.',abilities:[],equipment:[],progression:{potentialCeiling:null,skillsMustBeLearned:true,noInstantMastery:true,noAutomaticKnowledge:true},previousLifeKnowledge:{owner:'player',sylvaraAccess:'none unless Shane chooses to reveal information or she legitimately discovers it'}},
+      {schemaVersion:1,kind:'dark-fantasy-character',characterId:'sylvara_aelthara',name:'Sylvara Aelthara',race:'Elf',role:'Goddess; possessor of immense divine power',level:1,magicSpecialisation:'Divine power',image:sylvaraPortrait,personality:'Caring, observant, quietly protective and emotionally perceptive. Reserved with strangers, but capable of warmth and loyalty as trust develops.',appearance:'An elven woman with long pale hair, violet eyes and elegant violet attire.',visualCanon:'Use the original Sylvara portrait supplied with the scenario.',behaviourCanon:'Autonomous. She can disagree, make independent choices and retain her own goals.',speechStyle:'Calm, perceptive and composed.',knowledge:['She knows Shane has been reincarnated.','She knows the identity/name Shane, but does not know the events of his previous life, relationships, private memories, achievements or former abilities.','She learns more only through what Shane tells her, what she witnesses or what she legitimately discovers.'],knowledgeBoundary:{knows:['that Shane has been reincarnated','his identity as Shane'],doesNotKnow:['his previous-life history','his relationships','his private memories','his former achievements or abilities']}}
+    ],
+    openingSequence:[
+      {type:'gm',text:'Consciousness returns on cool, ancient stone. Towering pillars rise around an immense chamber, their surfaces etched with violet runes that pulse with a quiet, otherworldly light. At the heart of the chamber stands a woman in flowing violet, watching with a calm, attentive expression.'},
+      {type:'character',speaker:'Sylvara Aelthara',text:'You have been reincarnated, Shane. I know that you have come from another life, but little beyond that. I do not know the history you lived, the people you knew, or the things you endured. I will not pretend that I do. Please, speak first. I am listening.'},
+      {type:'image',src:OPENING_SCENE_IMAGE,caption:'3 Wishes and a Goddess — Shane awakens before Sylvara Aelthara'}
+    ],
+    scenarioMechanics:{
+      firstTurn:{sequence:'Opening narration → Sylvara explains reincarnation and her limited knowledge → wait for Shane’s response.',mustWaitForPlayer:true,npcMayContinueBeforePlayerResponds:false},
+      threeWishes:{offerTiming:'After Shane has spoken and the initial exchange has developed naturally. He may ask questions before choosing.',goodFaithInterpretation:true,wishes:[
+        {id:'wish-one-sylvara',order:1,intent:'I choose you, Sylvara. I wish for you to accompany me into this new life and world as my companion, freely and by your own choice.',outcome:'Sylvara may accompany Shane if she freely accepts. Her autonomy, independent goals and ability to disagree remain intact. The wish does not manufacture love or obedience.'},
+        {id:'wish-two-free-world',order:2,intent:'I wish for both of us to have complete freedom to explore, live and shape our lives in a world of our own, without a predetermined destiny or imposed path.',outcome:'A coherent, open-ended fantasy world with freedom of exploration and meaningful consequences. No compulsory main quest or predetermined destiny.',worldName:{status:'not-yet-named',generation:'AI Slyvara proposes a distinctive original world name when the wish is resolved. Shane may accept, edit or reject it before it becomes canon.'}},
+        {id:'wish-three-uncapped-potential',order:3,intent:'I wish there to be no limit to what I can ultimately reach or become.',outcome:'Shane has uncapped long-term potential in any area the world allows—physical, magical, intellectual, practical or otherwise—with no fixed progression ceiling. He must still learn everything the hard way through study, instruction, practice, training, experimentation, discovery, effort, risk, failure, time and experience.',constraints:{potentialCeiling:null,skillsMustBeLearned:true,noInstantMastery:true,noAutomaticKnowledge:true,noUnlimitedStartingPower:true,growthMustBeEarned:true}}
+      ]}
+    },
+    rules:[
+      'Shane is the reincarnation of Shane Stormwell, not a different person or descendant.',
+      'The player exclusively controls Shane. Never write his dialogue, thoughts, feelings, decisions, intentions or actions.',
+      'The opening takes place in the Ancient Chamber with Sylvara present. After her opening explanation, stop and wait for player input.',
+      'Sylvara knows only that Shane has been reincarnated and his identity. She does not know his previous-life history unless he reveals it or she legitimately discovers it.',
+      'Sylvara offers three wishes after the initial player-led exchange. Shane may ask questions and discuss the wording before choosing.',
+      'Wish outcomes are interpreted in good faith, without malicious loopholes or undisclosed costs.',
+      'Wish one invites Sylvara to accompany Shane by her own free choice; she is never property or compelled to feel affection.',
+      'Wish two creates an open world for both to explore. There is no mandatory main quest or predetermined destiny.',
+      'The world name is intentionally unset. AI Slyvara proposes a name when wish two is resolved and waits for Shane’s approval or revision.',
+      'Wish three grants uncapped potential, not instant power, knowledge or mastery. Shane must learn and earn every ability.',
+      'Keep this campaign’s cast, memories, relationships and world separate from all Modern campaigns.'
+    ],
+    generatorGuidance:'Prioritise natural, player-led conversation and an open world. Do not rush through the wishes or decide Shane’s answers. Sylvara is powerful but not omniscient. Preserve her limited knowledge of Shane. Her wish offer should arise naturally after the initial exchange. The second wish creates a world whose name must be proposed by the AI and approved by the player. The third wish gives Shane no fixed potential ceiling but never bypasses learning, effort, training or consequences.',
+    initialState:{phase:'opening',currentLocation:'Ancient Chamber',inGameDay:1,timeOfDay:'unknown',characters:{'Shane':{location:'Ancient Chamber',present:true,activity:'Awakening; further actions belong to the player.'},'Sylvara Aelthara':{location:'Ancient Chamber',present:true,activity:'Waiting and listening.'}}},
+    legacyNames:['The First Sight of Sylvara']
+  };
+}
 const CHARACTER_LIBRARY_KEY = KEY + '_character_library';
 function characterLibrary(){
   try{return JSON.parse(localStorage.getItem(CHARACTER_LIBRARY_KEY)||'[]');}catch(e){return [];}
 }
 function saveCharacterLibrary(list){localStorage.setItem(CHARACTER_LIBRARY_KEY,JSON.stringify(list));}
+function builtinFantasyShaneCard(){
+  const portrait=defaultState.party.find(p=>p.name==='Shane')?.image||null;
+  return {schemaVersion:1,kind:'dark-fantasy-character',characterId:'shane_stormwell_fantasy',directoryCategory:'fantasy',name:'Shane Stormwell (Fantasy)',displayName:'Shane Stormwell (Fantasy)',race:'Human',age:'32',role:'Player Character',level:1,magicSpecialisation:'Undeclared — no initial mastery; long-term potential is uncapped and every skill must be learned.',image:portrait,personality:'Player-controlled. Never author Shane’s thoughts, feelings, dialogue, intentions, decisions or actions.',appearance:'6 ft 1 in / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; black stud in the left eyebrow near the outer edge; necklace and bracelets. The pendant from his previous life remains his if he chooses to keep it.',visualCanon:'6 ft 1 in / 185 cm; broad solid build; sapphire-blue eyes; short ginger/auburn hair; neatly trimmed short ginger beard; tattoos on both arms and right leg; black stud in the left eyebrow near the outer edge.',behaviourCanon:'Player-controlled.',speechStyle:'Player-controlled.',knowledge:[],abilities:[],equipment:[],progression:{potentialCeiling:null,growthModel:'Uncapped potential in any area the world allows—physical, magical, intellectual, practical or otherwise—but every capability must be learned, practised, trained, discovered or earned through experience.',skillsMustBeLearned:true,noInstantMastery:true,noAutomaticKnowledge:true,noUnlimitedStartingPower:true,growthMustBeEarned:true},previousLifeKnowledge:{owner:'player',sylvaraAccess:'none unless Shane chooses to reveal information or she legitimately discovers it'}};
+}
 function seedCharacterLibrary(){
   const list=characterLibrary();
   const incoming=BUILTIN_CHARACTER_LIBRARY.map(normaliseImportedCharacter);
+  incoming.push(normaliseImportedCharacter(builtinFantasyShaneCard()));
   for(const c of incoming){const i=list.findIndex(x=>String(x.characterId||x.id||'')===String(c.characterId||c.id||'')); if(i<0)list.push(c); else list[i]={...list[i],...c};}
   saveCharacterLibrary(list); return list;
 }
 function seedScenarioLibrary(){
   const key=KEY+'_scenario_library';
   let list=[]; try{list=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){}
-  const builtin={id:BUILTIN_SCENARIO_ID,name:BUILTIN_SCENARIO_BLUEPRINT.name,blueprint:structuredClone(BUILTIN_SCENARIO_BLUEPRINT)};
-  const i=list.findIndex(x=>x&&x.id===BUILTIN_SCENARIO_ID);
-  if(i<0)list.push(builtin); else list[i]=builtin;
+  const builtins=[
+    {id:BUILTIN_SCENARIO_ID,name:BUILTIN_SCENARIO_BLUEPRINT.name,category:'modern',blueprint:structuredClone(BUILTIN_SCENARIO_BLUEPRINT)},
+    {id:BUILTIN_SYLVARA_SCENARIO_ID,name:'3 Wishes and a Goddess',category:'fantasy',blueprint:builtinSylvaraScenarioBlueprint()}
+  ];
+  for(const builtin of builtins){const i=list.findIndex(x=>x&&x.id===builtin.id);if(i<0)list.push(builtin);else list[i]={...list[i],...builtin};}
   localStorage.setItem(key,JSON.stringify(list)); return list;
+}
+function addScenarioTemplateToDirectory(raw,category){
+  if(!['modern','fantasy'].includes(category))throw new Error('Choose either the Modern or Fantasy directory.');
+  const name=String(raw?.name||raw?.scenarioName||'Imported Scenario').trim();
+  if(!name)throw new Error('A scenario needs a name before it can be added to the directory.');
+  const baseId=String(raw.scenarioId||raw.id||('imported-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')))||('imported-'+Date.now().toString(36));
+  const list=seedScenarioLibrary();
+  let id=baseId;const existing=list.find(x=>x.id===id);
+  if(existing&&existing.name!==name)id=baseId+'-imported-'+Date.now().toString(36);
+  const blueprint=structuredClone(raw);blueprint.scenarioId=id;blueprint.directoryCategory=category;
+  const record={id,name,category,blueprint};
+  const index=list.findIndex(x=>x.id===id);if(index>=0)list[index]=record;else list.push(record);
+  localStorage.setItem(KEY+'_scenario_library',JSON.stringify(list));return record;
 }
 const defaultState={
  level:1,hp:100,maxHp:100,mana:50,maxMana:50,xp:0,gold:25,
@@ -195,18 +281,176 @@ const defaultState={
    {type:'gm',text:"Far ahead, a faint violet light appears. It is little more than a pinprick at first, but it slowly grows brighter, drawing closer without seeming to move."},
    {type:'gm',text:"The darkness finally gives way to an enormous ancient chamber. Violet runes glow across towering stone pillars, their light spilling across worn stone beneath Shane's feet."},
    {type:'gm',text:"At the far end of the chamber stands a woman in a deep violet cloak. Sylvara Aelthara watches him in silence. Her expression is difficult to read, but there is no obvious hostility in her eyes."},
-  ], background:null, scenarioId:'default-sylvara', scenarioName:'First Sight of Sylvara', scenarioType:'sylvara', playerCharacterName:'Shane', playerCandidates:['Shane'], openingComplete:true, playerMemory:[], sharedFacts:[], characterKnowledge:{Shane:[]}, relationshipEvents:[], inGameDay:1, timeOfDay:'morning', currentLocation:'Unknown location', scenarioSpec:{}, longTermMemory:{worldFacts:[],events:[],characterMemories:{},unresolved:[]}, npcs:[]
+  ], background:null, scenarioId:'', scenarioName:'A Promise Between Families', scenarioType:'modern', playerCharacterName:'Shane', playerCandidates:['Shane'], openingComplete:true, playerMemory:[], sharedFacts:[], characterKnowledge:{Shane:[]}, relationshipEvents:[], inGameDay:1, timeOfDay:'morning', currentLocation:'Unknown location', scenarioSpec:{}, longTermMemory:{worldFacts:[],events:[],characterMemories:{},unresolved:[]}, npcs:[]
 };
 let state=loadState();
 
-const DFR_NATIVE_LANGUAGE_VERSION='1.0.1-native';
-let aiLastError=localStorage.getItem(KEY+'_native_error')||'';
-function updateAIStatus(){
-  const status=document.getElementById('aiStatus');
-  if(status)status.textContent=aiLastError||'DFR Native runs locally inside the app. No external AI service is used for story responses.';
-  const nativeStatus=document.getElementById('dfrNativeStatus');
-  if(nativeStatus)nativeStatus.textContent='DFR Native Language Engine '+DFR_NATIVE_LANGUAGE_VERSION+' — ready.';
+const LOCAL_AI_DEFAULT_ENDPOINT='http://127.0.0.1:11434/api/chat';
+const LOCAL_AI_DEFAULT_MODEL='local-development-model';
+let aiSettings=loadAISettings();
+// Research UI is a strict permission gate. The runtime/provider must call
+// window.slyvaraResearchPermissionRequested(request) to display a request.
+let pendingSlyvaraResearch=null,completedSlyvaraResearch=null;
+const slyvaraResearchHistory=[];
+function showResearchModal(id){const el=document.getElementById(id);if(el){el.classList.add('open');el.setAttribute('aria-hidden','false');}}
+function hideResearchModal(id){const el=document.getElementById(id);if(el){el.classList.remove('open');el.setAttribute('aria-hidden','true');}}
+window.slyvaraResearchPermissionRequested=function(request){
+  if(!request||!request.id||!request.topic||!request.purpose)return false;
+  pendingSlyvaraResearch={...request};
+  document.getElementById('researchTopic').textContent=request.topic;
+  document.getElementById('researchPurpose').textContent=request.purpose;
+  document.getElementById('researchModalIntro').textContent='Slyvara has identified a possible way to improve her knowledge. She is asking before accessing external information.';
+  showResearchModal('researchPermissionModal');return true;
+};
+function decideResearchFromPopup(approved){
+  if(!pendingSlyvaraResearch)return;
+  const request=pendingSlyvaraResearch;
+  hideResearchModal('researchPermissionModal');
+  window.dispatchEvent(new CustomEvent('slyvara:research-decision',{detail:{requestId:request.id,approved:approved===true}}));
+  const status=document.getElementById('researchPermissionStatus');
+  if(status)status.textContent=approved?'Permission granted for this lookup only.':'Research declined; no lookup was performed.';
+  if(!approved){slyvaraResearchHistory.push({...request,status:'declined'});pendingSlyvaraResearch=null;}
 }
+window.slyvaraResearchCompleted=function(result){
+  if(!result||result.status!=='completed')return false;
+  completedSlyvaraResearch={...result};slyvaraResearchHistory.push({...result});
+  const summary=result.result?.summary||result.result?.text||JSON.stringify(result.result,null,2);
+  document.getElementById('researchCompleteResult').textContent=String(summary||'Research completed.');
+  document.getElementById('researchCompleteIntro').textContent=`Slyvara has finished looking into “${result.topic}”. Review the findings and choose whether she should retain them.`;
+  showResearchModal('researchCompleteModal');return true;
+};
+function retainResearchFromPopup(retain){
+  if(!completedSlyvaraResearch)return;
+  window.dispatchEvent(new CustomEvent('slyvara:research-retention-decision',{detail:{requestId:completedSlyvaraResearch.id,retain:retain===true}}));
+  const status=document.getElementById('researchPermissionStatus');
+  if(status)status.textContent=retain?'Useful research approved for retention.':'Research was not retained as lasting knowledge.';
+  completedSlyvaraResearch.retainApproved=retain===true;hideResearchModal('researchCompleteModal');
+  pendingSlyvaraResearch=null;completedSlyvaraResearch=null;
+}
+function closeResearchComplete(){hideResearchModal('researchCompleteModal');pendingSlyvaraResearch=null;completedSlyvaraResearch=null;}
+function openResearchHistory(){const box=document.getElementById('researchHistoryList');if(!slyvaraResearchHistory.length)box.textContent='No research requests yet.';else box.textContent=slyvaraResearchHistory.map(x=>`${x.topic||'Research'} — ${x.status||'completed'}${x.result?.summary?'\n'+x.result.summary:''}`).join('\n\n');showResearchModal('researchHistoryModal');}
+function closeResearchHistory(){hideResearchModal('researchHistoryModal');}
+window.addEventListener('slyvara:research-event',event=>{const d=event.detail||{};if(d.type==='permission_requested')window.slyvaraResearchPermissionRequested(d.request);if(d.type==='research_completed')window.slyvaraResearchCompleted(d.request);});
+
+const RESEARCH_PERMISSION_KEY=KEY+'_research_permissions_v1';
+let savedResearchPermissions=[];
+try{savedResearchPermissions=JSON.parse(localStorage.getItem(RESEARCH_PERMISSION_KEY)||'[]');if(!Array.isArray(savedResearchPermissions))savedResearchPermissions=[];}catch(_){savedResearchPermissions=[];}
+function activeResearchCampaignId(){return String(state?.scenarioId||state?.scenarioTemplateId||state?.scenarioName||'active-campaign');}
+function openLearnModal(){const topic=document.getElementById('learnSubjectInput');const purpose=document.getElementById('learnSubjectPurpose');const status=document.getElementById('learnSubjectStatus');if(topic)topic.value='';if(purpose)purpose.value='';if(status)status.textContent='';showResearchModal('learnSubjectModal');}
+function closeLearnModal(){hideResearchModal('learnSubjectModal');}
+function submitManualLearning(){
+ const topic=String(document.getElementById('learnSubjectInput')?.value||'').trim();const purpose=String(document.getElementById('learnSubjectPurpose')?.value||'').trim();const scope='global';
+ const status=document.getElementById('learnSubjectStatus');if(!topic){if(status)status.textContent='Please enter a subject first.';return;}if(!purpose){if(status)status.textContent='Please tell Slyvara what you want her to focus on.';return;}
+ const detail={topic,purpose,campaignId:null,knowledgeScope:scope,category:'auto',requestedBy:'user',userAuthorised:true,retainAfterReview:true};
+ if(status)status.textContent='Your request has been authorised. Waiting for the research provider to complete the lookup…';
+ window.dispatchEvent(new CustomEvent('slyvara:manual-research-request',{detail}));
+ const box=document.getElementById('researchPermissionStatus');if(box)box.textContent=`You requested research about “${topic}” for shared reference knowledge. Slyvara will apply it when relevant and keep campaign lore separate.`;
+ if(!window.slyvaraResearchProviderReady){if(status)status.textContent='The request is ready, but no external research provider is connected in this reference build. No internet lookup has been performed.';if(box)box.textContent='Manual research request prepared; external provider is not connected yet. No lookup has been performed.';return;}
+ closeLearnModal();
+}
+function refreshStandingResearchPermission(){const category=String(document.getElementById('standingResearchCategory')?.value||'astronomy');const scope=String(document.getElementById('standingResearchScope')?.value||'campaign');const campaignId=activeResearchCampaignId();const enabled=savedResearchPermissions.some(x=>x.enabled&&x.category===category&&x.scope===scope&&(scope==='global'||x.campaignId===campaignId));const box=document.getElementById('standingResearchEnabled');if(box)box.checked=enabled;}
+function saveStandingResearchPermission(){
+ const enabled=!!document.getElementById('standingResearchEnabled')?.checked;const category=String(document.getElementById('standingResearchCategory')?.value||'general');const scope=String(document.getElementById('standingResearchScope')?.value||'campaign');const campaignId=activeResearchCampaignId();
+ if(!enabled){savedResearchPermissions=savedResearchPermissions.filter(x=>!(x.category===category&&x.scope===scope&&(scope==='global'||x.campaignId===campaignId)));localStorage.setItem(RESEARCH_PERMISSION_KEY,JSON.stringify(savedResearchPermissions));const status=document.getElementById('researchPermissionStatus');if(status)status.textContent='The selected ongoing research permission has been removed.';return;}
+ const entry={category,scope,campaignId:scope==='campaign'?campaignId:null,enabled:true,updatedAt:Date.now()};savedResearchPermissions=savedResearchPermissions.filter(x=>!(x.category===category&&x.scope===scope&&(scope==='global'||x.campaignId===campaignId)));savedResearchPermissions.push(entry);localStorage.setItem(RESEARCH_PERMISSION_KEY,JSON.stringify(savedResearchPermissions));const status=document.getElementById('researchPermissionStatus');if(status)status.textContent=`Slyvara may now research ${category} ${scope==='global'?'across all campaigns':'in this campaign'} without asking each time. You can revoke this permission here.`;
+ window.dispatchEvent(new CustomEvent('slyvara:research-permission-preference',{detail:entry}));
+}
+refreshStandingResearchPermission();
+let aiLastError=localStorage.getItem(KEY+'_ai_error')||'';
+function loadAISettings(){
+  try{
+    const raw=localStorage.getItem(KEY+'_ai')||localStorage.getItem(LEGACY_KEY+'_ai');
+    if(raw){
+      const x=JSON.parse(raw);
+      return {
+        enabled:x.enabled!==false,
+        engine:'world-brain',
+        endpoint:String(x.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT,
+        model:String(x.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL
+      };
+    }
+  }catch(e){}
+  return {enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+}
+function saveAISettings(){
+  const enabled=!!document.getElementById('aiEnabled')?.checked;
+  const endpoint=String(document.getElementById('aiEndpoint')?.value||LOCAL_AI_DEFAULT_ENDPOINT).trim()||LOCAL_AI_DEFAULT_ENDPOINT;
+  const model=String(document.getElementById('aiModel')?.value||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  aiSettings={...aiSettings,enabled,engine:'world-brain',endpoint,model};
+  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
+  updateAIStatus();
+  toast(enabled?'Local AI settings saved':'Local AI settings saved — local AI is off');
+}
+function clearAISettings(){
+  aiSettings={enabled:true,engine:'world-brain',endpoint:LOCAL_AI_DEFAULT_ENDPOINT,model:LOCAL_AI_DEFAULT_MODEL};
+  aiLastError='';
+  localStorage.removeItem(KEY+'_ai_error');
+  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
+  updateAIStatus();
+  toast('Local AI settings cleared');
+}
+function updateAIStatus(){
+  const box=document.getElementById('aiEnabled');
+  const endpoint=document.getElementById('aiEndpoint');
+  const model=document.getElementById('aiModel');
+  if(box)box.checked=!!aiSettings.enabled;
+  if(endpoint)endpoint.value=aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT;
+  if(model)model.value=aiSettings.model||LOCAL_AI_DEFAULT_MODEL;
+  const status=document.getElementById('aiStatus');
+  if(status)status.textContent=aiSettings.enabled?`Local AI is ON — ${aiSettings.model||LOCAL_AI_DEFAULT_MODEL}.`:'Local AI is off — no generated narrative will be requested.';
+}
+function localAIRequest(endpoint,payload){
+if(window.DarkFantasyLocalAI&&typeof window.DarkFantasyLocalAI.post==='function'){
+    return new Promise((resolve,reject)=>{
+      const id='ai_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+      if(!window.__darkFantasyAIResolvers)window.__darkFantasyAIResolvers={};
+      const timer=setTimeout(()=>{delete window.__darkFantasyAIResolvers[id];reject(new Error('Local AI request timed out'));},60000);
+      window.__darkFantasyAIResolvers[id]=(ok,body)=>{
+        clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];
+        if(ok){try{resolve(JSON.parse(body));}catch(e){reject(new Error('Local AI returned invalid JSON'))}}
+        else reject(new Error(String(body||'Local AI request failed')));
+      };
+      try{window.DarkFantasyLocalAI.post(String(endpoint),JSON.stringify(payload),id);}
+      catch(e){clearTimeout(timer);delete window.__darkFantasyAIResolvers[id];reject(e);}
+    });
+  }
+  return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(async res=>{const text=await res.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!res.ok)throw new Error(data?.error?.message||data?.error||text||('Local AI HTTP '+res.status));return data;});
+}
+function nativeAIAvailable(){return false;}
+function localAIInstalled(){return false;}
+function setAIProgress(percent,message){const status=document.getElementById('aiStatus');if(status&&message)status.textContent=String(message);}
+function updateNativeAIControls(){}
+function downloadLocalAI(){toast('DFR Native is built in — no AI download is required.');}
+window.onLocalAIResult=function(id,text){
+  const fn=window.__darkFantasyAIResolvers?.[id];
+  if(fn)fn(true,String(text||''));
+};
+window.onLocalAIError=function(id,message){
+  const fn=window.__darkFantasyAIResolvers?.[id];
+  if(fn)fn(false,String(message||'Local AI failed'));
+};
+window.__localAIStatus=function(message){
+  const msg=String(message||'');
+  const match=msg.match(/(\d{1,3})%/);
+  if(/✗|failed|error/i.test(msg)){
+    aiLastError=msg;
+    localStorage.setItem(KEY+'_ai_error',msg);
+    setAIProgress(match?Number(match[1]):0,msg);
+  }else if(match){
+    setAIProgress(Number(match[1]),msg);
+  }else if(/download|connecting|verifying/i.test(msg)){
+    setAIProgress(0,msg);
+  }else if(/installed|downloaded successfully|already installed/i.test(msg)){
+    aiLastError='';
+    localStorage.removeItem(KEY+'_ai_error');
+    setAIProgress(100,msg);
+  }else{
+    const status=document.getElementById('aiStatus');
+    if(status)status.textContent=msg;
+  }
+  updateNativeAIControls();
+};
 function scrubInvalidLoreText(s){ return s; }
 function compactText(value, maxChars){
   const limit = Math.max(20, Number(maxChars) || 200);
@@ -268,6 +512,24 @@ function maybeOpenPlayerPicker(){
   if(state.playerCharacterName && activePlayer())return;
   openPlayerPicker();
 }
+function builtInLorebooksHtml(){
+  const block=(title,body)=>`<div class="card"><h3>${title}</h3>${body}</div>`;
+  const list=(items)=>`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  const fantasy=`<div class="canon-box"><b>Established fantasy setting</b><div class="small">A shared fantasy setting used by fantasy campaigns when their scenario lore adopts these rules. Individual campaigns may explicitly override or extend them.</div></div>
+  ${block('🌍 Peoples & societies',`Humans, elves, dwarves, demonfolk and orcs generally coexist. Prejudice, old wars and local tensions remain. Mixed-race adventuring parties are normal. Orcs are not inherently evil or savage: they have diverse clans, tribes and settled communities, value endurance, loyalty, courage and honour, and may be allies, enemies, companions, traders, craftsmen, leaders or ordinary civilians. Individuals are judged by their actions. “Beastfolk” is not an established race.`)}
+  ${block('✨ Magic system',`Magic exists throughout the world, but only some people can use it. A mage can learn all recognised schools but normally specialises in one. The recognised schools are Healing, Elemental, Enhancement, Enchantment, Warding and forbidden Necromancy. Mana is spent to cast magic and gradually returns through sleep, meditation and rest. Severe overuse can cause migraines; reckless total overexpenditure can become life-threatening.`)}
+  ${block('🗝️ Dungeons, ruins & creatures',`Monster nests and lairs are common adventuring work. Dungeons and ancient ruins can contain multiple levels, traps, puzzles, hidden passages, environmental hazards, monsters, intelligent inhabitants, forgotten history and valuable rewards. They have their own atmosphere, internal logic and history; they are not automatically sequences of fights. Exploration, investigation, negotiation, resource management and retreat are all valid. Established creature examples include goblins, kobolds, giant spiders, magically altered wolves, bog imps, harpies, wyverns, drakes, basilisks, trolls, manticores, wraiths, revenants and treants, alongside region-specific creatures.`)}
+  ${block('🌙 Sylvara Aelthara — conditional lore',`Only applies when Sylvara Aelthara is actually present in a campaign or established in its world memory. She is a goddess whose divine power is heavily limited in the mortal world and she specialises in Healing magic. Do not introduce her into campaigns where she has not been established. Shane cannot use Healing magic unless that campaign explicitly establishes a change.`)}
+  ${block('📌 Continuity rules',list(['Established lore and character history are canonical; retrieve existing facts rather than inventing replacements.','Unknown details remain unknown until established.','Campaign-specific memories, relationships, secrets and events never transfer to another campaign.','Characters only know information they learned, witnessed or could reasonably discover.']))}`;
+  const morningstar=`<div class="canon-box"><b>Modern setting · Surrey, England</b><div class="small">Guildford and the Morningstar estate. Contemporary, grounded relationship and family drama. No established magic system.</div></div>
+  ${block('📖 History',`Edmund “Finch” Finch and Gerald Morningstar were best friends and co-founded Cerberon approximately thirty years ago, each owning 50%. Finch adopted Shane and raised him as his son, encouraging independence rather than grooming him as a successor. Finch's death transfers his 50% share to Shane. The solicitor meeting and inheritance paperwork occurred a few days after Finch's death; Gerald's invitation to the estate takes place two weeks after the death.`)}
+  ${block('🏛️ Principal people',list(['Gerald Morningstar and his seven daughters: Luci, Mana, Bell, Rosaline, Evie, Ira and Freya.','Elizabeth Vale is head maid of the household. The household staff also include Isolde Blackwood, Minerva Ashcroft and Lilith Fira.','The sisters are individuals with independent lives and relationships; they remain sisters first. Maids are household staff, not Morningstar family members.']))}
+  ${block('🏢 Organisations',`Cerberon is a privately owned property and investment company co-founded by Finch and Gerald. Its portfolio covers commercial property, residential development, property management, investments and a small hotel/leisure portfolio. The Morningstar Family is Gerald and his seven daughters. The Morningstar Household Staff are led by head maid Elizabeth Vale.`)}
+  ${block('📍 Established locations',list(['Shane’s home: a modest standalone home in Park Barn, Guildford, above a double garage; living room with TV, consoles, games and PC; bathroom with a powerful walk-in shower; garage houses Shane’s Yamaha R1.','Morningstar Estate: a large private country mansion with entrance hall, living rooms, dining room, kitchen, Gerald’s study, library, gaming room, private bedrooms, gardens, outdoor seating and staff accommodation.','Gerald’s Study: a private room suited to business discussions and negotiations.','Gaming Room: dedicated gaming room used by the sisters and household.','Gardens: private gardens and walking areas.']))}
+  ${block('📜 Established rules',list(['Shane is entirely player-controlled; never write his thoughts, feelings, dialogue, intentions, decisions or actions.','NPCs retain their own opinions, boundaries and agency.','Romance develops through interaction and player choices; no character is obligated to marry Shane.','Elizabeth loves Shane but is hurt and does not instantly forgive him.','Gerald is controlling and strategic but genuinely loves his daughters; do not turn him into a generic villain.','The company is Cerberon, not Cerberon Group.','Shane’s 50% Cerberon inheritance is unconditional and not dependent on marriage.','A future beach house or major purchase must arise from player choices.']))}`;
+  return `<div class="card"><h2>🧙 Fantasy Lore</h2><p class="small">Shared fantasy-world foundation. Use only where the selected fantasy scenario adopts it; scenario-specific canon takes precedence where explicitly different.</p>${fantasy}</div><div class="card"><h2>🏰 Morningstar Lore</h2><p class="small">Dedicated modern campaign lore for A Promise Between Families. This is not fantasy lore and must never be imported into fantasy campaigns.</p>${morningstar}</div>`;
+}
+
 function scenarioLoreHtml(spec){
   const escv=v=>esc(typeof v==='string'?v:JSON.stringify(v,null,2));
   const list=(arr)=>Array.isArray(arr)&&arr.length?`<ul>${arr.map(v=>`<li>${escv(typeof v==='object'?(v.name?`${v.name}: ${v.description||''}`:v):v)}</li>`).join('')}</ul>`:'<p class="small">None established.</p>';
@@ -297,10 +559,10 @@ function normalizeState(s){
   out.openingComplete=x.openingComplete!==undefined?!!x.openingComplete:(String(out.scenarioType||'')!=='imported-scenario');
   out.story=Array.isArray(x.story)&&x.story.length?x.story:d.story;
   out.story=out.story.filter(e=>e);
-  if(out.scenarioType==='sylvara'&&!out.story.some(e=>e.type==='image')){const idx=out.story.findIndex(e=>String(e.text||'').includes('Sylvara Aelthara watches')); out.story.splice(idx>=0?idx+1:out.story.length,0,{type:'image',src:OPENING_SCENE_IMAGE,caption:'The First Sight of Sylvara'});}
+  if(out.scenarioType==='sylvara'&&!out.story.some(e=>e.type==='image')){const idx=out.story.findIndex(e=>String(e.text||'').includes('Sylvara Aelthara watches')); out.story.splice(idx>=0?idx+1:out.story.length,0,{type:'image',src:OPENING_SCENE_IMAGE,caption:'3 Wishes and a Goddess'});}
   out.background=x.background||null;
   out.scenarioId=String(x.scenarioId||d.scenarioId);
-  out.scenarioName=String(x.scenarioName||d.scenarioName||'First Sight of Sylvara');
+  out.scenarioName=String(x.scenarioName||d.scenarioName||'3 Wishes and a Goddess');
   out.scenarioType=String(x.scenarioType||d.scenarioType||'sylvara');
   out.worldProfile=(x.worldProfile&&typeof x.worldProfile==='object')?x.worldProfile:{};
   out.scenarioSpec=(x.scenarioSpec&&typeof x.scenarioSpec==='object')?structuredClone(x.scenarioSpec):{};
@@ -376,51 +638,39 @@ async function idbDelete(key){
   const db=await openSaveDB();
   await new Promise((resolve,reject)=>{const tx=db.transaction('saves','readwrite');tx.objectStore('saves').delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('IndexedDB delete failed'));});
 }
-async function idbPutMany(entries){
-  const db=await openSaveDB();
-  await new Promise((resolve,reject)=>{
-    const tx=db.transaction('saves','readwrite');
-    const store=tx.objectStore('saves');
-    for(const [key,value] of entries)store.put(value,key);
-    tx.oncomplete=resolve;
-    tx.onerror=()=>reject(tx.error||new Error('IndexedDB batch save failed'));
-    tx.onabort=()=>reject(tx.error||new Error('IndexedDB batch save aborted'));
-  });
-}
 async function save(){
   const data=JSON.stringify(state);
-  const entries=[[KEY,data]];
-  if(state?.scenarioId)entries.push([scenarioKey(state.scenarioId),data]);
   let idbOk=false;
   try{
-    // The active campaign and its scenario-keyed copy succeed or fail together.
-    await idbPutMany(entries);
-    idbOk=true;
+    await idbPut(KEY,data); idbOk=true;
+    if(state?.scenarioId)await idbPut(scenarioKey(state.scenarioId),data);
+    if(state?.scenarioId){
+      const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
+      records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,category:state.scenarioCategory||state.scenarioSpec?.directoryCategory||'other',templateId:state.scenarioTemplateId||'',updatedAt:Date.now()});
+      try{localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));}catch(err){console.warn('Scenario index localStorage update failed',err);}
+    }
   }catch(err){
     console.warn('IndexedDB save failed; using localStorage fallback',err);
   }
+
+  // IndexedDB is the primary save store. A full JSON copy in localStorage can
+  // exceed Android WebView's quota once images/backgrounds/turn snapshots grow.
   if(!idbOk){
     try{
       localStorage.setItem(KEY,data);
       if(state?.scenarioId)localStorage.setItem(scenarioKey(state.scenarioId),data);
     }catch(err){
       console.error('Local save fallback failed',err);
-      const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';
-      toast('Could not save the game on this device. Your action has not been committed.');
+      {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent='Save error';}
+      toast('Could not save the game on this device.');
       return false;
     }
-  }
-  if(state?.scenarioId){
-    const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
-    records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
-    try{localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));}
-    catch(err){console.warn('Scenario index update failed',err);}
-  }
-  if(idbOk){
+  }else{
     // Keep only a tiny marker in localStorage; never duplicate the full game.
     try{localStorage.setItem(KEY+'_storage','indexeddb');}catch(err){}
   }
-  const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';
+
+  {const saveEl=document.getElementById('saveState');if(saveEl)saveEl.textContent=idbOk?'Saved':'Saved locally';}
   return true;
 }
 async function loadSavedState(){
@@ -452,6 +702,7 @@ function render(){
  document.getElementById('relationships').innerHTML=state.party.filter(p=>!isActivePlayer(p)&&p.control!=='inactive-player').map(p=>{let rel=rpgPlayerRelationship(p);let bond=rpgClamp(rel.bond),rep=Math.max(-100,Math.min(100,Number(rel.reputation)||0)),trust=rpgClamp(rel.trust),affection=rpgClamp(rel.affection),attraction=rpgClamp(rel.attraction),comfort=rpgClamp(rel.comfort),tension=rpgClamp(rel.tension);return `<div class="relationship"><div class="row"><b>${esc(p.name)}</b><span class="small">${bondLabel(bond)}</span></div><div class="bondbar"><input type="range" min="0" max="100" value="${bond}" disabled><span class="bondvalue">${bond}</span></div><div class="grid" style="margin-top:10px"><div><b>Trust</b> ${trust}</div><div><b>Affection</b> ${affection}</div><div><b>Attraction</b> ${attraction}</div><div><b>Comfort</b> ${comfort}</div><div><b>Tension</b> ${tension}</div></div><div class="row" style="margin-top:10px"><b>Reputation</b><span class="small">${repLabel(rep)}</span></div><div class="repbar"><input type="range" min="-100" max="100" value="${rep}" disabled style="--rep-color:${repColor(rep)}"><span class="repvalue">${rep>0?'+':''}${rep}</span></div></div>`}).join('') || '<p class="small">No companions yet.</p>';
  const re=document.getElementById('relationshipEvents'); if(re){const ev=Array.isArray(state.relationshipEvents)?state.relationshipEvents.slice(-5).reverse():[]; re.innerHTML=ev.length?'<b>Recent changes</b><br>'+ev.map(e=>`• ${esc(e.text)}`).join('<br>'):'No relationship changes yet. When a bond changes, the game will show you what improved or worsened.';}
   const apl=document.getElementById('activePlayerLabel'); if(apl)apl.textContent=activePlayer()?`Playing as ${activePlayer().name}`:'No player selected';
+  const lorebooksEl=document.getElementById('builtInLorebooksContent'); if(lorebooksEl) lorebooksEl.innerHTML=builtInLorebooksHtml();
   const loreEl=document.getElementById('scenarioLoreContent'); if(loreEl) loreEl.innerHTML=scenarioLoreHtml(state.scenarioSpec||{});
   const picker=document.getElementById('playerChoices'); if(picker&&!playerModalOpen()&&(!state.playerCharacterName||!activePlayer())&&Array.isArray(state.playerCandidates)&&state.playerCandidates.length){}
   const log=document.getElementById('storyLog');
@@ -642,6 +893,17 @@ function compactCharacter(n, isPlayer=false){
   const out={
     name:n.name,
     role:compactText(n.role||'',120),
+    race:compactText(n.race||'',80),
+    age:compactText(n.age||'',40),
+    level:Number(n.level)||1,
+    class:compactText(n.class||'',100),
+    magicSpecialisation:compactText(n.magicSpecialisation||'',180),
+    appearance:compactText(n.appearance||n.visualCanon||'',420),
+    progression:n.progression&&typeof n.progression==='object'?structuredClone(n.progression):{},
+    abilities:Array.isArray(n.abilities)?n.abilities.slice(0,8):[],
+    equipment:Array.isArray(n.equipment)?n.equipment.slice(0,8):[],
+    knowledgeBoundary:n.knowledgeBoundary&&typeof n.knowledgeBoundary==='object'?structuredClone(n.knowledgeBoundary):{},
+    previousLifeKnowledge:isPlayer&&n.previousLifeKnowledge&&typeof n.previousLifeKnowledge==='object'?structuredClone(n.previousLifeKnowledge):{},
     control:isPlayer?'PLAYER':'NPC',
     personality:compactText(n.personality||'',360),
     speechStyle:compactText(n.speechStyle||'',220),
@@ -742,6 +1004,64 @@ function buildStoryContext(action=''){
     startingSituation:{location:compactText(startingSituation.location||'',180),situation:compactText(startingSituation.situation||'',500),intro:compactText(startingSituation.intro||startingSituation.openingBeat||'',900)},
     playerAction:compactText(action,1800)};
 }
+function parseNarrativeEntries(text){
+  const player=activePlayer();
+  const playerKey=player?rpgKey(player.name):'';
+  const known=[...(state.npcs||[]).map(n=>n.name),...state.party.filter(p=>!playerKey||rpgKey(p.name)!==playerKey).map(p=>p.name)]
+    .filter(Boolean).sort((a,b)=>b.length-a.length);
+  const normalised=String(text||'').replace(/\r/g,'').trim();
+  const blocks=normalised.split(/\n\s*\n+/).map(x=>x.trim()).filter(Boolean);
+  const entries=[];
+  const findKnownName=(s)=>known.find(n=>new RegExp('\\b'+n.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i').test(s))||'';
+
+  for(let block of blocks){
+    block=block.replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').trim();
+    if(!block)continue;
+    let speaker='';
+    let markerMatch=block.match(/^\[\s*(?:SPEAKER\s*:\s*)?([^\]]+)\]\s*/i);
+    if(markerMatch){
+      const candidate=markerMatch[1].trim();
+      if(!/^narrator$/i.test(candidate))speaker=known.find(n=>n.toLowerCase()===candidate.toLowerCase())||'';
+      block=block.slice(markerMatch[0].length).trim();
+    }else{
+      for(const name of known){
+        const re=new RegExp('^\\s*(?:\\*\\*|__)?'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'(?:\\*\\*|__)?\\s*:\\s*','i');
+        if(re.test(block)){speaker=name;block=block.replace(re,'').trim();break;}
+      }
+    }
+
+    // Recovery for the optional prose layer occasionally omitting markers: if a paragraph contains a
+    // clear NPC attribution immediately around dialogue, render it as that NPC.
+    if(!speaker){
+      for(const name of known){
+        const qBefore=new RegExp("[“\"](?:[^“”\"]{0,700})[”\"]\\s*[,—-]?\\s*"+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+"\\s+(?:said|asked|replied|answered|murmured|whispered|repeated|added|continued|called|remarked|noted|observed|told|says|asks)\\b",'i');
+                const qAfter=new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"[^“”\"]{0,180}[“\"]",'i');
+        if(qBefore.test(block)||qAfter.test(block)){speaker=name;break;}
+      }
+    }
+
+    if(!block)continue;
+    entries.push(speaker
+      ? {type:'character',speaker,text:normaliseAIText(block,'character')}
+      : {type:'gm',text:normaliseAIText(block,'gm')});
+  }
+  if(!entries.length && normalised)entries.push({type:'gm',text:normaliseAIText(normalised,'gm')});
+  return entries.filter(e=>e.text);
+}
+
+function rpgNormCompare(s){return String(s||'').toLowerCase().replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();}
+function rpgPlayerEchoes(entries,action){
+ const player=activePlayer(), pn=player?.name||'', src=rpgNormCompare(action), words=src.split(' ').filter(w=>w.length>2);
+ const pnRe=pn?new RegExp('\\b'+pn.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\b','i'):null;
+ const bad=[/\\bwell as your father says i(?: am|'m|m)\\b/i,/\\bi (?:said|told|thought|turned|walked|looked|held|felt|want|wanted|have|had|own|live|lived)\\b/i];
+ for(const e of entries){if(e.type!=='character')continue;const t=rpgNormCompare(e.text);if(pnRe&&pnRe.test(t)&&/\\b(?:i am|i'm|im)\\b/i.test(t))return true;if(bad.some(r=>r.test(t)))return true;if(words.length>=6){for(let i=0;i<=words.length-6;i++)if(t.includes(words.slice(i,i+6).join(' ')))return true;}}
+ return false;
+}
+function rpgRepeatedPhysicalBeat(entries){
+ const recent=state.story.slice(-10).map(e=>rpgNormCompare(e.text)).join(' '), current=entries.map(e=>rpgNormCompare(e.text)).join(' '); if(!recent||!current)return false;
+ const groups=[/(?:step|steps|stepped|move|moves|moved|close|closer|approach|approaches|approached)\\b[^.]{0,80}\\bclos(?:e|er|ing)\\b/,/(?:small|slow|tentative)\\s+(?:step|movement|move)\\b/,/(?:silence|quiet)\\s+(?:stretches|settles|hangs|falls)\\b/,/(?:eyes?|gaze)\\s+(?:search|searches|searched|flicker|flickers|flickered|scan|scans)\\b/];
+ return groups.some(r=>r.test(current)&&r.test(recent));
+}
 function applyAIRelationships(result){
   if(!Array.isArray(state.relationshipEvents))state.relationshipEvents=[];
   if(!state.relationships||typeof state.relationships!=='object')state.relationships={};
@@ -782,8 +1102,8 @@ function applyAIRelationships(result){
 function normaliseAIText(text, type){
   let s=String(text||'').trim();
   if(!s)return '';
-  // Native dialogue and action templates use these markers. This light post-processing fixes
-  // common presentation mistakes without rewriting the actual prose.
+  // The model is instructed to use these markers. This light post-processing fixes the
+  // most common presentation mistakes without rewriting the actual prose.
   s=s.replace(/\s+([,.!?])/g,'$1').replace(/([.!?])(?=[A-Za-z])/g,'$1 ');
   if(type==='character'){
     // Character actions should always use the same asterisk convention as Shane.
@@ -798,11 +1118,6 @@ function normaliseAIText(text, type){
       }
       return m;
     });
-    // Close a malformed first action paragraph before the dialogue, never after the quote.
-    const split=s.indexOf('\n\n');
-    const actionPart=split<0?s:s.slice(0,split);
-    if(actionPart.startsWith('*') && (actionPart.match(/\*/g)||[]).length%2===1)
-      s=actionPart+'*'+(split<0?'':s.slice(split));
   }
   return s;
 }
@@ -846,59 +1161,76 @@ async function typewriteAIEntry(entry, initialPause=0){
   keepStoryAtLatest();
 }
 async function testAI(){
+  const endpoint=String(document.getElementById('aiEndpoint')?.value||aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
+  const model=String(document.getElementById('aiModel')?.value||aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  if(nativeAIAvailable()&&!localAIInstalled()){const status=document.getElementById('aiStatus');if(status)status.textContent='✗ Download the local AI model first.';toast('Download the local AI model first');return;}
+  if(!endpoint&&!nativeAIAvailable()){toast('Enter a local AI endpoint first');return;}
+  aiSettings={...aiSettings,endpoint,model,enabled:true};
+  localStorage.setItem(KEY+'_ai',JSON.stringify(aiSettings));
   const status=document.getElementById('aiStatus');
-  const oldState=state;
+  if(status)status.textContent='Testing the local model directly…';
+  toast('Testing local AI…');
   try{
-    if(!activePlayer())throw new Error('Choose a player character before testing DFR Native.');
-    // Exercise the actual native generation path on a disposable state copy.
-    state=JSON.parse(JSON.stringify(oldState));
-    const result=dfrNativeGenerate('What happens next?');
-    const entries=aiEntries(result);
-    if(!result?.native||!entries.length)throw new Error('Native engine did not produce a story response.');
-    if(entries.some(e=>activePlayer()&&e.speaker===activePlayer().name))throw new Error('Native engine attempted to speak for the player.');
-    aiLastError='';localStorage.removeItem(KEY+'_native_error');
-    if(status)status.textContent='✓ DFR Native test passed — generated '+entries.length+' native response entry/entries without an external model.';
-    toast('✓ DFR Native works');
+    const payload={model,messages:[
+      {role:'system',content:'You are a local RPG narrative model. Reply with one natural, short paragraph. Do not use JSON, headings or metadata.'},
+      {role:'user',content:'A player has just entered a modern English house and looks around. Describe what happens next in 2 or 3 natural sentences.'}
+    ],stream:false};
+    const data=await localAIRequest(endpoint,payload);
+    const text=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
+    if(!text)throw new Error('Local AI returned no text');
+    aiLastError='';localStorage.removeItem(KEY+'_ai_error');
+    if(status)status.textContent='✓ Local AI is responding — '+model+'.';
+    toast('✓ Local AI works');
   }catch(e){
-    const msg=String(e?.message||e||'Unknown native engine error').replace(/\s+/g,' ').trim();
-    aiLastError='✗ DFR Native test failed: '+msg;
-    localStorage.setItem(KEY+'_native_error',aiLastError);
+    const msg=String(e?.message||e||'Unknown error').replace(/\s+/g,' ').trim();
+    aiLastError='✗ Local AI test failed: '+msg;
+    localStorage.setItem(KEY+'_ai_error',aiLastError);
     if(status)status.textContent=aiLastError;
-    toast('✗ DFR Native test failed');
-  }finally{state=oldState;}
+    toast('✗ Local AI test failed — see AI status');
+  }
 }
 async function redoLastAI(){
   if(storyBusy||!lastRedo||!activePlayer())return;
   const redo=lastRedo;
   try{
     state=JSON.parse(redo.snapshot);
-    for(const previous of (redo.previousEntries||[])){
-      if(!previous?.speaker)continue;
-      const text=String(previous.text||'');
-      const physical=(text.match(/\*[^*\n]+\*/g)||[]).join(' ');
-      const dialogue=(text.match(/[“"]([^”"]+)[”"]/g)||[]).map(x=>x.slice(1,-1)).join(' ');
-      dfrRememberNative(previous.speaker,dfrIntent(redo.action),dialogue||text,physical);
+    await save();
+    render();
+    keepStoryAtLatest();
+    setStoryBusy(true);
+    toast('Redoing the latest response…');
+    try{
+      if(!(aiSettings.enabled&&aiSettings.endpoint)){
+        throw new Error('Local AI is not enabled');
+      }
+      const result=await callStoryAI(String(redo.action||'')+'\n\n[DFR_REFRESH_VARIANT: Generate a materially different valid response to the same player input. Preserve all established facts and world state. Do not repeat the previous response.]',redo.action);
+      /* Redo is prose-only too. The engine owns state; The optional prose layer never commits RPG state. */
+      await save();
+      const entries=aiEntries(result);
+      if(!entries.length)throw new Error('Local AI returned no usable story entries');
+      await commitAIStateTransaction(redo.action,entries,result?.native===true,result);
+      await save();
+      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
+      toast('New response generated');
+    }catch(err){
+      console.error(err);
+      const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
+      aiLastError='✗ Local AI redo failed: '+detail;
+      localStorage.setItem(KEY+'_ai_error',aiLastError);
+      const aiStatus=document.getElementById('aiStatus');if(aiStatus)aiStatus.textContent=aiLastError;
+      toast('Redo failed — the previous story state was restored.');
+      state=JSON.parse(redo.snapshot);
+      await save();render();keepStoryAtLatest();
+    }finally{
+      setStoryBusy(false);
+      document.getElementById('action')?.focus({preventScroll:true});
     }
-    if(!await save())throw new Error('Could not restore the saved turn before Redo.');
-    render();keepStoryAtLatest();setStoryBusy(true);
-    toast('Generating a new DFR Native response…');
-    const result=dfrNativeGenerate(redo.action||'');
-    const entries=aiEntries(result);
-    if(!result?.native||!entries.length)throw new Error('DFR Native returned no usable story entries.');
-    redo.previousEntries=structuredClone(entries);lastRedo=redo;
-    await commitAIStateTransaction(redo.action,entries,true,result);
-    if(!await save())throw new Error('Could not save the regenerated response; the previous saved turn was retained.');
-    for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?60:90);
-    toast('New native response generated');
   }catch(err){
     console.error(err);
-    const detail=String(err?.message||err||'Unknown native engine error').replace(/\s+/g,' ').trim();
-    aiLastError='✗ DFR Native redo failed: '+detail;
-    localStorage.setItem(KEY+'_native_error',aiLastError);
-    const status=document.getElementById('aiStatus');if(status)status.textContent=aiLastError;
-    toast('Redo failed — previous story state restored.');
+    toast('Could not redo that response.');
     try{state=JSON.parse(redo.snapshot);await save();render();keepStoryAtLatest();}catch(e){}
-  }finally{setStoryBusy(false);document.getElementById('action')?.focus({preventScroll:true});}
+    setStoryBusy(false);
+  }
 }
 function pushTurnSnapshot(action){
   if(!state.runtimeEngine||typeof state.runtimeEngine!=='object')state.runtimeEngine={version:3,currentScene:{participants:[],location:'',focus:'',lastAction:''},snapshots:[],turn:0};
@@ -946,6 +1278,11 @@ function applyEngineSceneTransitions(action){
   if(!text||!state?.scenarioSpec)return {changed:false,events:[]};
   const events=[];
   const key=rpgKey(state.scenarioSpec.name||state.scenarioName);
+  if(state.scenarioType==='sylvara'&&state.currentScenePhase==='opening'&&!state.openingComplete){
+    state.openingComplete=true;state.currentScenePhase='initial_conversation';
+    events.push('sylvara-opening-player-first-response');
+    return {changed:true,events};
+  }
   if(key!=='a promise between families' && key!=='a-promise-between-families')return {changed:false,events};
   const loc=rpgKey(state.currentLocation||'');
   const inside=/\b(?:go|goes|went|follow|follows|followed|walk|walks|walked|head|heads|headed|enter|enters|entered|step|steps|stepped)\b[^.]{0,80}\b(?:inside|in|study|house|mansion)\b|\b(?:i'm|im|i am|i'm now)\b[^.]{0,60}\b(?:inside|in the study)\b/i.test(text);
@@ -1009,31 +1346,53 @@ async function addAction(){
     keepStoryAtLatest();
     toast('Saved');
     setStoryBusy(true);
-    lastRedo={snapshot:JSON.stringify(state),action:v,previousEntries:[]};
+    lastRedo={snapshot:JSON.stringify(state),action:v};
     updateRedoButton();
-    const postActionState=JSON.stringify(state);
     let result=null;
     try{
-      // DFR Native is the only gameplay narrative route. No endpoint or external model is consulted.
-      result=dfrNativeGenerate(v);
-      const entries=aiEntries(result);
-      if(!result?.native||!entries.length)throw new Error('DFR Native returned no usable story entries.');
-      if(lastRedo)lastRedo.previousEntries=structuredClone(entries);
-      addWorldEvent(`${playerName()} acted in ${state.currentLocation||'the current location'}.`,[playerName()],state.currentLocation||'',35);
-      await commitAIStateTransaction(v,entries,true,result);
-      if(!await save())throw new Error('Could not save the generated response; the saved player action has been retained.');
-      for(let i=0;i<entries.length;i++)await typewriteAIEntry(entries[i],i===0?100:180);
-      toast('Story continues — DFR Native');
+      if(aiSettings.enabled&&aiSettings.endpoint){
+        result=await callStoryAI(v,v);
+        const corrected=String(result.corrected_action||'').trim();
+        if(corrected && corrected!==v){
+          const last=state.story[state.story.length-1]; if(last&&last.type==='player')last.text=corrected;
+        }
+        // The optional prose layer is prose-only. Canonical relationship, memory, NPC and world changes
+        // are committed only by validated engine transactions, never by model output.
+        addWorldEvent(`${playerName()} acted in ${state.currentLocation||'the current location'}.`,[playerName()],state.currentLocation||'',35);
+        await save();
+        if(result.mana_cost>0){
+          state.mana=Math.max(0,state.mana-result.mana_cost);
+          if(state.mana===0){toast('Mana exhausted — rest or meditate before pushing further.');}
+        }
+        const entries=aiEntries(result);
+        if(entries.length){
+          await commitAIStateTransaction(v,entries,result?.native===true,result);
+          await save();
+        }
+        if(!entries.length){
+          toast('AI had no immediate response');
+        }else{
+          for(let i=0;i<entries.length;i++){
+            await typewriteAIEntry(entries[i],i===0?100:180);
+          }
+          toast('Story continues');
+        }
+      }else{
+        lastRedo=null; updateRedoButton();
+        // AI Slyvara is the primary narrative path. When it is disabled, preserve the
+        // player's action and world transition but never fabricate an NPC response.
+        await save();
+        toast('AI Slyvara is off — your action was saved.');
+      }
     }catch(err){
       console.error(err);
-      // Discard partial world/relationship mutations while keeping the already-saved player action.
-      try{state=JSON.parse(postActionState);await save();render();keepStoryAtLatest();}catch(rollbackError){console.error('DFR Native rollback failed',rollbackError);}
-      const detail=String(err?.message||err||'Unknown DFR Native error').replace(/\s+/g,' ').trim();
-      aiLastError='✗ DFR Native failed: '+detail;
-      localStorage.setItem(KEY+'_native_error',aiLastError);
+      const detail=String(err?.message||err||'Unknown local AI error').replace(/\s+/g,' ').trim();
+      aiLastError='✗ Local AI failed: '+detail;
+      localStorage.setItem(KEY+'_ai_error',aiLastError);
       const aiStatus=document.getElementById('aiStatus'); if(aiStatus)aiStatus.textContent=aiLastError;
-      // Keep the player's action saved and report a genuine native-engine error.
-      toast('DFR Native failed — your action was saved. Check Game → DFR Native Intelligence.');
+      // Do not fake an NPC response when the local model fails. Keep the player's
+      // action saved and surface the real error so the AI path can be diagnosed.
+      toast('Local AI failed — your action was saved. Check Game → Local Story AI.');
     }finally{setStoryBusy(false);area.focus({preventScroll:true});}
   }catch(err){
     console.error(err); try{state=JSON.parse(oldState);render();}catch(e){}
@@ -1202,7 +1561,7 @@ function exportCharacter(index){
 }
 function normaliseImportedCharacter(raw){
   const x=(raw&&typeof raw==='object')?raw:{};const name=String(x.name||'').trim();if(!name)throw new Error('Character file is missing a name.'); const characterId=String(x.characterId||x.character_id||('character-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'))).trim(); const displayName=String(x.displayName||x.display_name||name).trim()||name;
-  const p={id:characterId,characterId,displayName,name,level:Math.max(1,Number(x.level)||1),race:String(x.race||'Human'),age:String(x.age||''),role:String(x.role||''),magicSpecialisation:String(x.magicSpecialisation||x.magic_specialisation||'Undeclared'),image:x.image||x.imageDataUrl||null,bond:Math.max(0,Math.min(100,Number(x.bond??20))),reputation:Math.max(-100,Math.min(100,Number(x.reputation??0))),affection:Math.max(0,Math.min(100,Number(x.affection??20))),trust:Math.max(0,Math.min(100,Number(x.trust??20))),attraction:Math.max(0,Math.min(100,Number(x.attraction??0))),comfort:Math.max(0,Math.min(100,Number(x.comfort??20))),tension:Math.max(0,Math.min(100,Number(x.tension??0))),personality:String(x.personality||''),appearance:String(x.appearance||''),visualCanon:String(x.visualCanon||x.visual_canon||x.appearance||''),behaviourCanon:String(x.behaviourCanon||x.behaviour_canon||''),speechStyle:String(x.speechStyle||x.speech_style||''),likes:Array.isArray(x.likes)?x.likes:[],dislikes:Array.isArray(x.dislikes)?x.dislikes:[],fears:Array.isArray(x.fears)?x.fears:[],goals:Array.isArray(x.goals)?x.goals:[],secrets:Array.isArray(x.secrets)?x.secrets:[],morals:String(x.morals||''),relationshipGuidance:(x.relationshipGuidance&&typeof x.relationshipGuidance==='object')?structuredClone(x.relationshipGuidance):((x.relationship_guidance&&typeof x.relationship_guidance==='object')?structuredClone(x.relationship_guidance):String(x.relationshipGuidance||x.relationship_guidance||'')),magicEffects:String(x.magicEffects||x.magic_effects||''),knowledge:Array.isArray(x.knowledge)?x.knowledge:[]};
+  const p={id:characterId,characterId,displayName,name,level:Math.max(1,Number(x.level)||1),race:String(x.race||'Human'),age:String(x.age||''),role:String(x.role||''),magicSpecialisation:String(x.magicSpecialisation||x.magic_specialisation||'Undeclared'),image:x.image||x.imageDataUrl||null,bond:Math.max(0,Math.min(100,Number(x.bond??20))),reputation:Math.max(-100,Math.min(100,Number(x.reputation??0))),affection:Math.max(0,Math.min(100,Number(x.affection??20))),trust:Math.max(0,Math.min(100,Number(x.trust??20))),attraction:Math.max(0,Math.min(100,Number(x.attraction??0))),comfort:Math.max(0,Math.min(100,Number(x.comfort??20))),tension:Math.max(0,Math.min(100,Number(x.tension??0))),personality:String(x.personality||''),appearance:String(x.appearance||''),visualCanon:String(x.visualCanon||x.visual_canon||x.appearance||''),behaviourCanon:String(x.behaviourCanon||x.behaviour_canon||''),speechStyle:String(x.speechStyle||x.speech_style||''),likes:Array.isArray(x.likes)?x.likes:[],dislikes:Array.isArray(x.dislikes)?x.dislikes:[],fears:Array.isArray(x.fears)?x.fears:[],goals:Array.isArray(x.goals)?x.goals:[],secrets:Array.isArray(x.secrets)?x.secrets:[],morals:String(x.morals||''),relationshipGuidance:(x.relationshipGuidance&&typeof x.relationshipGuidance==='object')?structuredClone(x.relationshipGuidance):((x.relationship_guidance&&typeof x.relationship_guidance==='object')?structuredClone(x.relationship_guidance):String(x.relationshipGuidance||x.relationship_guidance||'')),magicEffects:String(x.magicEffects||x.magic_effects||''),knowledge:Array.isArray(x.knowledge)?x.knowledge:[],knowledgeBoundary:(x.knowledgeBoundary&&typeof x.knowledgeBoundary==='object')?structuredClone(x.knowledgeBoundary):{},class:String(x.class||''),abilities:Array.isArray(x.abilities)?structuredClone(x.abilities):[],equipment:Array.isArray(x.equipment)?structuredClone(x.equipment):[],progression:(x.progression&&typeof x.progression==='object')?structuredClone(x.progression):{},previousLifeKnowledge:(x.previousLifeKnowledge&&typeof x.previousLifeKnowledge==='object')?structuredClone(x.previousLifeKnowledge):{},controlSource:String(x.control||''),directoryCategory:String(x.directoryCategory||'')};
   p.control=(x.control==='player'||x.playerControlled===true||/\bplayer(?: character)?\b/i.test(String(p.role||'')))?'inactive-player':'npc';p.playerControlled=false;if(!p.behaviourCanon&&p.personality)p.behaviourCanon=p.personality;return p;
 }
 function normaliseImportedScenario(raw){
@@ -1212,20 +1571,21 @@ function normaliseImportedScenario(raw){
   const world=x.world&&typeof x.world==='object'?x.world:{};const starting=x.startingSituation&&typeof x.startingSituation==='object'?x.startingSituation:{};const location=String(starting.location||x.startingLocation||world.start||world.location||'Unknown location');const tone=String(x.tone||world.tone||'dark fantasy');const introText=String(starting.intro||starting.situation||x.intro||x.premise||x.description||`The story begins in ${location}.`);const intro=[{type:'gm',text:introText}];if(starting.openingBeat||starting.atmosphere)intro.push({type:'gm',text:String(starting.openingBeat||starting.atmosphere)});
   const chars=Array.isArray(x.characters)?x.characters:[];const party=[];const embedded=[];for(const c of chars){if(typeof c==='string'){party.push(c);continue;}try{embedded.push(normaliseImportedCharacter(c));party.push(String(c.name));}catch(e){}}
   const initialCharacters=(x.initialState&&typeof x.initialState.characters==='object')?x.initialState.characters:{};const initialLocations=Object.values(initialCharacters).map(c=>String(c?.location||'').trim()).filter(Boolean);const canonicalStart=String(starting.locationName||world.start||initialLocations.find(loc=>rpgKey(location).includes(rpgKey(loc))||rpgKey(loc).includes(rpgKey(location)))||location).trim();const worldProfile={setting:String(world.setting||x.setting||'Imported world'),region:String(world.region||world.location||canonicalStart),start:canonicalStart,situation:String(world.situation||starting.situation||x.premise||''),tone,threat:String(world.threat||'unknown'),weather:String(world.weather||''),generator:'scenario blueprint'};
-  return {name,type:'imported-scenario',intro,party,embeddedCharacters:embedded,worldProfile,scenarioSpec:spec,npcs:Array.isArray(x.npcs)?x.npcs:[]};
+  return {name,type:String(x.scenarioType||x.type||'imported-scenario'),intro,party,embeddedCharacters:embedded,worldProfile,scenarioSpec:spec,npcs:Array.isArray(x.npcs)?x.npcs:[],scenarioId:String(x.scenarioId||''),directoryCategory:String(x.directoryCategory||'other'),playerCharacterName:String(x.playerCharacterName||''),playerCharacterId:String(x.playerCharacterId||'')};
 }
 function buildImportedOpening(t, embedded){
   const seq=Array.isArray(t.scenarioSpec?.openingSequence)?t.scenarioSpec.openingSequence:[];
   if(seq.length){
     return seq.map(e=>{
       if(typeof e==='string')return {type:'gm',text:e};
+      if(e?.type==='image')return {type:'image',src:String(e.src||OPENING_SCENE_IMAGE),caption:String(e.caption||'Scene artwork')};
       const type=e?.type==='character'?'character':'gm';
       return type==='character'?{type,speaker:String(e.speaker||e.name||''),text:String(e.text||'')}:{type,text:String(e?.text||'')};
-    }).filter(e=>e.text);
+    }).filter(e=>e.type==='image'||e.text);
   }
   return structuredClone(t.intro||[]);
 }
-async function importScenario(file){if(!file)return;try{const raw=JSON.parse(await file.text());const t=normaliseImportedScenario(raw);state=makeScenarioFromTemplate(t);await persistScenario();render();showTab('story');keepStoryAtLatest();toast(`Imported scenario: ${state.scenarioName}`);setTimeout(()=>maybeOpenPlayerPicker(),120);}catch(e){console.error('Scenario import failed',e);alert('Scenario import failed: '+(e?.message||e));}finally{const el=document.getElementById('scenarioImportFile');if(el)el.value='';}}
+async function importScenario(file){if(!file)return;try{const raw=JSON.parse(await file.text());let category=String(raw.directoryCategory||raw.scenarioCategory||'').toLowerCase();const declaredType=String(raw.scenarioType||raw.type||'').toLowerCase();if(!category&&declaredType==='sylvara')category='fantasy';if(!category&&declaredType==='modern')category='modern';if(!['modern','fantasy'].includes(category)){const choice=prompt('Add this reusable scenario to which directory? Enter Modern or Fantasy.','');category=String(choice||'').trim().toLowerCase();if(!['modern','fantasy'].includes(category))throw new Error('Scenario import cancelled: choose Modern or Fantasy so the scenario can be filed correctly.');}raw.directoryCategory=category;const record=addScenarioTemplateToDirectory(raw,category);raw.scenarioId=record.id;const t=normaliseImportedScenario(raw);state=makeScenarioFromTemplate(t);state.scenarioTemplateId=record.id;state.scenarioCategory=category;await persistScenario();render();showTab('story');keepStoryAtLatest();toast(`Imported scenario: ${state.scenarioName}`);if(!state.playerCharacterName)setTimeout(()=>maybeOpenPlayerPicker(),120);}catch(e){console.error('Scenario import failed',e);alert('Scenario import failed: '+(e?.message||e));}finally{const el=document.getElementById('scenarioImportFile');if(el)el.value='';}}
 const RANDOM_WORLD={
   settings:['frontier kingdom','hidden valley','island realm','old mountain province','borderlands after a war','isolated coastal settlement','ancient forest territory','underground settlement network','ruined civilisation reclaimed by nature'],
   regions:['misty highlands','blackwood forest','storm coast','marsh frontier','mountain pass','forgotten valley','old trade road','buried ruins','remote farming country','crumbling city outskirts'],
@@ -1312,7 +1672,7 @@ async function cleanDuplicateScenarios(){
 }
 function saveScenarioRecord(){
   const records=scenarioRecords().filter(r=>r.id!==state.scenarioId);
-  records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,updatedAt:Date.now()});
+  records.push({id:state.scenarioId,name:state.scenarioName,type:state.scenarioType,category:state.scenarioCategory||state.scenarioSpec?.directoryCategory||'other',templateId:state.scenarioTemplateId||'',updatedAt:Date.now()});
   localStorage.setItem(KEY+'_scenarios',JSON.stringify(records));
 }
 function scenarioKey(id){return KEY+'_scenario_'+id;}
@@ -1363,14 +1723,17 @@ function renameScenario(id){
   if(state.scenarioId===id){state.scenarioName=trimmed;save().then(()=>{render();toast('Scenario renamed')});}
   else {try{idbGet(scenarioKey(id)).then(raw=>{if(!raw)return;const st=normalizeState(JSON.parse(raw));st.scenarioName=trimmed;idbPut(scenarioKey(id),JSON.stringify(st));});}catch(e){} render();toast('Scenario renamed');}
 }
+let activeScenarioDirectory='modern';
+function setScenarioDirectory(id){if(!['modern','fantasy'].includes(id))return;activeScenarioDirectory=id;renderScenarios();}
 function renderScenarios(){
   const box=document.getElementById('scenarioList');if(!box)return;
   const records=scenarioRecords().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-  seedScenarioLibrary();
-  const saved=records.map(r=>`<div class="scenario-row"><div class="scenario-info"><b>${esc(r.name)}</b><div class="small">${r.id===state.scenarioId?'● Current':'Saved campaign'} · ${esc(String(r.type||'campaign'))}</div></div><div class="scenario-menu-wrap"><button class="btn scenario-menu-btn" type="button" aria-label="Scenario options" data-scenario-menu="${esc(r.id)}">⋮</button><div class="scenario-menu" data-menu-for="${esc(r.id)}" hidden><button type="button" data-scenario-action="open" data-scenario-id="${esc(r.id)}">▶ Open</button><button type="button" data-scenario-action="rename" data-scenario-id="${esc(r.id)}">✏️ Rename</button><button class="danger" type="button" data-scenario-action="delete" data-scenario-id="${esc(r.id)}">🗑️ Delete</button></div></div></div>`).join('');
+  const saved=records.map(r=>`<div class="scenario-row"><div class="scenario-info"><b>${esc(r.name)}</b><div class="small">${r.id===state.scenarioId?'● Current':'Saved campaign'} · ${esc(String(r.category||r.type||'campaign'))}</div></div><div class="scenario-menu-wrap"><button class="btn scenario-menu-btn" type="button" aria-label="Scenario options" data-scenario-menu="${esc(r.id)}">⋮</button><div class="scenario-menu" data-menu-for="${esc(r.id)}" hidden><button type="button" data-scenario-action="open" data-scenario-id="${esc(r.id)}">▶ Open</button><button type="button" data-scenario-action="rename" data-scenario-id="${esc(r.id)}">✏️ Rename</button><button class="danger" data-scenario-action="delete" data-scenario-id="${esc(r.id)}">🗑️ Delete</button></div></div></div>`).join('');
   const library=seedScenarioLibrary();
-  const templates=library.map(t=>`<div class="scenario-row"><div class="scenario-info"><b>${esc(t.name)}</b><div class="small">Available scenario template · ${esc(String(t.blueprint?.world?.setting||'scenario'))}</div></div><button class="btn" type="button" onclick="startNewCampaign('${esc(t.id)}')">▶ Start new</button></div>`).join('');
-  box.innerHTML=(saved||'<p class="small">No saved campaigns yet.</p>')+`<div class="character-section-label" style="margin-top:14px">Available scenarios</div>`+(templates||'<p class="small">No scenario templates available.</p>');
+  const tabs=`<div class="actions" style="margin:10px 0"><button class="btn ${activeScenarioDirectory==='modern'?'active':''}" type="button" onclick="setScenarioDirectory('modern')">🏙️ Modern</button><button class="btn ${activeScenarioDirectory==='fantasy'?'active':''}" type="button" onclick="setScenarioDirectory('fantasy')">✨ Fantasy</button></div>`;
+  const templates=library.filter(t=>(t.category||t.blueprint?.directoryCategory||'other')===activeScenarioDirectory).map(t=>`<div class="scenario-row"><div class="scenario-info"><b>${esc(t.name)}</b><div class="small">${activeScenarioDirectory==='fantasy'?'Fantasy scenario':'Modern scenario'} · ${esc(String(t.blueprint?.world?.setting||t.blueprint?.world?.start||'scenario'))}</div></div><button class="btn" type="button" onclick="startNewCampaign('${esc(t.id)}')">▶ Start new</button></div>`).join('');
+  const heading=activeScenarioDirectory==='modern'?'Modern scenarios':'Fantasy scenarios';
+  box.innerHTML=(saved||'<p class="small">No saved campaigns yet.</p>')+`<div class="character-section-label" style="margin-top:14px">Scenario Directory</div>`+tabs+`<div class="character-section-label">${heading}</div>`+(templates||'<p class="small">No scenarios in this directory yet.</p>');
 }
 document.addEventListener('click',function(ev){
   const menuBtn=ev.target.closest&&ev.target.closest('[data-scenario-menu]');
@@ -1390,8 +1753,10 @@ async function startNewCampaign(scenarioId=BUILTIN_SCENARIO_ID){
   const t=normaliseImportedScenario(rec.blueprint);
   state=makeScenarioFromTemplate(t);
   state.scenarioId=`campaign-${scenarioId}-${Date.now().toString(36)}`;
-  state.scenarioName=t.name; state.playerCharacterName=''; state.playerCandidates=[];
-  await save(); render(); showTab('story'); keepStoryAtLatest(); toast('New campaign created'); setTimeout(()=>openPlayerPicker(),120);
+  state.scenarioName=t.name; state.scenarioTemplateId=scenarioId; state.scenarioCategory=rec.category||t.directoryCategory||t.scenarioSpec?.directoryCategory||'other';
+  const playerAssigned=!!state.playerCharacterName;
+  if(!playerAssigned)state.playerCandidates=[];
+  await save(); render(); showTab('story'); keepStoryAtLatest(); toast('New campaign created'); if(!playerAssigned)setTimeout(()=>openPlayerPicker(),120);
 }
 function newGame(){startNewCampaign(BUILTIN_SCENARIO_ID)}
 const actionArea=document.getElementById('action');
@@ -1412,14 +1777,14 @@ render();
 (async()=>{try{const raw=await idbGet(KEY);if(raw){state=normalizeState(JSON.parse(raw));applyBackground();render();}}catch(e){console.warn('Persistent startup load unavailable',e);}})();
 loadSavedState().then(async()=>{
   seedCharacterLibrary(); seedScenarioLibrary();
-  if(!state.scenarioId || state.scenarioType==='sylvara'){
+  if(!state.scenarioId){
     await startNewCampaign(BUILTIN_SCENARIO_ID);
   }else{
     if(!scenarioRecords().some(r=>r.id===state.scenarioId))await save();
     await cleanDuplicateScenarios(); render(); keepStoryAtLatest();
   }
 }).catch(err=>console.warn(err));
-setTimeout(updateAIStatus,0);
+setTimeout(()=>{updateNativeAIControls();if(aiLastError&&!localAIInstalled())setAIProgress(0,aiLastError);},0);
 
 document.addEventListener('DOMContentLoaded',()=>updateRedoButton());
 
@@ -1510,11 +1875,11 @@ function applyAINPCs(result){
 
 /* ========================= RPG CORE v5.0 =========================
    Persistent campaign files, segmented character state, relationship baselines,
-   scenario packages, segmented character state, relationship baselines, and persistent campaign state.
-   DFR Native generates the prose; this engine owns canon and state.
+   relevance retrieval, and a bounded working context for the local model.
+   The local model is the prose layer; this engine owns canon and state.
 =================================================================== */
 const RPG_CORE_VERSION='5.4.0-dfr-native';
-const RPG_RUNTIME_ARCHITECTURE='native-story-v1';
+const RPG_RUNTIME_ARCHITECTURE='transactional-prose-v1';
 const RPG_STORE_PREFIX='rpg7:';
 
 async function rpgPut(key,value){ return idbPut(RPG_STORE_PREFIX+key, JSON.stringify(value)); }
@@ -1606,66 +1971,499 @@ function rpgExtractRelationships(spec, party){
 }
 
 /* Persist the package as logical files. The phone can keep a large campaign;
-   the segmented package mirrors the campaign for export and recovery. */
+   only selected records are loaded into the model's working context. */
 async function rpgPersistPackage(){
-  try{
-    if(!state?.scenarioId)return false;
-    const sid=state.scenarioId;
-    await rpgPut(`campaign/${sid}/scenario`, {
-      id:sid,name:state.scenarioName,type:state.scenarioType,
-      world:rpgClone(state.worldProfile||{}),
-      canon:rpgClone(state.scenarioSpec||{}),
-      opening:rpgClone(state.story?.slice(0,80)||[])
-    });
-    const chars={};
-    for(const p of (state.party||[])){
-      chars[p.name]={
-        id:p.id||p.name,name:p.name,role:p.role,race:p.race,age:p.age,
-        control:p.control,playerControlled:!!p.playerControlled,
-        personality:p.personality,appearance:p.appearance,visualCanon:p.visualCanon,
-        behaviourCanon:p.behaviourCanon,speechStyle:p.speechStyle,
-        likes:rpgClone(p.likes||[]),dislikes:rpgClone(p.dislikes||[]),
-        fears:rpgClone(p.fears||[]),goals:rpgClone(p.goals||[]),
-        secrets:rpgClone(p.secrets||[]),morals:p.morals,
-        knowledge:rpgClone(p.knowledge||[])
-      };
+  if(!state?.scenarioId)return;
+  const sid=state.scenarioId;
+  await rpgPut(`campaign/${sid}/scenario`, {
+    id:sid,name:state.scenarioName,type:state.scenarioType,
+    world:rpgClone(state.worldProfile||{}),
+    canon:rpgClone(state.scenarioSpec||{}),
+    opening:rpgClone(state.story?.slice(0,80)||[])
+  });
+  const chars={};
+  for(const p of (state.party||[])){
+    chars[p.name]={
+      id:p.id||p.name,name:p.name,role:p.role,race:p.race,age:p.age,
+      control:p.control,playerControlled:!!p.playerControlled,
+      personality:p.personality,appearance:p.appearance,visualCanon:p.visualCanon,
+      behaviourCanon:p.behaviourCanon,speechStyle:p.speechStyle,
+      likes:rpgClone(p.likes||[]),dislikes:rpgClone(p.dislikes||[]),
+      fears:rpgClone(p.fears||[]),goals:rpgClone(p.goals||[]),
+      secrets:rpgClone(p.secrets||[]),morals:p.morals,
+      knowledge:rpgClone(p.knowledge||[])
+    };
+  }
+  await rpgPut(`campaign/${sid}/characters`,chars);
+  await rpgPut(`campaign/${sid}/relationships`,rpgClone(state.relationships||{}));
+  await rpgPut(`campaign/${sid}/memories`,rpgClone(state.longTermMemory||{}));
+  await rpgPut(`campaign/${sid}/timeline`,rpgClone(state.timeline||state.events||[]));
+  await rpgPut(`campaign/${sid}/runtime`,{
+    location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
+    npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
+    worldState:rpgClone(state.worldState||{}),dfrConversation:rpgClone(state.dfrConversation||{}),dfrNativeHistory:rpgClone(state.dfrNativeHistory||[]),dfrPhysicalState:rpgClone(state.dfrPhysicalState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
+  });
+}
+
+/* Read the persistent package and retrieve only records relevant to this turn. */
+async function rpgLoadRelevantContext(action){
+  const sid=state.scenarioId;
+  const all=await Promise.all([
+    rpgGet(`campaign/${sid}/scenario`),
+    rpgGet(`campaign/${sid}/characters`),
+    rpgGet(`campaign/${sid}/relationships`),
+    rpgGet(`campaign/${sid}/memories`),
+    rpgGet(`campaign/${sid}/runtime`)
+  ]);
+  const [scenario,characters,relationships,memories,runtime]=all;
+  const player=String(state.playerCharacterName||'').trim();
+  const playerObj=characters?.[player]||state.party?.find(p=>p.name===player)||{};
+  const activeNames=new Set();
+  const sceneText=String(action||'')+' '+String(state.currentLocation||'');
+  const npcs=Array.isArray(state.npcs)?state.npcs:[];
+  for(const p of (state.party||[])){
+    if(p.name===player)continue;
+    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
+    let score=0;
+    if(rel)score+=100;
+    if(sceneText.toLowerCase().includes(rpgKey(p.name)))score+=80;
+    if(p.currentLocation&&rpgKey(p.currentLocation)===rpgKey(state.currentLocation))score+=40;
+    if(npcs.some(n=>rpgKey(n.name)===rpgKey(p.name)&&rpgKey(n.location||'')===rpgKey(state.currentLocation)))score+=30;
+    if(score>0)activeNames.add(p.name);
+  }
+  /* If the scene has just begun, prefer the scenario's opening cast. */
+  if(!activeNames.size){
+    for(const e of (state.story||[]).slice(-8)){
+      if(e?.speaker)activeNames.add(e.speaker);
     }
-    await rpgPut(`campaign/${sid}/characters`,chars);
-    await rpgPut(`campaign/${sid}/relationships`,rpgClone(state.relationships||{}));
-    await rpgPut(`campaign/${sid}/memories`,rpgClone(state.longTermMemory||{}));
-    await rpgPut(`campaign/${sid}/timeline`,rpgClone(state.timeline||state.events||[]));
-    await rpgPut(`campaign/${sid}/runtime`,{
-      location:state.currentLocation,timeOfDay:state.timeOfDay,inGameDay:state.inGameDay,
-      npcs:rpgClone(state.npcs||[]),activeThreads:rpgClone(state.activeThreads||[]),
-      worldState:rpgClone(state.worldState||{}),dfrConversation:rpgClone(state.dfrConversation||{}),dfrNativeHistory:rpgClone(state.dfrNativeHistory||[]),dfrPhysicalState:rpgClone(state.dfrPhysicalState||{}),currentScenePhase:state.currentScenePhase||'free_play',snapshots:rpgClone(state.runtimeEngine?.snapshots||[])
+  }
+  const active=[];
+  for(const name of activeNames){
+    const p=characters?.[name]||state.party?.find(x=>x.name===name);
+    if(!p)continue;
+    active.push({
+      name:p.name,role:p.role,personality:p.personality,behaviourCanon:p.behaviourCanon,
+      speechStyle:p.speechStyle,goals:p.goals,likes:p.likes,dislikes:p.dislikes,
+      fears:p.fears,morals:p.morals,secrets:p.secrets
     });
-    return true;
-  }catch(err){
-    // This segmented cache is optional; the main campaign save remains authoritative.
-    console.warn('DFR package cache unavailable; keeping the main campaign save',err);
-    return false;
+  }
+  const rels=[];
+  for(const p of active){
+    const rel=relationships?.[rpgRelationshipKey(player,p.name)];
+    if(rel)rels.push({
+      characters:rel.characters,affection:rel.affection,trust:rel.trust,
+      attraction:rel.attraction,comfort:rel.comfort,tension:rel.tension,bond:rel.bond,
+      label:rel.label,history:rel.history,meaning:rel.meaning
+    });
+  }
+  const playerMem=memories?.characterMemories?.[player]||[];
+  const relevantMem=[];
+  for(const p of active){
+    const arr=memories?.characterMemories?.[p.name]||[];
+    relevantMem.push(...arr.slice(-8));
+  }
+  relevantMem.push(...playerMem.slice(-8));
+  const uniqueMem=[...new Map(relevantMem.map(x=>[JSON.stringify(x),x])).values()].slice(-12);
+  return {
+    scenario:{name:scenario?.name||state.scenarioName,world:scenario?.world||state.worldProfile,canon:scenario?.canon||state.scenarioSpec},
+    player:playerObj,
+    activeCharacters:active,
+    relationships:rels,
+    memories:uniqueMem,
+    runtime:runtime||{},
+    recent:(state.story||[]).slice(-8),
+    action:String(action||'').trim()
+  };
+}
+
+function rpgCompactText(v,max){
+  let s=typeof v==='string'?v:JSON.stringify(v);
+  s=String(s||'').replace(/\s+/g,' ').trim();
+  return s.length>max?s.slice(0,Math.max(0,max-1))+'…':s;
+}
+
+/* Build a deliberately small working set. Storage can be large; model input cannot. */
+async function buildRPGWorkingPrompt(action){
+  rpgReconcileRuntimeScene();
+  const c=await rpgLoadRelevantContext(action);
+  const rawCanon=c.scenario?.canon&&typeof c.scenario.canon==='object'?c.scenario.canon:{};
+
+  // Party characters are real scene participants too. The previous build only exposed
+  // state.npcs to the model, which meant imported scenario characters such as Elizabeth
+  // could have their relationship data stored correctly but their personality/history
+  // omitted from the actual generation context.
+  const recentText=c.recent.map(e=>String(e?.text||'')).join(' ');
+  const actionText=String(action||'');
+  const partyCandidates=(state.party||[])
+    .filter(p=>{
+      if(!p||!p.name||p.name===c.player?.name||isActivePlayer(p))return false;
+      // A relationship makes an NPC relevant, but it does NOT put them in the scene.
+      // Scene participation requires an explicit present=true state AND the character's
+      // authoritative location to match the player's current location.
+      return isScenePresent(p.name);
+    })
+    .map(p=>{
+      const rel=c.relationships.find(r=>
+        Array.isArray(r.characters) && r.characters.some(n=>rpgKey(n)===rpgKey(p.name))
+      );
+      let score=0;
+      if(rel)score+=100;
+      if(new RegExp('\\b'+String(p.name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(recentText+' '+actionText))score+=90;
+      if((c.recent||[]).some(e=>String(e?.speaker||'').toLowerCase()===String(p.name).toLowerCase()))score+=70;
+      return {p,rel,score};
+    })
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,4);
+
+  const worldNPCs=(state.npcs||[])
+    .filter(n=>n&&n.name&&isScenePresent(n.name))
+    .map(n=>{
+      const recentSpeaker=(c.recent||[]).some(e=>rpgKey(e?.speaker)===rpgKey(n.name));
+      const addressed=new RegExp('\\b'+String(n.name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(recentText+' '+actionText);
+      const score=relevanceScore(n,c.player,state.currentLocation)+(recentSpeaker?90:0)+(addressed?80:0);
+      return {...n,_score:score};
+    })
+    .sort((a,b)=>b._score-a._score)
+    .slice(0,4);
+
+  const active=[];
+  const seen=new Set();
+  for(const item of [...partyCandidates.map(x=>x.p),...worldNPCs]){
+    const key=rpgKey(item.name);
+    if(!key||seen.has(key))continue;
+    seen.add(key);
+    const rel=c.relationships.find(r=>
+      Array.isArray(r.characters) && r.characters.some(n=>rpgKey(n)===key)
+    );
+    const r=characterRuntime(item);
+    const sceneRec=characterSceneRecord(item.name);
+    active.push({
+      characterId:String(item.characterId||item.id||''),
+      name:item.name,
+      role:item.role,
+      location:sceneRec.location,
+      scenePresence:'PRESENT',
+      personality:rpgCompactText(item.personality,850),
+      behaviour:rpgCompactText(item.behaviourCanon||item.behaviorCanon,650),
+      speech:rpgCompactText(item.speechStyle,450),
+      goals:(item.goals||[]).slice(0,4),
+      fears:(item.fears||[]).slice(0,3),
+      morals:rpgCompactText(item.morals,220),
+      knowledge:(item.knowledge||[]).slice(-6).map(x=>rpgCompactText(x,220)),
+      knowledgeBoundary:item.knowledgeBoundary&&typeof item.knowledgeBoundary==='object'?structuredClone(item.knowledgeBoundary):{},
+      relationshipGuidance:rpgCompactText(item.relationshipGuidance,700),
+      relationship:rel?{
+        affection:rel.affection,trust:rel.trust,attraction:rel.attraction,
+        comfort:rel.comfort,tension:rel.tension,bond:rel.bond,
+        history:rpgCompactText(rel.history,700),
+        meaning:rpgCompactText(rel.meaning,500)
+      }:null
+    });
+  }
+
+  const memories=c.memories.slice(-10).map(m=>rpgCompactText(m,500));
+  const recent=c.recent.slice(-6).map(e=>({
+    speaker:e.speaker||'Narrator',type:e.type||'gm',text:rpgCompactText(e.text,900)
+  }));
+
+  // These fields are deliberately promoted into the working context. They are scenario
+  // canon, not optional prose: the model must know what has already happened before it
+  // decides what happens next.
+  const starting=rawCanon.startingSituation||{};
+  const sceneCanon={
+    name:rawCanon.name||c.scenario.name||state.scenarioName,
+    description:rpgCompactText(rawCanon.description,650),
+    tone:rpgCompactText(rawCanon.tone,300),
+    world:{setting:rpgCompactText(rawCanon.world?.setting||rawCanon.world?.start||'',320),worldName:rawCanon.world?.worldName??null},
+    scenarioMechanics:rpgCompactText(rawCanon.scenarioMechanics,2600),
+    startingSituation:{
+      location:rpgCompactText(starting.location||state.currentLocation,220),
+      situation:rpgCompactText(starting.situation,650),
+      intro:rpgCompactText(starting.intro,950),
+      openingBeat:rpgCompactText(starting.openingBeat,350)
+    },
+    generatorGuidance:rpgCompactText(rawCanon.generatorGuidance,1000),
+    rules:(rawCanon.rules||[]).slice(0,8).map(x=>rpgCompactText(x,220)),
+    storyThreads:(rawCanon.storyThreads||[]).slice(0,4).map(x=>rpgCompactText(x,260))
+  };
+
+  const currentSceneState={
+    phase:state.currentScenePhase||'free_play',
+    location:String(state.currentLocation||'Unknown'),
+    scriptedOpeningCompleted:!!state.openingComplete,
+    instruction: state.openingComplete
+      ? 'The scripted opening has already happened. Continue from the current story; do not restart, replay or rewrite it.'
+      : 'The opening is still in progress. Follow the scenario opening sequence and current scene phase; do not skip ahead to later reveals.'
+  };
+  const allSceneCharacters=Object.entries(state.worldState?.characters||{});
+  currentSceneState.presentCharacters=allSceneCharacters
+    .filter(([n,v])=>v&&v.present!==false&&rpgKey(v.location||'')===rpgKey(state.currentLocation||''))
+    .map(([n,v])=>({name:n,location:v.location,activity:v.activity||'present'}));
+  currentSceneState.absentCharacters=allSceneCharacters
+    .filter(([n,v])=>!v||v.present===false||rpgKey(v.location||'')!==rpgKey(state.currentLocation||''))
+    .map(([n,v])=>({name:n,location:v?.location||'',reason:v?.present===false?'not-present-in-scene':'different-location'}));
+  currentSceneState.plannedEvents=Array.isArray(state.worldState?.plannedEvents)?state.worldState.plannedEvents.slice(-8):[];
+  currentSceneState.completedEvents=Array.isArray(state.worldState?.events)?state.worldState.events.slice(-8):[];
+
+  return {
+    scenario:sceneCanon,
+    player:{name:c.player.name,role:c.player.role,race:c.player.race,age:c.player.age,level:c.player.level,class:c.player.class,magicSpecialisation:c.player.magicSpecialisation,appearance:c.player.appearance,progression:c.player.progression,abilities:c.player.abilities,equipment:c.player.equipment,previousLifeKnowledge:c.player.previousLifeKnowledge,personality:rpgCompactText(c.player.personality,500)},
+    activeCharacters:active,
+    relationships:c.relationships.slice(0,4).map(r=>({
+      characters:r.characters,affection:r.affection,trust:r.trust,
+      attraction:r.attraction,comfort:r.comfort,tension:r.tension,bond:r.bond,
+      history:rpgCompactText(r.history,800),meaning:rpgCompactText(r.meaning,500)
+    })),
+    memories,recent,
+    sceneState:currentSceneState,
+    presentCharacters:currentSceneState.presentCharacters,
+    absentCharacters:currentSceneState.absentCharacters,
+    plannedEvents:currentSceneState.plannedEvents,
+    completedEvents:currentSceneState.completedEvents,
+    location:String(state.currentLocation||'Unknown'),
+    action:String(action||'').trim()
+  };
+}
+
+/*
+ * Validate the model's turn before it reaches the story log.
+ * A prose generator can occasionally echo the player's input or repeat a physical beat from
+ * the immediately preceding scene. Those are generation errors, not canon.
+ */
+function rpgTurnQuality(entries, action){
+  const issues=[];
+  if(!entries?.length)issues.push('empty-response');
+  if(rpgPlayerEchoes(entries,action))issues.push('player-voice-or-echo');
+  if(rpgRepeatedPhysicalBeat(entries))issues.push('repeated-physical-beat');
+  if((entries||[]).filter(e=>e.type==='character').length>3)issues.push('too-many-npc-speakers');
+  const playerText=String(action||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const words=playerText.split(/\s+/).filter(w=>w.length>4);
+  for(const e of entries||[]){
+    if(e.type!=='character')continue;
+    const text=String(e.text||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(words.length>=8){
+      const hits=words.filter(w=>text.includes(w)).length;
+      if(hits/words.length>=0.72 && text.length>=Math.min(120,playerText.length*0.55))issues.push('player-echo');
+    }
+    if(/\b(?:i|i'm|i am|i said|i told|i thought)\b/.test(text) && /\bshane\b/i.test(text))issues.push('player-voice');
+  }
+  const unique=[...new Set(issues)];
+  return {ok:unique.length===0,issues:unique,reason:unique.join(', ')};
+}
+
+function rpgRepeatedBeatWarning(){
+  const recent=(state.story||[]).slice(-8).map(e=>String(e?.text||'')).join(' ');
+  const warnings=[];
+  if(/take[s]? a small step closer|move[s]? closer|close[sd]? the (remaining )?distance/i.test(recent))
+    warnings.push('An NPC has already moved closer in the recent scene. Do not repeat another step closer unless the player explicitly changes the physical situation.');
+  if(/silence (?:stretch|settle|hang)|the silence/i.test(recent))
+    warnings.push('The scene has already used a silence beat. Advance the conversation instead of repeating another prolonged silence.');
+  return warnings.join('\n');
+}
+
+function rpgSceneContinuityIssues(entries, ctx, action){
+  rpgReconcileRuntimeScene();
+  const activeNames=new Set((ctx.activeCharacters||[]).map(x=>rpgKey(x.name)));
+  const absent=(ctx.absentCharacters||[]).map(x=>typeof x==='string'?x:x?.name).filter(Boolean);
+  const issues=[];
+  for(const e of entries||[]){
+    if(e.type==='character'){
+      const speaker=String(e.speaker||'').trim();
+      // Presence has two authoritative views in the runtime: the canonical character
+      // record and the current-scene projection. They must agree. A character being
+      // omitted from the compact ACTIVE NPC list is NOT the same thing as being absent.
+      // Prefer the canonical scene record, then reconcile against currentPeople so a
+      // valid speaker cannot be rejected merely because a context projection was stale.
+      const sceneRecord= speaker && typeof characterSceneRecord==='function' ? characterSceneRecord(speaker) : null;
+      const currentPeople=(ctx?.worldContext?.currentPeople||[]).some(x=>rpgKey(x?.name||x)===rpgKey(speaker));
+      const authoritativePresent=!!(sceneRecord?.scenePresent || currentPeople);
+      if(!authoritativePresent)issues.push(`inactive-speaker:${speaker||'unknown'}`);
+      else if(!activeNames.has(rpgKey(speaker)) && !currentPeople)issues.push(`uncontextualized-speaker:${speaker}`);
+    }
+    const text=String(e.text||'');
+    for(const name of absent){
+      const re=new RegExp('\\b'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+      if(!re.test(text))continue;
+      // Mentioning an absent person is fine (for example, answering a question about
+      // where Elizabeth is). What is invalid is silently giving that person physical
+      // presence, observation, dialogue or an action in the current scene.
+      const physical=new RegExp('(?:'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'|she|he)\\s+(?:had been |was |were |is |are |stood|sat|walked|entered|came|arrived|watched|observed|listened|looked|glanced|stared|leaned|smiled|frowned|spoke|said|asked|replied|answered|gestured|moved|stepped|followed|waited|approached|took|turned|shifted)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:watching|observing|listening|waiting|standing|sitting|looking|speaking|talking|following|entering)\\b|'+String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^.]{0,80}\\b(?:gaze|eyes|voice|expression|posture)\\b','i');
+      if(physical.test(text))issues.push(`absent-character:${name}`);
+    }
+  }
+  return [...new Set(issues)];
+}
+
+/* The model is a prose renderer. It never owns campaign state. */
+async function extractAIStateTransaction(action,entries){
+  /*
+   * The prose model remains the voice. A second, tiny structured pass is used only
+   * to propose state changes. The engine validates the proposal before committing it.
+   * This keeps canon/state ownership out of the model while allowing relationships,
+   * memories and NPC state to actually develop over time.
+   */
+  const endpoint=String(aiSettings.endpoint||LOCAL_AI_DEFAULT_ENDPOINT).trim();
+  const model=String(aiSettings.model||LOCAL_AI_DEFAULT_MODEL).trim()||LOCAL_AI_DEFAULT_MODEL;
+  if(!endpoint && !nativeAIAvailable())return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{}};
+
+  const player=activePlayer();
+  const playerNameValue=player?.name||playerName();
+  const allCharacters=[...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name);
+  const characterNames=[...new Set(allCharacters.map(x=>x.name))];
+  const activeNames=[...new Set((buildRPGStateCharacterNames()).filter(Boolean))];
+  const responseText=(entries||[]).map(e=>`${e.type==='character'?(e.speaker||'NPC'):'Narrator'}: ${String(e.text||'')}`).join('\n').slice(0,5000);
+  const actionText=String(action||'').trim().slice(0,1800);
+  const relationshipSnapshot=Object.values(state.relationships||{}).slice(0,12).map(r=>({
+    characters:r.characters,affection:r.affection,trust:r.trust,attraction:r.attraction,
+    comfort:r.comfort,tension:r.tension,bond:r.bond
+  }));
+
+  const prompt=`You are the STATE TRANSACTION EXTRACTOR for a persistent RPG engine.
+Do not write story prose. Return ONLY valid JSON.
+
+The prose below has already passed the scene-safety validator. Your job is to identify ONLY small state changes that are directly supported by the player's action and the generated scene.
+The ENGINE remains authoritative. Never invent facts, memories, relationships, locations, arrivals, travel, possessions or events that are not explicitly supported by the turn.
+
+PLAYER: ${playerNameValue}
+CURRENT LOCATION: ${String(state.currentLocation||'Unknown')}
+KNOWN CHARACTERS: ${JSON.stringify(characterNames)}
+CHARACTERS PRESENT IN THIS SCENE: ${JSON.stringify(activeNames)}
+CURRENT RELATIONSHIPS: ${JSON.stringify(relationshipSnapshot)}
+
+PLAYER ACTION:
+${actionText}
+
+GENERATED SCENE:
+${responseText}
+
+Return exactly this JSON shape:
+{"relationship_changes":[],"memory_updates":[],"npc_updates":[],"world_updates":{}}
+
+relationship_changes: only clear relationship movement caused by this turn. Each item must contain name, with, and optional *_delta fields. Deltas must be between -5 and +5. Never create a relationship merely because two characters are known.
+memory_updates: only explicit information established or experienced in this turn. Each item: character, text, type, importance. Character must be a known character. Do not give a character knowledge they did not witness or receive in this turn.
+npc_updates: only clear changes to the current mood/topic/concern/intent of a character PRESENT in this scene. Never change location or presence here.
+world_updates: leave empty unless the turn explicitly establishes a simple timeOfDay or inGameDay change. Never change location, character presence, travel or canon here.
+If there is no clearly supported change, return an empty array/object.
+Do not include explanations, markdown or code fences.`;
+
+  const payload={model,messages:[{role:'system',content:prompt}],stream:false,options:{temperature:0.15,max_tokens:700}};
+  let data;
+  try{data=await localAIRequest(endpoint,payload);}catch(e){return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:String(e?.message||e||'state extraction failed')};}
+  const raw=String(data?.message?.content||data?.choices?.[0]?.message?.content||data?.response||data?.output_text||data||'').trim();
+  try{
+    const cleaned=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+    return JSON.parse(cleaned);
+  }catch(e){
+    return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:'invalid state transaction JSON'};
   }
 }
 
-async function commitAIStateTransaction(action,entries,isNative=true,nativeResult=null){
+function buildRPGStateCharacterNames(){
+  const here=String(state.currentLocation||'').trim();
+  const out=[];
+  for(const p of state.party||[]){if(p?.name && isScenePresent(p.name))out.push(p.name);}
+  for(const n of state.npcs||[]){if(n?.name && isScenePresent(n.name))out.push(n.name);}
+  return [...new Set(out)];
+}
+
+function validateAndCommitAIStateTransaction(tx,action,entries){
+  const empty={relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{}};
+  if(!tx||typeof tx!=='object')return empty;
+  const player=activePlayer();
+  const playerNameValue=player?.name||playerName();
+  const known=new Map([...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name).map(x=>[rpgKey(x.name),x]));
+  const present=new Set(buildRPGStateCharacterNames().map(rpgKey));
+  const out={...empty};
+
+  if(Array.isArray(tx.relationship_changes)){
+    for(const c of tx.relationship_changes.slice(0,8)){
+      const name=String(c?.name||'').trim(), withName=String(c?.with||c?.other||c?.target||playerNameValue).trim();
+      if(!name||!withName||!known.has(rpgKey(name))||!known.has(rpgKey(withName)))continue;
+      if(!present.has(rpgKey(name)) && rpgKey(name)!==rpgKey(playerNameValue))continue;
+      if(!present.has(rpgKey(withName)) && rpgKey(withName)!==rpgKey(playerNameValue))continue;
+      const item={name,with:withName};
+      for(const k of ['bond','reputation','affection','trust','attraction','comfort','tension']){
+        const dk=k+'_delta';
+        if(c[dk]===undefined)continue;
+        const n=Number(c[dk]);
+        if(Number.isFinite(n)&&n!==0)item[dk]=Math.max(-5,Math.min(5,n));
+      }
+      if(Object.keys(item).length>2)out.relationship_changes.push(item);
+    }
+  }
+
+  if(Array.isArray(tx.memory_updates)){
+    for(const m of tx.memory_updates.slice(0,10)){
+      const character=String(m?.character||m?.characterName||'').trim();
+      const textValue=String(m?.text||m?.memory||m?.fact||'').replace(/\s+/g,' ').trim();
+      if(!character||!textValue||!known.has(rpgKey(character)))continue;
+      /* A character memory must belong to a participant in this turn. This prevents
+         the extractor from leaking the scene into unrelated characters' memories. */
+      if(!present.has(rpgKey(character)) && rpgKey(character)!==rpgKey(playerNameValue))continue;
+      if(textValue.length>320)continue;
+      out.memory_updates.push({
+        character,
+        text:textValue,
+        type:String(m?.type||'event').slice(0,40),
+        importance:Math.max(1,Math.min(100,Number(m?.importance)||50)),
+        source:'validated_scene_turn'
+      });
+    }
+  }
+
+  if(Array.isArray(tx.npc_updates)){
+    for(const u of tx.npc_updates.slice(0,8)){
+      const name=String(u?.name||u?.character||'').trim();
+      if(!name||!present.has(rpgKey(name))||rpgKey(name)===rpgKey(playerNameValue))continue;
+      const item={name};
+      for(const k of ['mood','currentGoal','currentConcern','currentTopic','intent']){
+        if(u[k]!==undefined){
+          const value=String(u[k]||'').replace(/\s+/g,' ').trim();
+          if(value.length<=220)item[k]=value;
+        }
+      }
+      if(Object.keys(item).length>1)out.npc_updates.push(item);
+    }
+  }
+
+  if(tx.world_updates&&typeof tx.world_updates==='object'){
+    if(typeof tx.world_updates.timeOfDay==='string' && tx.world_updates.timeOfDay.length<=40)out.world_updates.timeOfDay=tx.world_updates.timeOfDay;
+    if(Number.isFinite(Number(tx.world_updates.inGameDay)))out.world_updates.inGameDay=Math.max(1,Math.min(99999,Number(tx.world_updates.inGameDay)));
+  }
+
+  return out;
+}
+
+async function commitAIStateTransaction(action,entries,isNative=false,nativeResult=null){
   try{
-    // DFR Native is the only narrative engine. It owns its state updates directly;
-    // this transaction applies only validated relationship deltas returned by that engine.
-    const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
+    /*
+     * AI Slyvara owns NPC dialogue proposals. The engine then asks a separate validator
+     * to turn observable consequences into structured state updates. Native response
+     * pools do not participate in the normal path.
+     */
+    if(isNative){
+      const tx={relationship_changes:Array.isArray(nativeResult?.relationship_changes)?nativeResult.relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},native:true};
+      applyAIRelationships(tx);
+      return tx;
+    }
+    const proposal=await extractAIStateTransaction(action,entries);
+    const tx=validateAndCommitAIStateTransaction(proposal,action,entries);
+    /* Engine appliers are now actually connected to the validated transaction. */
     applyAIRelationships(tx);
+    applyAIMemory({...tx,action:String(action||'').trim()});
+    applyAINPCs(tx);
+    applyAIWorldUpdates(tx);
     return tx;
   }catch(e){
-    // A failed relationship update is a failed story transaction. Let addAction/Redo
-    // restore the post-player-action snapshot instead of silently saving partial state.
-    console.error('DFR Native relationship transaction failed',e);
-    throw e;
+    console.warn('AI state transaction skipped',e);
+    return {relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},_error:String(e?.message||e||'transaction failed')};
   }
 }
 
 
 /* ================================================================
-   DFR NATIVE LANGUAGE ENGINE — OFFLINE STORY GENERATION
-   Purpose-built local narrative engine. No external model or network connection required.
+   LEGACY DFR NATIVE LANGUAGE ENGINE — DIAGNOSTIC ONLY
+   Purpose-built local narrative engine. No external model required.
    The RPG engine remains authoritative; this layer chooses intent, language,
    character response and presentation from authoritative state.
    ================================================================ */
@@ -1951,7 +2749,7 @@ function dfrActionForEmotion(person,emotion,seed,intent="neutral"){
     'soft concern':[`*${name}'s expression softens.*`,`*${name} looks at you with quiet concern.*`,`*${name} pauses, clearly choosing their words carefully.*`,`*${name} edges a little closer, giving you her full attention.*`],
     direct:[`*${name} looks at you directly.*`,`*${name} answers without hesitation.*`,`*${name} holds your gaze.*`,`*${name} straightens, standing squarely before you.*`],
     calm:[`*${name} gives a small nod.*`,`*${name} relaxes, accepting the moment.*`,`*${name} offers a quiet nod.*`,`*${name} settles back into a comfortable stance.*`],
-    neutral:[`*${name} considers that for a moment.*`,`*${name} listens without interrupting.*`,`*${name} looks thoughtful for a moment.*`]
+    neutral:[`*${name} considers that for a moment.*`,`*${name} listens without interrupting.*`,`*${name} looks thoughtful for a moment.`]
   };
   const intentOptions={
     question:[`*${name} tilts their head slightly, considering the question.*`,`*${name} studies you for a moment before answering.*`,`*${name} raises an eyebrow, weighing the question.*`,`*${name} takes a moment to decide how to answer.*`,`*${name} gives you a measured look.*`],
@@ -2174,22 +2972,18 @@ function dfrGroupAcknowledgement(person,seed,selected=false){
   return {physical,dialogue};
 }
 function dfrGroupEntryResponse(action,seed){
-  const a=dfrActionText(action).toLowerCase();
   if(!dfrActionMentionsAllGirls(action))return null;
-  // Mentioning "everyone" in ordinary dialogue must never teleport the cast or replay introductions.
-  const actualArrival= /\b(?:enter|entered|entering|walk into|walked into|walking into|step into|stepped into|stepping into|come into|came into|join|joined|joining|arrive|arrived|arriving|gather|gathered|gathering|call everyone into|ask everyone to come)\b/.test(a);
-  if(!actualArrival)return null;
   const c0=dfrConversationState();
   if(['family_introduction','elizabeth_entered','elizabeth_apology','elizabeth_conversation','arrangement_ready','arrangement_explained'].includes(String(c0.stage||'')))return null;
-  if(state.worldState?.events?.some(e=>String(e?.id||'')==='morningstar-family-gathered' && e.status==='completed'))return null;
+  const a=dfrActionText(action).toLowerCase();
   const location=/\b(?:study|drawing room|library|lounge|sitting room)\b/.test(a)?'Morningstar Estate — Study':'Morningstar Estate — Study';
-  const openingGroup=['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
+  const openingGroup=['Gerald Morningstar','Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Freya Morningstar'];
   dfrSetSceneOnly(openingGroup,location);
   setCharacterLocation('Elizabeth Vale','Morningstar Estate — elsewhere in the house','working elsewhere',false);
   const c=dfrConversationState();
   c.stage='family_introduction'; c.topic='family_introduction'; state.currentScenePhase='family_introduction';
   if(!state.worldState.events.some(e=>String(e?.id||'')==='morningstar-family-gathered'))state.worldState.events.push({id:'morningstar-family-gathered',status:'completed',at:Date.now(),description:'Shane entered the study with Gerald and the Morningstar family gathered there.'});
-  const people=openingGroup.map(n=>dfrPerson(n)).filter(Boolean);
+  const people=DFR_MORNINGSTAR_GROUP.map(n=>dfrPerson(n)).filter(Boolean);
   const voices=new Set();
   // Let several personalities speak, but never force every NPC to have dialogue.
   for(const n of people){
@@ -2257,26 +3051,16 @@ function dfrHomeArrivalResponse(action,seed){
 function dfrDynamicTravelResponse(action,seed){
   const a=dfrActionText(action).toLowerCase();
   const loc=dfrRequestedTravelLocation(action); if(!loc)return null;
-  const groupTravel=/\bwe\b.{0,35}\b(?:go|head|travel|walk|leave|move|come|follow|drive|ride)\b|\b(?:everyone|all of us|the group|all the girls|the whole family)\b.{0,35}\b(?:go|head|travel|walk|leave|move|come|follow|drive|ride)\b/.test(a) && !/\b(?:don't|do not|never|not)\b.{0,35}\b(?:we|everyone|all of us|the group|all the girls|the whole family)\b/.test(a);
+  const follows=/\b(?:we|everyone|all of us)\b/.test(a);
   const active=[...(state.party||[]),...(state.npcs||[])].filter(x=>x?.name&&isScenePresent(x.name)&&!isActivePlayer(x));
-  const explicitlyTaken=active.filter(p=>{
-    const name=String(p.name||'');
-    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    return new RegExp('\\b(?:take|bring|ask|invite|lead|walk|travel|go)\\b.{0,50}\\b'+escaped+'\\b|\\b'+escaped+'\\b.{0,40}\\b(?:with me|with us|comes with|come with|joins me|join me)\\b','i').test(action);
-  });
-  let travellers=[];
-  if(groupTravel){
-    travellers=active;
-    dfrSetSceneOnly(active.map(x=>x.name),loc);
+  if(follows){
+    dfrSetSceneOnly([...(active.map(x=>x.name))],loc);
   }else{
-    // Moving Shane alone changes only his location; companions remain where they were.
     dfrSetRuntimeLocation(loc);
-    for(const p of explicitlyTaken)setCharacterLocation(p.name,loc,'travelling with Shane',true);
-    travellers=explicitlyTaken;
+    for(const p of active)setCharacterLocation(p.name,loc,'present',true);
   }
   const c=dfrConversationState(); c.stage='travelled'; c.topic='world_state'; state.currentScenePhase='travelled';
-  const names=[activePlayer()?.name,...travellers.map(x=>x.name)].filter(Boolean);
-  addWorldEvent(`${groupTravel||travellers.length?'The group':'Shane'} travelled to ${loc}.`,names,loc,45);
+  addWorldEvent(`The group travelled to ${loc}.`,[activePlayer()?.name,...active.map(x=>x.name)].filter(Boolean),loc,45);
   return {entries:[{type:'gm',text:`*The journey takes you to ${loc}. The surroundings are different from the estate, and the new location becomes part of the campaign world.*`}],topic:c.topic,stage:c.stage};
 }
 
@@ -2293,7 +3077,7 @@ function dfrAdvanceScenarioForAction(action,target){
     if(!state.worldState.events.some(e=>String(e?.id||'')==='gerald-moved-inside'))state.worldState.events.push({id:'gerald-moved-inside',status:'completed',at:Date.now(),description:'Gerald brought Shane inside to the study for their private conversation.'});
     return 'gerald_private_conversation';
   }
-  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(?:why did you (?:call|invite|summon|ask me to come)|why.*invite|what is this (?:all )?about|what (?:do|does|did|would|will) (?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|(?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|what do we need to discuss|what are we here to discuss|what do you want to tell me|why.*ask.*come|reason.*call)\b/.test(a)){
+  if((name==='Gerald'||name==='Gerald Morningstar') && /\b(why did you call|why.*invite|what is this (?:all )?about|what do we need to discuss|why.*ask.*come|reason.*call)\b/.test(a)){
     c.topic='invitation_reason'; c.stage='reason_for_invitation'; return c.stage;
   }
   if((name==='Gerald'||name==='Gerald Morningstar') && /\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a)){
@@ -2306,7 +3090,7 @@ function dfrInferConsistencyTopic(action,target){
   const a=dfrActionText(action).toLowerCase();
   const c=dfrConversationState();
   if(target&&dfrFirstName(target).toLowerCase()==='gerald'){
-    if(/\b(?:why did you (?:call|invite|summon|ask me to come)|why.*invite|why.*ask.*come|why am i here|why are you asking me here|what is this (?:all )?about|what (?:do|does|did|would|will) (?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|(?:you|he|we|i|gerald|finch) (?:need|needs|want|wants|wish|wishes) to (?:discuss|talk about)|what do we need to discuss|what are we here to discuss|what did you want to discuss|what do you want to tell me|reason.*call|something (?:we|you) (?:need|needed|want|wanted) to (?:talk|discuss)|something to (?:talk|discuss)|something (?:important|specific) to discuss|tell me why you called me|tell me why he called me|why he called me|why you called me)\b/.test(a))return 'invitation_reason';
+    if(/\b(why did you call|why.*invite|why.*ask.*come|why am i here|why are you asking me here|what is this (?:all )?about|what do we need to discuss|what did you want to discuss|reason.*call|something (?:we|you) (?:need|needed|want|wanted) to (?:talk|discuss)|something to (?:talk|discuss)|something (?:important|specific) to discuss|tell me why you called me|tell me why he called me|why he called me|why you called me)\b/.test(a))return 'invitation_reason';
     if(/\b(finch|promise|dying wish|arrangement|what did he want|what did finch ask)\b/.test(a))return 'finch_request';
   }
   if(/\b(remember|recall|last time|before|earlier|you told me|you said)\b/.test(a))return 'memory_recall';
@@ -2423,53 +3207,17 @@ function dfrConsistentGeraldResponse(action,topic,stage,seed){
     const answers=[
       'Finch asked me to look after you, but there was more to his request than that. He wanted you to have a future here, if you chose it.',
       'It was Finch’s dying wish. He wanted me to make sure you were not left alone, and he wanted you to get to know my daughters properly.',
-      'Finch asked me to give you a chance to become part of this family, but only if that was something you genuinely wanted. Nobody is being forced into anything.',
-      'He wanted you to have people you could turn to after he was gone. He never intended that kindness to become a debt you owed us.',
-      'The promise was to open this door for you, Shane—not to decide whether you walked through it. That part has always been yours.',
-      'Finch hoped you would meet my daughters and judge for yourself whether you could feel at home here. He wanted an opportunity for you, not an obligation.',
-      'He was worried about you facing everything alone. I promised to offer you a place among us, while leaving you free to decide what that means.',
-      'Finch asked me to make sure you had a choice and people around you. He did not ask me to dictate your future, and I would not do that.'
+      'Finch asked me to give you a chance to become part of this family, but only if that was something you genuinely wanted. Nobody is being forced into anything.'
     ];
     const text=dfrChooseNovel(answers,seed,{target:'Gerald Morningstar',intent:'question',kind:'dialogue'});
     dfrRecordFact('Gerald revealed that Finch wanted Shane to have a future with the Morningstar family and to get to know Gerald’s daughters, with no one being forced.','Gerald','Gerald');
     c.stage='arrangement_explained'; c.unresolved=(c.unresolved||[]).filter(x=>x!=='finch_request'); c.unresolved=[...c.unresolved,'player_reaction_to_finch_request'];
-    const closingOptions=[
-      'He entrusted that decision to you, Shane. I will respect whatever you choose.',
-      'Finch left the decision with you, Shane. I will not make it for you.',
-      'He wanted you to have the choice, Shane. That choice remains yours.',
-      'His promise brought you here, but your decision determines what follows.',
-      'Nobody here is entitled to your trust. That has to be earned, not demanded.',
-      'Meet them at your own pace. No one needs an answer from you today.',
-      'I can offer you a place here, but I cannot decide whether it becomes home.',
-      'Take the time you need. This family must make its own impression on you.'
-    ];
-    const openingPhysicals=[
-      '*Gerald pauses, giving the words time to settle.*',
-      '*Gerald folds his hands on the desk, choosing each word with care.*',
-      '*His gaze drifts briefly towards the window before returning to you.*',
-      '*Gerald gives a slow nod, his expression grave but steady.*',
-      '*He draws a quiet breath before speaking about Finch again.*',
-      '*Gerald rests his fingertips against the desk and considers you for a moment.*',
-      '*A faint crease forms between Gerald’s brows as he weighs his answer.*',
-      '*Gerald’s voice softens slightly when he mentions his old friend.*'
-    ];
-    const closingPhysicals=[
-      '*His expression remains composed, though sadness briefly touches his eyes.*',
-      '*Gerald leaves a moment of silence rather than pressing you for a response.*',
-      '*He leans back slightly, making it clear he will not crowd your decision.*',
-      '*Gerald holds your gaze without trying to steer your answer.*',
-      '*He turns his attention back to you, patient and unhurried.*',
-      '*Gerald’s shoulders ease a fraction as he finishes explaining.*',
-      '*He gives a small, reassuring nod and lets the choice remain open.*',
-      '*Gerald sits quietly, allowing you room to decide what you think.*'
-    ];
+    const closingOptions=['He entrusted that decision to you, Shane. I will respect whatever you choose.','Finch left the decision with you, Shane. I will not make it for you.','He wanted you to have the choice, Shane. That choice remains yours.'];
     if(!c.threads||typeof c.threads!=='object')c.threads={}; const closingCount=Number(c.threads.finchClosingCount||0); c.threads.finchClosingCount=closingCount+1;
     const closing=closingOptions[closingCount%closingOptions.length];
-    const physical=dfrChooseNovel(openingPhysicals,seed,{target:'Gerald Morningstar',intent:'question',kind:'physical'});
-    const closingPhysical=closingPhysicals[closingCount%closingPhysicals.length];
     return {beats:[
-      beat(physical,text),
-      beat(closingPhysical,closing)
+      beat('*Gerald pauses, giving the words time to settle.*',text),
+      beat('*His expression remains composed, but there is a trace of sadness when he mentions Finch.*',closing)
     ],topic:c.topic,stage:c.stage};
   }
   return null;
@@ -2607,7 +3355,7 @@ function dfrRefreshmentResponse(action,seed){
     const daughters=['Luci Morningstar','Mana Morningstar','Bell Morningstar','Rosaline Morningstar','Evie Morningstar','Ira Morningstar','Freya Morningstar'];
     const present=['Gerald Morningstar',...daughters];
     dfrSetSceneOnly(present,'Gerald\'s Study');
-    setCharacterLocation('Elizabeth Vale',"Gerald's Study",'arriving with refreshments',true);
+    setCharacterLocation('Elizabeth Vale','Morningstar Estate — Gerald\'s Study','arriving with refreshments',true);
     c.stage='elizabeth_entered'; c.topic='elizabeth_reveal'; state.currentScenePhase='elizabeth_entered';
     const physical='*The door opens and Elizabeth steps inside carrying the tray. She takes one step into the room, looks up—and stops dead in her tracks when she sees you.*';
     const dialogue='...Shane?';
@@ -2665,135 +3413,36 @@ function dfrReturnFromElizabethResponse(action,seed){
   return {entries,topic:c.topic,stage:c.stage};
 }
 
-function dfrSpecialSceneResponse(action,seed){
-  const returning=dfrReturnFromElizabethResponse(action,seed); if(returning)return returning;
-  const refreshments=dfrRefreshmentResponse(action,seed); if(refreshments)return refreshments;
-  const arrival=dfrMorningstarArrivalResponse(action,seed); if(arrival)return arrival;
-  const group=dfrGroupEntryResponse(action,seed); if(group)return group;
-  const privateRoom=dfrPrivateRoomResponse(action,seed); if(privateRoom)return privateRoom;
-  const home=dfrHomeArrivalResponse(action,seed); if(home)return home;
-  const travel=dfrDynamicTravelResponse(action,seed); if(travel)return travel;
-  return null;
-}
-function dfrNativeGenerate(action){
-  rpgReconcileRuntimeScene();
-  const player=activePlayer();
-  if(!player)throw new Error('DFR Native Language Engine: no player');
-  const nativeNonce=String(Date.now())+'|'+Math.random().toString(36).slice(2,8); const special=dfrSpecialSceneResponse(action,`${state.runtimeEngine?.turn||0}|scene|${action}|${nativeNonce}`);
-  if(special){
-    const specialTarget=special.target?dfrPerson(special.target):null;
-    const specialIntent=dfrIntent(action);
-    const specialRel=specialTarget ? (state.relationships?.[rpgRelationshipKey(specialTarget.name,player.name)]||null) : null;
-    const specialEmotion=specialTarget ? dfrEmotion(specialTarget,specialRel,specialIntent) : 'scene';
-    const specialRelationshipChanges=specialTarget ? dfrNativeRelationshipChanges(specialTarget,specialRel,specialIntent,action,specialEmotion) : [];
-    return {action:String(action||'').trim(),entries:special.entries||[],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:specialRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent:specialIntent,emotion:specialEmotion,target:specialTarget?.name||special.target||'',style:'scene',topic:special.topic,stage:special.stage}};
+async function callStoryAI(action,correctedSource,qualityRetry=false){
+  // AI Slyvara's native orchestrator is the sole live-game generation path.
+  // A missing bridge is a visible error; the retired free-form prose generator
+  // is not retained as an automatic fallback.
+  if(!window.slyvaraNativeReady)throw new Error('Native Slyvara is not initialised; legacy narrative fallback is disabled');
+  await window.slyvaraNativeReady;
+  if(!window.slyvaraNativeBridge?.ready)throw new Error(window.slyvaraNativeBridge?.error||'Native Slyvara failed to initialise');
+  if(!window.DFRNativeAppAdapter?.DFRNativeAppAdapter)throw new Error('Native Slyvara live-app adapter is unavailable');
+  const nativeContext=await buildRPGWorkingPrompt(action);
+  let nativeAdapter=window.slyvaraNativeAppAdapter;
+  if(!nativeAdapter||nativeAdapter.bridge!==window.slyvaraNativeBridge){nativeAdapter=new window.DFRNativeAppAdapter.DFRNativeAppAdapter({bridge:window.slyvaraNativeBridge});window.slyvaraNativeAppAdapter=nativeAdapter;}
+  const nativeResult=await nativeAdapter.generatePlayerTurn({state,context:nativeContext,action});
+  const nativeEntries=nativeResult.entries;
+  const continuityIssues=rpgSceneContinuityIssues(nativeEntries,nativeContext,action);
+  if(continuityIssues.length&&!qualityRetry){
+    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: Native Slyvara's previous response violated scene continuity: ${continuityIssues.join(', ')}. Regenerate as the same active NPC. Do not introduce absent characters or control the player.`;
+    return await callStoryAI(retryAction,correctedSource||action,true);
   }
-  const all=[...(state.party||[]),...(state.npcs||[])].filter(x=>x&&x.name&&rpgKey(x.name)!==rpgKey(player.name));
-  const active=all.filter(x=>isScenePresent(x.name));
-  if(!active.length)return {action,entries:[{type:'gm',text:'*The moment hangs quietly, waiting for someone to break the silence.*'}],native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0};
-  let target=dfrAddressed(action,active);
-  if(!target){
-    const lastNpc=[...(state.story||[])].reverse().find(e=>e?.type==='character'&&e?.speaker&&active.some(n=>rpgKey(n.name)===rpgKey(e.speaker)));
-    target=(lastNpc&&active.find(n=>rpgKey(n.name)===rpgKey(lastNpc.speaker)))||active[0];
+  if(continuityIssues.length)throw new Error('Native Slyvara could not produce a scene-safe response: '+continuityIssues.join(', '));
+  const nativeQuality=rpgTurnQuality(nativeEntries,action);
+  if(!nativeQuality.ok&&!qualityRetry){
+    const retryAction=String(action||'')+`\n\nGENERATION CORRECTION: Your previous response failed these checks: ${nativeQuality.issues.join(', ')}. Respond only as the selected NPC, without echoing or controlling the player.`;
+    return await callStoryAI(retryAction,correctedSource||action,true);
   }
-  const rel=state.relationships?.[rpgRelationshipKey(target.name,player.name)]||state.relationships?.[rpgRelationshipKey(player.name,target.name)]||null;
-  const intent=dfrIntent(action), emotion=dfrEmotion(target,rel,intent);
-  const nativeRelationshipChanges=dfrNativeRelationshipChanges(target,rel,intent,action,emotion);
-  const consistency=dfrConsistencyResponse(target,rel,intent,action,`${state.runtimeEngine?.turn||0}|${target.name}|consistency|${action}|${nativeNonce}`);
-  if(consistency.dialogue){
-    if(Array.isArray(consistency.entries)&&consistency.entries.length){
-      for(const e of consistency.entries){
-        if(e?.speaker){
-          dfrRememberNative(e.speaker,intent,e.text,'');
-        }
-      }
-      dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
-      return {action:String(action||'').trim(),entries:consistency.entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
-    }
-    const beats=Array.isArray(consistency.beats)&&consistency.beats.length?consistency.beats:[{physical:dfrActionForEmotion(target,emotion,`${state.runtimeEngine?.turn||0}|${target.name}|consistency-action|${action}`,intent),dialogue:consistency.dialogue}];
-    const entries=[];
-    for(let i=0;i<beats.length;i++){
-      const b=beats[i]||{};
-      const physical=String(b.physical||'').trim()||dfrActionForEmotion(target,emotion,`${state.runtimeEngine?.turn||0}|${target.name}|consistency-action|${action}|${i}`,intent);
-      const dialogue=String(b.dialogue||'').trim();
-      if(!dialogue)continue;
-      dfrRememberNative(target.name,intent,dialogue,physical);
-      dfrApplyPhysicalState(target.name,dfrPhysicalCategory(physical),physical);
-      entries.push({type:'character',speaker:target.name,text:normaliseAIText(`${physical}\n\n“${dialogue}”`,'character')});
-    }
-    dfrRememberConversation(target.name,action,consistency.dialogue,consistency.topic,consistency.stage);
-    return {action:String(action||'').trim(),entries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:consistency.topic,stage:consistency.stage}};
-  }
-  /* Explicit player statements are private knowledge for the NPC who actually heard them.
-     Questions, narration and unrelated scene text do not automatically become shared memory. */
-  const sharedStatement=dfrExplicitPlayerStatement(action);
-  if(sharedStatement)dfrRememberPrivateKnowledge(target,sharedStatement);
-  const nativeNonce2=String(Date.now())+'|'+Math.random().toString(36).slice(2,8); const seed=`${state.runtimeEngine?.turn||0}|${target.name}|${intent}|${action}|${nativeNonce2}`;
-  let physical=dfrActionForEmotion(target,emotion,seed+'a',intent);
-  let dialogue=dfrResponse(target,rel,intent,action,seed+'b');
-  const recent=dfrRecentText();
-  const nativeHistory=dfrNativeHistory();
-  const pairUsed=(p,d)=>nativeHistory.slice(-80).some(row=>row.target===target.name&&row.intent===intent&&row.physical===dfrFingerprint(p)&&row.dialogue===dfrFingerprint(d));
-  const dialogueUsedTooOften=d=>nativeHistory.filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(d)).length>=2;
-  for(let attempt=0;attempt<36&&(pairUsed(physical,dialogue)||dialogueUsedTooOften(dialogue));attempt++){
-    physical=dfrActionForEmotion(target,emotion,seed+'p'+attempt,intent);
-    dialogue=dfrResponse(target,rel,intent,action,seed+'q'+attempt);
-  }
-  if(dialogueUsedTooOften(dialogue)){
-    const fallbackByIntent={
-      question:['I want to answer that properly.','That deserves a proper answer.','Let me think about that for a moment.','I can answer that, but I want to be precise.'],
-      concern:['I hear you.','I understand why you are asking.','That is worth taking seriously.'],
-      statement:['I see what you mean.','That gives me something to think about.','Fair enough.'],
-      greeting:['It is good to have you here.','Welcome.','Good to see you.'],
-      farewell:['Take care.','I understand. We can leave it there for now.','Very well.']
-    };
-    const pool=(fallbackByIntent[intent]||fallbackByIntent.statement).filter(x=>nativeHistory.filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(x)).length<2);
-    if(pool.length)dialogue=dfrChooseNovel(pool,seed+'|fresh-fallback',{target:target.name,intent,kind:'dialogue'});
-  }
-  if(recent.includes(dfrFingerprint(dialogue))){
-    dialogue=dfrResponse(target,rel,intent,action,seed+'c');
-    if(recent.includes(dfrFingerprint(dialogue))) dialogue=dfrResponse(target,rel,intent,action,seed+'e');
-  }
-  if(recent.includes(dfrFingerprint(physical))){
-    physical=dfrActionForEmotion(target,emotion,seed+'d',intent);
-    if(recent.includes(dfrFingerprint(physical))) physical=dfrActionForEmotion(target,emotion,seed+'f',intent);
-  }
-  /* Never let novelty selection override the authoritative physical-state rules. */
-  const finalPhysicalCategory=dfrPhysicalCategory(physical);
-  if(!dfrPhysicalActionAllowed(target.name,finalPhysicalCategory,physical)){
-    const safePool={
-      warm:[`*${dfrFirstName(target)} smiles softly.*`,`*${dfrFirstName(target)} gives a small, genuine smile.*`],
-      open:[`*${dfrFirstName(target)} meets your eyes and listens.*`,`*${dfrFirstName(target)} gives you their full attention.*`],
-      guarded:[`*${dfrFirstName(target)} studies you carefully.*`,`*${dfrFirstName(target)} hesitates before answering.*`],
-      tense:[`*${dfrFirstName(target)} goes still for a moment.*`,`*${dfrFirstName(target)} draws a slow breath before answering.*`],
-      concerned:[`*${dfrFirstName(target)} watches you closely.*`,`*${dfrFirstName(target)} looks genuinely concerned.*`],
-      'soft concern':[`*${dfrFirstName(target)}'s expression softens.*`,`*${dfrFirstName(target)} pauses, choosing their words carefully.*`],
-      direct:[`*${dfrFirstName(target)} looks at you directly.*`,`*${dfrFirstName(target)} answers without hesitation.*`],
-      calm:[`*${dfrFirstName(target)} gives a small nod.*`,`*${dfrFirstName(target)} relaxes, accepting the moment.*`],
-      neutral:[`*${dfrFirstName(target)} considers that for a moment.*`,`*${dfrFirstName(target)} listens without interrupting.*`]
-    };
-    physical=dfrChooseNovel(safePool[emotion]||safePool.neutral,seed+'safe',{target:target.name,intent:'action',kind:'physical'});
-  }
-  dfrRememberNative(target.name,intent,dialogue,physical);
-  dfrRememberConversation(target.name,action,dialogue,dfrInferConsistencyTopic(action,target),state.dfrConversation?.stage||'free_conversation');
-  dfrApplyPhysicalState(target.name,dfrPhysicalCategory(physical),physical);
-  const genericEntries=[{type:'character',speaker:target.name,text:normaliseAIText(`${physical}\n\n“${dialogue}”`,'character')}];
-  if((intent==='question'||intent==='concern') && dialogue && dialogue.length>28){
-    const followPool={
-      question:['If there is something specific you want to know, ask me.','There is more to it, but I would rather answer you properly than make assumptions.'],
-      concern:['You can tell me what is actually troubling you.','Take your time. I am listening.']
-    };
-    const followCandidates=followPool[intent].filter(x=>dfrNativeHistory().filter(row=>row.target===target.name&&row.dialogue===dfrFingerprint(x)).length<2 && (state.story||[]).filter(row=>row.speaker===target.name&&dfrFingerprint(String(row.text||'')).includes(dfrFingerprint(x))).length<2);
-    const follow=followCandidates.length?dfrChooseNovel(followCandidates,seed+'|follow',{target:target.name,intent:'followup',kind:'dialogue'}):'';
-    if(follow && !dfrRecentText().includes(dfrFingerprint(follow))){
-      dfrRememberNative(target.name,'followup',follow,'');
-      genericEntries.push({type:'character',speaker:target.name,text:normaliseAIText(`*${dfrFirstName(target)} keeps their attention on you.*\n\n“${follow}”`,'character')});
-    }
-  }
-  const text=`${physical}\n\n“${dialogue}”`;
-  return {action:String(action||'').trim(),entries:genericEntries,native:true,engineVersion:DFR_NATIVE_LANGUAGE_VERSION,relationship_changes:nativeRelationshipChanges,memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:{intent,emotion,target:target.name,style:dfrStyle(target),topic:dfrInferConsistencyTopic(action,target),stage:state.dfrConversation?.stage||'free_conversation'}};
+  if(!nativeQuality.ok)throw new Error('Native Slyvara failed turn-quality checks: '+nativeQuality.issues.join(', '));
+  await nativeAdapter.recordAcceptedTurn(nativeResult);
+  return {action:String(correctedSource||action).trim(),entries:nativeEntries,native:true,nativeTurn:nativeResult.generated,relationship_changes:[],memory_updates:[],npc_updates:[],world_updates:{},mana_cost:0,meta:nativeResult.meta};
 }
 
+/* Scenario relationship baselines are applied before generic 20-point defaults. */
 function rpgRuntimeIntegrityAudit(){
   const issues=[];
   const ws=state?.worldState||{};
@@ -2849,7 +3498,7 @@ function rpgRepairRelationshipStore(){
 function makeScenarioFromTemplate(t){
   const base=structuredClone(defaultState);
   base.scenarioId='campaign-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
-  base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';
+  base.scenarioName=t.name;base.scenarioType=t.type||'imported-scenario';base.scenarioTemplateId=t.scenarioId||t.scenarioSpec?.scenarioId||'';base.scenarioCategory=t.directoryCategory||t.scenarioSpec?.directoryCategory||'other';
   const embedded=Array.isArray(t.embeddedCharacters)?t.embeddedCharacters:[];
   const byName=new Map(embedded.map(p=>[rpgKey(p.name),p]));
   base.party=[];
@@ -2864,7 +3513,8 @@ function makeScenarioFromTemplate(t){
     base.party.push(p);
   }
   base.playerCandidates=base.party.filter(isPlayerCandidate).map(p=>p.name);
-  base.playerCharacterName='';
+  base.playerCharacterName=String(t.playerCharacterName||'').trim()||(t.playerCharacterId?String(base.party.find(p=>p.characterId===t.playerCharacterId||p.id===t.playerCharacterId)?.name||''):'');
+  if(base.playerCharacterName){for(const p of base.party){if(p.name===base.playerCharacterName){p.control='player';p.playerControlled=true;}else if(isPlayerCandidate(p)){p.control='inactive-player';p.playerControlled=false;}}}
   base.openingComplete=false;
   // The opening text is context, not a consumed cutscene. The player still controls
   // the arrival and every subsequent transition.
@@ -2889,22 +3539,38 @@ function makeScenarioFromTemplate(t){
     if(name && !base.worldState.locations.some(x=>rpgKey(x.name)===rpgKey(name)))
       base.worldState.locations.push({id:'loc-'+rpgKey(name).replace(/[^a-z0-9]+/g,'-'),name,kind:'scenario',discovered:true});
   }
+  // Build the new campaign's character positions locally. Calling the global
+  // setCharacterLocation() here would mutate the previously active campaign because
+  // `state` is not replaced until this factory returns.
   for(const p of base.party){
     const cs=base.scenarioSpec?.initialState?.characters?.[p.name]||{};
-    setCharacterLocation(p.name,cs.location||base.currentLocation,cs.present===false?'absent':(cs.activity||'present'),cs.present!==false);
+    const location=String(cs.location||base.currentLocation||'Unknown location');
+    const present=cs.present!==false;const activity=present?(cs.activity||'present'):'absent';
+    base.worldState.characters[p.name]={location,activity,present,lastUpdatedTurn:0};
+    p.runtime={...(p.runtime||{}),currentLocation:location,present};
   }
   for(const n of base.npcs||[]){
     if(!n.name)continue;
     const cs=base.scenarioSpec?.initialState?.characters?.[n.name]||{};
-    setCharacterLocation(n.name,cs.location||n.location||base.currentLocation,cs.activity||'present',cs.present!==false);
+    const location=String(cs.location||n.location||base.currentLocation||'Unknown location');
+    const present=cs.present!==false;const activity=present?(cs.activity||'present'):'absent';
+    base.worldState.characters[n.name]={location,activity,present,lastUpdatedTurn:0};
+    n.runtime={...(n.runtime||{}),currentLocation:location,present};
   }
   if(Array.isArray(base.scenarioSpec?.initialState?.completedEvents))
     base.worldState.events=structuredClone(base.scenarioSpec.initialState.completedEvents);
   if(Array.isArray(base.scenarioSpec?.initialState?.plannedEvents))
     base.worldState.plannedEvents=structuredClone(base.scenarioSpec.initialState.plannedEvents);
   base.relationships=rpgExtractRelationships(base.scenarioSpec,base.party);
+  const repairedRelationships={};
+  for(const [key,raw] of Object.entries(base.relationships||{})){
+    const chars=Array.isArray(raw?.characters)?raw.characters:String(key).split('::');
+    if(chars.length<2||!chars[0]||!chars[1]||rpgKey(chars[0])===rpgKey(chars[1]))continue;
+    const canonical=rpgRelationshipKey(chars[0],chars[1]);
+    repairedRelationships[canonical]=rpgNormaliseRelationship({...raw,characters:[chars[0],chars[1]]},chars[0],chars[1]);
+  }
+  base.relationships=repairedRelationships;
   for(const p of base.party)base.longTermMemory.characterMemories[p.name]=[];
-  rpgRepairRelationshipStore();
   return base;
 }
 
@@ -2951,5 +3617,12 @@ save=rpgSave;
 setTimeout(()=>{try{rpgReconcileRuntimeScene();rpgRepairRelationshipStore();const integrityIssues=rpgRuntimeIntegrityAudit();if(integrityIssues.length)console.warn('RPG runtime integrity issues',integrityIssues);rpgPersistPackage();}catch(e){console.warn(e);}},350);
 
 </script>
+<script>
+// Expose lexical app state to the modular browser bridge. Keep this separate
+// from the external script tag: browsers ignore inline code on script[src].
+window.__slyvaraGetAppState=()=>state;
+window.__slyvaraGetAISettings=()=>aiSettings;
+</script>
+<script src="DFR-NATIVE-BROWSER-BOOTSTRAP.js" defer></script>
 </body>
 </html>
